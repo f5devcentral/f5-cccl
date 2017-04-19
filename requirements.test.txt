@@ -1,0 +1,12 @@
+# Install this directory (will use setup.py and therefore install_requires).
+-e .
+# Test Requirements
+mock==2.0.0
+pytest==3.0.5
+pytest-cov>=2.2.1
+python-coveralls==2.7.0
+pyOpenSSL==16.2.0
+requests-mock==1.2.0
+flake8
+netaddr
+q
