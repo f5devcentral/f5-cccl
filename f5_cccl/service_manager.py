@@ -39,7 +39,7 @@ class F5CloudServiceManager(object):
         self.partition = partition
         self.prefix = prefix
 
-    def applyConfig(self, services):
+    def apply_config(self, services):
         """Apply service configurations to the BIG-IP partition.
 
         :param services: A serializable object that defines one or more
@@ -47,9 +47,9 @@ class F5CloudServiceManager(object):
 
         :return: True if successful, otherwise an exception is thrown.
         """
-        pass
+        return True
 
-    def getStatus(self):
+    def get_status(self):
         """Gets status for each service in the managed partition.
 
         :return: A serializable object of the statuses of each managed
@@ -58,9 +58,11 @@ class F5CloudServiceManager(object):
         Its structure is defined by:
             cccl-status-schema.json
         """
-        pass
+        status = {}
 
-    def getStatistics(self):
+        return status
+
+    def get_statistics(self):
         """Get statistics for each service in the managed partition.
 
         :return: A serializable object of the virtual server statistics
@@ -69,4 +71,6 @@ class F5CloudServiceManager(object):
         Its structure is defined by:
             cccl-statistics-schema.json
         """
-        pass
+        statistics = {}
+
+        return statistics

@@ -14,8 +14,23 @@
 # limitations under the License.
 #
 
-import f5_cccl.service_manager
+from f5_cccl.service_manager import F5CloudServiceManager
+from mock import MagicMock
+import pytest
 
 
-def test_create_service_manager():
-    pass
+@pytest.fixture
+def service_manager():
+    bigip = [MagicMock]
+    partition = "Test"
+
+    service_mgr = F5CloudServiceManager(
+        bigip,
+        partition)
+
+    return service_mgr
+
+def test_apply_config(service_manager):
+    services = {}
+
+    assert service_manager.apply_config(services)
