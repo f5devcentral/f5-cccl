@@ -15,12 +15,15 @@
 # limitations under the License.
 #
 
-import f5_cccl
-
-from setuptools import find_packages
+from pip.req import parse_requirements as parse_reqs
 from setuptools import setup
 
-install_requires = []
+import f5_cccl
+
+install_requires = map(lambda x: str(x.req),
+                       parse_reqs('./setup_requirements.txt',
+                       session='setup'))
+
 print('install_requires', install_requires)
 setup(
     name='f5-cccl',
@@ -31,9 +34,7 @@ setup(
     url='https://github.com/f5devcentral/f5-cccl',
     keywords=['F5', 'big-ip'],
     install_requires=install_requires,
-    packages=find_packages(
-        exclude=["*.test", "*.test.*", "test.*", "test_*", "test", "test*"]
-    ),
+    packages=["f5_cccl"],
     data_files=[],
     classifiers=[
     ],

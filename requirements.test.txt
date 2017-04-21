@@ -1,6 +1,7 @@
-# Install this directory (will use setup.py and therefore install_requires).
--e .
 # Test Requirements
+f5-sdk==2.2.2
+ipaddress==1.0.17
+PyJWT==1.4.0
 mock==2.0.0
 pytest==3.0.5
 pytest-cov>=2.2.1
