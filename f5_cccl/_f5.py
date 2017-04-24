@@ -328,26 +328,6 @@ class CloudBigIP(BigIP):
             log_sequence('cloud_pool_list', cloud_pool_list)
             log_sequence('cloud_virtual_list', cloud_virtual_list)
 
-            # virtual delete
-            virt_delete = list_diff(f5_virtual_list, cloud_virtual_list)
-            log_sequence('Virtual Servers to delete', virt_delete)
-            for virt in virt_delete:
-                self.virtual_delete(partition, virt)
-
-            # pool delete
-            pool_delete_list = list_diff(f5_pool_list, cloud_pool_list)
-            log_sequence('Pools to delete', pool_delete_list)
-            for pool in pool_delete_list:
-                self.pool_delete(partition, pool)
-
-            # healthcheck delete
-            health_delete = list_diff(f5_healthcheck_list,
-                                      cloud_healthcheck_list)
-            log_sequence('Healthchecks to delete', health_delete)
-            for hc in health_delete:
-                self.healthcheck_delete(partition, hc,
-                                        f5_healthcheck_dict[hc]['type'])
-
             # healthcheck config needs to happen before pool config because
             # the pool is where we add the healthcheck
             # healthcheck add: use the name of the virt for the healthcheck
@@ -397,6 +377,26 @@ class CloudBigIP(BigIP):
 
             for virt in virt_intersect:
                 self.virtual_update(partition, virt, config[virt])
+
+            # virtual delete
+            virt_delete = list_diff(f5_virtual_list, cloud_virtual_list)
+            log_sequence('Virtual Servers to delete', virt_delete)
+            for virt in virt_delete:
+                self.virtual_delete(partition, virt)
+
+            # pool delete
+            pool_delete_list = list_diff(f5_pool_list, cloud_pool_list)
+            log_sequence('Pools to delete', pool_delete_list)
+            for pool in pool_delete_list:
+                self.pool_delete(partition, pool)
+
+            # healthcheck delete
+            health_delete = list_diff(f5_healthcheck_list,
+                                      cloud_healthcheck_list)
+            log_sequence('Healthchecks to delete', health_delete)
+            for hc in health_delete:
+                self.healthcheck_delete(partition, hc,
+                                        f5_healthcheck_dict[hc]['type'])
 
             # add/update/remove pool members
             # need to iterate over pool_add and pool_intersect (note that
@@ -561,22 +561,24 @@ class CloudBigIP(BigIP):
         data = data['pool']
         pool = self.get_pool(partition, pool)
 
-        def genChange(p, d):
-            """Update pool members config data."""
+        def find_change(p, d):
+            """Check if data for pool has been updated."""
             for key, val in p.__dict__.iteritems():
                 if key in d:
-                    if None is not val:
-                        yield d[key] == val.strip()
-                    else:
-                        yield d[key] == val
-
-        no_change = all(genChange(pool, data))
-
-        if no_change:
+                    if val is not None and (d[key] != val.strip()):
+                            return True
+                    elif (d[key] != val):
+                            return True
+            for key, _ in d.iteritems():
+                if key not in p.__dict__:
+                    return True
             return False
 
-        pool.modify(**data)
-        return True
+        if find_change(pool, data):
+            pool.modify(**data)
+            return True
+
+        return False
 
     def get_member(self, partition, pool, member):
         """Get a pool-member object.
