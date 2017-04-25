@@ -30,12 +30,18 @@ CloudBigIP manages the following BIG-IP resources:
 """
 
 import logging
+import json
+from operator import attrgetter
+import os
+import time
 import urllib
 
 import ipaddress
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from common import list_diff, list_intersect
+from common import resolve_ip, list_diff, list_diff_exclusive, list_intersect,\
+                   ipv4_to_mac, extract_partition_and_name,\
+                   PartitionNameError, IPV4FormatError
 
 import f5
 from f5.bigip import BigIP
@@ -128,6 +134,7 @@ class CloudBigIP(BigIP):
       the accounts with proper permissions, for either local or remote auth).
 
     Args:
+        cloud: cloud environment (marathon or kubernetes)
         hostname: IP address of BIG-IP
         port: Port of BIG-IP
         username: BIG-IP username
@@ -136,7 +143,7 @@ class CloudBigIP(BigIP):
         token: The optional auth token to use with BIG-IP (e.g. "tmos")
     """
 
-    def __init__(self, hostname, port, username, password, partitions,
+    def __init__(self, cloud, hostname, port, username, password, partitions,
                  token=None):
         """Initialize the CloudBigIP object."""
         super_kwargs = {"port": port}
@@ -144,6 +151,7 @@ class CloudBigIP(BigIP):
             super_kwargs["token"] = token
         super(CloudBigIP, self).__init__(hostname, username, password,
                                          **super_kwargs)
+        self._cloud = cloud
         self._hostname = hostname
         self._port = port
         self._username = username
@@ -171,10 +179,6 @@ class CloudBigIP(BigIP):
             "ratio-session"
             )
 
-    def get_partitions(self):
-        """Getter for partitions."""
-        return self._partitions
-
     def is_label_data_valid(self, app):
         """Validate the Marathon app's label data.
 
@@ -195,13 +199,11 @@ class CloudBigIP(BigIP):
             is_valid = False
 
         # Validate address
-        if app.bindAddr is not None:
-            try:
-                ipaddress.ip_address(app.bindAddr)
-            except ValueError:
-                logger.error(msg.format('F5_BIND_ADDR',
-                                        app.appId, app.bindAddr))
-                is_valid = False
+        try:
+            ipaddress.ip_address(app.bindAddr)
+        except ValueError:
+            logger.error(msg.format('F5_BIND_ADDR', app.appId, app.bindAddr))
+            is_valid = False
 
         # Validate LB method
         if app.balance not in self._lbmethods:
@@ -210,13 +212,17 @@ class CloudBigIP(BigIP):
 
         return is_valid
 
-    def regenerate_config_f5(self, cfg):
-        """Configure the BIG-IP based on the configuration.
+    def regenerate_config_f5(self, cloud_state):
+        """Configure the BIG-IP based on the cloud state.
 
         Args:
-            cfg: configuration
+            cloud_state: Marathon or Kubernetes state
         """
         try:
+            if self._cloud == 'marathon':
+                cfg = self._create_config_marathon(cloud_state)
+            else:
+                cfg = self._create_config_kubernetes(cloud_state)
             self._apply_config(cfg)
 
         # Handle F5/BIG-IP exceptions here
@@ -243,7 +249,336 @@ class CloudBigIP(BigIP):
             # Indicate that we need to retry
             return True
 
+        if os.environ.get('SCALE_PERF_ENABLE'):  # pragma: no cover
+            test_data = {}
+            app_count = 0
+            backend_count = 0
+            if self._cloud == 'marathon':
+                for app in cloud_state:
+                    if app.partition == 'test':
+                        app_count += 1
+                        backends = len(app.backends)
+                        test_data[app.appId[1:]] = backends
+                        backend_count += backends
+            elif self._cloud == 'kubernetes':
+                for service in cloud_state['services']:
+                    app_count += 1
+                    vs_backend = service['virtualServer']['backend']
+                    backends = len(vs_backend['poolMemberAddrs'])
+                    test_data[vs_backend['serviceName']] = backends
+                    backend_count += backends
+
+            test_data['Total_Services'] = app_count
+            test_data['Total_Backends'] = backend_count
+            test_data['Time'] = time.time()
+            json_data = json.dumps(test_data)
+            logger.info('SCALE_PERF: Test data: %s', json_data)
         return False
+
+    def _create_config_kubernetes(self, config):
+        """Create a BIG-IP configuration from the Kubernetes configuration.
+
+        Args:
+            config: Kubernetes BigIP config
+        """
+        logger.debug("Generating config for BIG-IP from Kubernetes state")
+        f5 = {'ltm': {}, 'network': {}}
+        if 'openshift-sdn' in config:
+            f5['network'] = self._create_network_config_kubernetes(config)
+        if 'services' in config:
+            f5['ltm'] = self._create_ltm_config_kubernetes(config)
+
+        return f5
+
+    def _create_network_config_kubernetes(self, config):
+        """Create a BIG-IP Network configuration from the Kubernetes config.
+
+        Args:
+            config: Kubernetes BigIP config which contains openshift-sdn defs
+        """
+        f5_network = {}
+        if 'openshift-sdn' in config:
+            openshift_sdn = config['openshift-sdn']
+            f5_network['fdb'] = openshift_sdn
+        return f5_network
+
+    def _create_ltm_config_kubernetes(self, config):
+        """Create a BIG-IP LTM configuration from the Kubernetes configuration.
+
+        Args:
+            config: Kubernetes BigIP config which contains a svc list
+        """
+        f5_services = {}
+
+        # partitions this script is responsible for:
+        partitions = frozenset(self._partitions)
+
+        svcs = config['services']
+        for svc in svcs:
+            f5_service = {}
+
+            backend = svc['virtualServer']['backend']
+            frontend = svc['virtualServer']['frontend']
+            health_monitors = backend.get('healthMonitors', [])
+
+            # Only handle application if it's partition is one that this script
+            # is responsible for
+            if not has_partition(partitions, frontend['partition']):
+                continue
+
+            # No address for this port
+            if (('virtualAddress' not in frontend or
+                 'bindAddr' not in frontend['virtualAddress']) and
+                    'iapp' not in frontend):
+                continue
+
+            frontend_name = frontend['virtualServerName']
+
+            f5_service['name'] = frontend_name
+
+            f5_service['partition'] = frontend['partition']
+
+            if 'iapp' in frontend:
+                f5_service['iapp'] = {'template': frontend['iapp'],
+                                      'poolMemberTable':
+                                      frontend['iappPoolMemberTable'],
+                                      'variables': frontend['iappVariables'],
+                                      'options': frontend['iappOptions']}
+                f5_service['iapp']['tables'] = frontend.get('iappTables', {})
+            else:
+                f5_service['virtual'] = {}
+                f5_service['pool'] = {}
+                f5_service['health'] = []
+
+                # Parse the SSL profile into partition and name
+                profiles = []
+                if 'sslProfile' in frontend:
+                    profile = (
+                        frontend['sslProfile']['f5ProfileName'].split('/'))
+                    if len(profile) != 2:
+                        logger.error("Could not parse partition and name from "
+                                     "SSL profile: %s",
+                                     frontend['sslProfile']['f5ProfileName'])
+                    else:
+                        profiles.append({'partition': profile[0],
+                                         'name': profile[1]})
+
+                # Add appropriate profiles
+                if str(frontend['mode']).lower() == 'http':
+                    profiles.append({'partition': 'Common', 'name': 'http'})
+                elif get_protocol(frontend['mode']) == 'tcp':
+                    profiles.append({'partition': 'Common', 'name': 'tcp'})
+
+                f5_service['virtual_address'] = frontend['virtualAddress'][
+                    'bindAddr']
+
+                f5_service['virtual'].update({
+                    'enabled': True,
+                    'disabled': False,
+                    'ipProtocol': get_protocol(frontend['mode']),
+                    'destination':
+                    "/%s/%s:%d" % (frontend['partition'],
+                                   frontend['virtualAddress']['bindAddr'],
+                                   frontend['virtualAddress']['port']),
+                    'pool': "/%s/%s" % (frontend['partition'], frontend_name),
+                    'sourceAddressTranslation': {'type': 'automap'},
+                    'profiles': profiles
+                })
+
+                monitors = None
+                # Health Monitors
+                for index, health in enumerate(health_monitors):
+                    logger.debug("Healthcheck for service %s: %s",
+                                 backend['serviceName'], health)
+                    if index == 0:
+                        health['name'] = frontend_name
+                    else:
+                        health['name'] = frontend_name + '_' + str(index)
+                        monitors = monitors + ' and '
+                    f5_service['health'].append(health)
+
+                    # monitors is a string of health-monitor names
+                    # delimited by ' and '
+                    monitor = "/%s/%s" % (frontend['partition'],
+                                          f5_service['health'][index]['name'])
+
+                    monitors = (monitors + monitor) if monitors is not None \
+                        else monitor
+
+                f5_service['pool'].update({
+                    'monitor': monitors,
+                    'loadBalancingMode': frontend['balance']
+                })
+
+            f5_service['nodes'] = {}
+            if backend['poolMemberAddrs']:
+                for node in backend['poolMemberAddrs']:
+                    f5_service['nodes'].update({node: {
+                        'state': 'user-up',
+                        'session': 'user-enabled'
+                    }})
+            else:
+                logger.warning(
+                    'Virtual server "{}" has service "{}", which is empty - '
+                    'configuring 0 pool members.'.format(
+                        frontend_name, backend['serviceName']))
+
+            f5_services.update({frontend_name: f5_service})
+
+        return f5_services
+
+    def _create_config_marathon(self, apps):
+        """Create a BIG-IP configuration from the Marathon app list.
+
+        Args:
+            apps: Marathon app list
+        """
+        logger.debug(apps)
+        for app in apps:
+            logger.debug(app.__hash__())
+
+        logger.info("Generating config for BIG-IP")
+        f5 = {'ltm': {}}
+        # partitions this script is responsible for:
+        partitions = frozenset(self._partitions)
+
+        for app in sorted(apps, key=attrgetter('appId', 'servicePort')):
+            f5_service = {
+                'virtual': {},
+                'pool': {},
+                'nodes': {},
+                'health': [],
+                'partition': '',
+                'name': ''
+            }
+            # Only handle application if it's partition is one that this script
+            # is responsible for
+            if not has_partition(partitions, app.partition):
+                continue
+
+            # No address or iApp for this port
+            if not app.bindAddr and not app.iapp:
+                continue
+
+            # Validate data from the app's labels
+            if not app.iapp and not self.is_label_data_valid(app):
+                continue
+
+            f5_service['partition'] = app.partition
+
+            if app.iapp:
+                # Translate from the internal properties we set on app to the
+                # naming expected by the common f5_service['iapp']
+                # Only set properties that are actually present.
+                #
+                # tableName would be better as poolMemberTableName but it is
+                # required to be tableName to match the tableName produced by
+                # the k8s-bigip-ctlr
+                f5_service['iapp'] = {}
+                for k, v in {'template': 'iapp',
+                             'tableName': 'iappPoolMemberTableName',
+                             'poolMemberTable': 'iappPoolMemberTable',
+                             'tables': 'iappTables',
+                             'variables': 'iappVariables',
+                             'options': 'iappOptions'}.iteritems():
+                    if hasattr(app, v):
+                        f5_service['iapp'][k] = getattr(app, v)
+
+                # Decode the tables
+                for key in app.iappTables:
+                    f5_service['iapp']['tables'][key] = \
+                        json.loads(app.iappTables[key])
+
+            logger.info("Configuring app %s, partition %s", app.appId,
+                        app.partition)
+            backend = app.appId[1:].replace('/', '_') + '_' + \
+                str(app.servicePort)
+
+            frontend = 'iapp' if app.iapp else app.bindAddr
+            frontend_name = "%s_%s_%d" % ((app.appId).lstrip('/'), frontend,
+                                          app.servicePort)
+            # The Marathon appId contains the full path, replace all '/' in
+            # the name with '_'
+            frontend_name = frontend_name.replace('/', '_')
+            f5_service['name'] = frontend_name
+            if app.bindAddr:
+                logger.debug("Frontend at %s:%d with backend %s", app.bindAddr,
+                             app.servicePort, backend)
+
+            if app.healthCheck:
+                for hc in app.healthCheck:
+                    logger.debug("Healthcheck for app '%s': %s", app.appId, hc)
+                    hc['name'] = frontend_name
+
+                    # normalize healtcheck protocol name to lowercase
+                    if 'protocol' in hc:
+                        hc['protocol'] = (hc['protocol']).lower()
+                    hc.update({
+                        'interval': hc['intervalSeconds'],
+                        'timeout': healthcheck_timeout_calculate(hc),
+                        'send': self.healthcheck_sendstring(hc),
+                        })
+                    f5_service['health'].append(hc)
+
+            # Parse the SSL profile into partition and name
+            profiles = []
+            if app.profile:
+                profile = app.profile.split('/')
+                if len(profile) != 2:
+                    logger.error("Could not parse partition and name from SSL"
+                                 " profile: %s", app.profile)
+                else:
+                    profiles.append({'partition': profile[0],
+                                     'name': profile[1]})
+
+            # Add appropriate profiles
+            if str(app.mode).lower() == 'http':
+                profiles.append({'partition': 'Common', 'name': 'http'})
+            elif get_protocol(app.mode) == 'tcp':
+                profiles.append({'partition': 'Common', 'name': 'tcp'})
+
+            f5_service['virtual_address'] = app.bindAddr
+
+            f5_service['virtual'].update({
+                'enabled': True,
+                'disabled': False,
+                'ipProtocol': get_protocol(app.mode),
+                'destination':
+                "/%s/%s:%d" % (app.partition, app.bindAddr, app.servicePort),
+                'pool': "/%s/%s" % (app.partition, frontend_name),
+                'sourceAddressTranslation': {'type': 'automap'},
+                'profiles': profiles
+            })
+            f5_service['pool'].update({
+                'monitor': "/%s/%s" %
+                           (app.partition, f5_service['health'][0]['name'])
+                           if app.healthCheck else None,
+                'loadBalancingMode': app.balance
+            })
+
+            key_func = attrgetter('host', 'port')
+            for backendServer in sorted(app.backends, key=key_func):
+                logger.debug("Found backend server at %s:%d for app %s",
+                             backendServer.host, backendServer.port, app.appId)
+
+                # Resolve backendServer hostname to IP address
+                ipv4 = resolve_ip(backendServer.host)
+
+                if ipv4 is not None:
+                    f5_node_name = ipv4 + ':' + str(backendServer.port)
+                    f5_service['nodes'].update({f5_node_name: {
+                        'state': 'user-up',
+                        'session': 'user-enabled'
+                    }})
+                else:
+                    logger.warning("Could not resolve ip for host %s, "
+                                   "ignoring this backend", backendServer.host)
+
+            f5['ltm'].update({frontend_name: f5_service})
+
+        logger.debug("F5 json config: %s", json.dumps(f5))
+
+        return f5
 
     def _apply_config(self, config):
         """Apply the configuration to the BIG-IP.
@@ -251,7 +586,19 @@ class CloudBigIP(BigIP):
         Args:
             config: BIG-IP config dict
         """
-        unique_partitions = self.get_managed_partition_names(self._partitions)
+        if 'ltm' in config:
+            self._apply_ltm_config(config['ltm'])
+
+        if 'network' in config:
+            self._apply_network_config(config['network'])
+
+    def _apply_ltm_config(self, config):
+        """Apply the local traffic configuration to the BIG-IP.
+
+        Args:
+            config: BIG-IP LTM config dict
+        """
+        unique_partitions = self.get_partitions(self._partitions)
 
         for partition in unique_partitions:
             logger.debug("Doing config for partition '%s'", partition)
@@ -259,7 +606,7 @@ class CloudBigIP(BigIP):
             cloud_virtual_list = \
                 [x for x in config.keys()
                  if config[x]['partition'] == partition and
-                 'iapp' not in config[x] and config[x]['virtual']]
+                 'iapp' not in config[x]]
             cloud_pool_list = \
                 [x for x in config.keys()
                  if config[x]['partition'] == partition and
@@ -292,11 +639,13 @@ class CloudBigIP(BigIP):
             for iapp in iapp_intersect:
                 self.iapp_update(partition, iapp, config[iapp])
 
+            # this is kinda kludgey: health monitor has the same name as the
+            # virtual, and there is no more than 1 monitor per virtual.
             cloud_healthcheck_list = []
-            for pool in cloud_pool_list:
-                for hc in config[pool].get('health', {}):
+            for v in cloud_virtual_list:
+                for hc in config[v]['health']:
                     if 'protocol' in hc:
-                        cloud_healthcheck_list.append(hc['name'])
+                        cloud_healthcheck_list.append(v)
 
             f5_pool_list = self.get_pool_list(partition)
             f5_virtual_list = self.get_virtual_list(partition)
@@ -354,12 +703,9 @@ class CloudBigIP(BigIP):
             healthcheck_add = list_diff(cloud_healthcheck_list,
                                         f5_healthcheck_list)
             log_sequence('Healthchecks to add', healthcheck_add)
-
-            # healthcheck add
-            for key in config:
-                for hc in config[key].get('health', {}):
-                    if 'name' in hc and hc['name'] in healthcheck_add:
-                        self.healthcheck_create(partition, hc)
+            for hc in healthcheck_add:
+                for item in config[hc]['health']:
+                    self.healthcheck_create(partition, item)
 
             # pool add
             pool_add = list_diff(cloud_pool_list, f5_pool_list)
@@ -374,15 +720,13 @@ class CloudBigIP(BigIP):
                 self.virtual_create(partition, virt, config[virt])
 
             # healthcheck intersection
-            healthcheck_intersect = list_intersect(cloud_healthcheck_list,
+            healthcheck_intersect = list_intersect(cloud_virtual_list,
                                                    f5_healthcheck_list)
             log_sequence('Healthchecks to update', healthcheck_intersect)
 
-            # healthcheck intersect
-            for key in config:
-                for hc in config[key].get('health', {}):
-                    if 'name' in hc and hc['name'] in healthcheck_intersect:
-                        self.healthcheck_update(partition, key, hc)
+            for hc in healthcheck_intersect:
+                for item in config[hc]['health']:
+                    self.healthcheck_update(partition, hc, item)
 
             # pool intersection
             pool_intersect = list_intersect(cloud_pool_list, f5_pool_list)
@@ -435,6 +779,42 @@ class CloudBigIP(BigIP):
 
             # Delete any unreferenced nodes
             self.cleanup_nodes(partition)
+
+    def _apply_network_config(self, config):
+        """Apply the network configuration to the BIG-IP.
+
+        Args:
+            config: BIG-IP network config dict
+        """
+        if 'fdb' in config:
+            self._apply_network_fdb_config(config['fdb'])
+
+    def _apply_network_fdb_config(self, fdb_config):
+        """Apply the network fdb configuration to the BIG-IP.
+
+        Args:
+            config: BIG-IP network fdb config dict
+        """
+        req_vxlan_name = fdb_config['vxlan-name']
+        req_fdb_record_endpoint_list = fdb_config['vxlan-node-ips']
+        try:
+            f5_fdb_record_endpoint_list = self.get_fdb_records(req_vxlan_name)
+
+            log_sequence('req_fdb_record_list', req_fdb_record_endpoint_list)
+            log_sequence('f5_fdb_record_list', f5_fdb_record_endpoint_list)
+
+            # See if the list of records is different.
+            # If so, update with new list.
+            if list_diff_exclusive(f5_fdb_record_endpoint_list,
+                                   req_fdb_record_endpoint_list):
+                self.fdb_records_update(req_vxlan_name,
+                                        req_fdb_record_endpoint_list)
+        except (PartitionNameError, IPV4FormatError) as e:
+            logger.error(e)
+            return
+        except Exception as e:
+            logger.error('Failed to configure the FDB for VxLAN tunnel '
+                         '{}: {}'.format(req_vxlan_name, e))
 
     def cleanup_nodes(self, partition):
         """Delete any unused nodes in a partition from the BIG-IP.
@@ -1040,7 +1420,7 @@ class CloudBigIP(BigIP):
         pool.monitor = name
         pool.update()
 
-    def get_managed_partition_names(self, partitions):
+    def get_partitions(self, partitions):
         """Get a list of BIG-IP partition names.
 
         Args:
@@ -1220,3 +1600,45 @@ class CloudBigIP(BigIP):
                 iapp_list.append(iapp.name)
 
         return iapp_list
+
+    def get_vxlan_tunnel(self, vxlan_name):
+        """Get a vxlan tunnel object.
+
+        Args:
+            vxlan_name: Name of the vxlan tunnel
+        """
+        partition, name = extract_partition_and_name(vxlan_name)
+        vxlan_tunnel = self.net.fdb.tunnels.tunnel.load(
+            partition=partition, name=urllib.quote(name))
+        return vxlan_tunnel
+
+    def get_fdb_records(self, vxlan_name):
+        """Get a list of FDB records (just the endpoint list) for the vxlan.
+
+        Args:
+            vxlan_name: Name of the vxlan tunnel
+        """
+        endpoint_list = []
+        vxlan_tunnel = self.get_vxlan_tunnel(vxlan_name)
+        if hasattr(vxlan_tunnel, 'records'):
+            for record in vxlan_tunnel.records:
+                endpoint_list.append(record['endpoint'])
+
+        return endpoint_list
+
+    def fdb_records_update(self, vxlan_name, endpoint_list):
+        """Update the fdb records for a vxlan tunnel.
+
+        Args:
+            vxlan_name: Name of the vxlan tunnel
+            fdb_record_list: IP address associated with the fdb record
+        """
+        vxlan_tunnel = self.get_vxlan_tunnel(vxlan_name)
+        data = {'records': []}
+        records = data['records']
+        for endpoint in endpoint_list:
+            record = {'name': ipv4_to_mac(endpoint), 'endpoint': endpoint}
+            records.append(record)
+        logger.debug("Updating records for vxlan tunnel {}: {}".format(
+            vxlan_name, data['records']))
+        vxlan_tunnel.update(**data)
