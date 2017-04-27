@@ -1,8 +1,5 @@
-# Headline or summary  of the issue you are fixing
-
 # Using the Fixes #<issueid> will close the issue on commit to repo
-Issues:
-Fixes #<issueid>
+Fixes #<issueid>: <brief>
 
 # Describe the issue that this change addresses
 Problem:
