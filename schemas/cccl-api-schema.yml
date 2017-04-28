@@ -1,0 +1,579 @@
+# Copyright 2017 F5 Networks Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+---
+  # This is the schema definition of the cccl-api that
+  # represents the list of service definitions to apply
+  # to a partition.
+  $schema: "http://json-schema.org/draft-04/schema#"
+  id: "http://github.com/f5devcentral/f5-cccl/schemas/cccl-api-schema.json"
+  type: "object"
+  definitions:
+
+    portType: 
+      definition: "Defines the network port for the virtual-server or member"
+      type: "integer"
+      minimum: 0
+      maximum: 65535
+
+    routeDomainType: 
+      type: "object"
+      description: "Defines the route domain name and id pair"
+      properties: 
+        id: 
+          type: "integer"
+          default: 0
+        name: 
+          type: "string"
+          default: ""
+      required: 
+        - "id"
+
+    l7RuleType:
+      description: "Defines an L7 rule."
+      type: "object"
+      properties:
+        name:
+          description: "The name of the rule"
+          type: "string"
+          minLength: 1
+          maxLength: 256
+        actions:
+          items: 
+            $ref: "#definitions/l7RuleActionType"
+            type: "array"
+        conditions: 
+          items: 
+            $ref: "#definitions/l7RuleMatchType"
+            type: "array"
+      required:
+        - "name"
+
+    l7RuleActionType: 
+      type: "object"
+      properties: 
+        action: 
+          default: "forward-pool"
+          description: |
+            "Either a forwarding, redirect, or reject action to take. 
+            Supported actions are:
+              forward-pool: Forward to the named pool.  The
+              pool must exist in the managed partition or the
+              Common partition.
+
+              forward-vs: Forward to the named virtual server.
+              The virtual server must exist in the managed partition 
+              or the Common partition.
+
+              redirect-uri: Redirect to the URI string
+
+              reject: Block the traffic"
+          enum: 
+            - "forward-vs"
+            - "forward-pool"
+            - "redirect-uri"
+            - "reject"
+          type: "string"
+
+        target: 
+          description: |
+            "Where to forward the request.  This must be defined for 
+            all forwarding rules."
+          type: "string"
+          minLength: 1
+          maxLength: 256
+
+      required: 
+        - "action"
+
+    l7RuleMatchType: 
+      type: "object"
+      properties: 
+        caseSensitive: 
+          default: false
+          description: "The match string is case-sensive"
+          type: "boolean"
+        condition: 
+          description: "."
+          enum: 
+            - "equals"
+            - "begins-with"
+            - "ends-with"
+            - "contains"
+          type: "string"
+        missing: 
+          default: false
+          description: "Skip this condition if it is missing from the request."
+          type: "boolean"
+        negate: 
+          default: false
+          description: "Negate the sense of the match."
+          type: "boolean"
+        operand: 
+          description: "Request object to evaluate."
+          enum: 
+            - "http-uri-host"
+            - "http-uri-path"
+            - "http-uri-ext"
+            - "http-header"
+            - "http-cookie"
+          type: "string"
+        cookieName: 
+          description: "Name of the HTTP cookie that contains the value to compare."
+          type: "string"
+        httpHeaderName: 
+          description: "Name of the HTTP header that contains the value to compare."
+          type: "string"
+        value: 
+          description: "Value against which the operand is compared."
+          type: "string"
+      required: 
+        - "operand"
+        - "condition"
+        - "value"
+
+    l7PolicyType: 
+      id: "#/definitions/l7PolicyType"
+      type: "object"
+      properties: 
+        name: 
+          type: "string"
+          description: "Name of the policy object"
+        description: 
+          type: "string"
+        strategy: 
+          type: "string"
+          description: |
+            "Specifies the method to determine which actions get executed in the
+            case where there are multiple rules that match. The default is first."
+          enum:
+            - "first"
+            - "best"
+            - "all"
+          default: "first"
+        rules: 
+          type: "array"
+          description: |
+            "List of rules associated with this policy.  This can be an empty list"
+          items:
+            $ref: "#definitions/l7RuleType"
+      required: 
+        - "name"
+        - "rules"
+
+    healthMonitorType: 
+      type: "object"
+      properties: 
+        interval: 
+          type: "integer"
+          definition: |
+            "Specifies, in seconds, the frequency at which the system issues the monitor
+            check when either the resource is down or the status of the resource is
+            unknown. The default is 5."
+          minimum: 1
+          maximum: 86400
+          default: 5
+        timeout: 
+          type: "integer"
+          definition: |
+            "Specifies the number of seconds to wait after a resource first responds
+            correctly to the monitor before setting the resource to up."
+          minimum: 1
+          maximum: 86400
+          default: 16
+        type: 
+          type: "string"
+          description: "Specifies the type of the monitor."
+          enum: 
+            - "http"
+            - "tcp"
+            - "https"
+            - "gateway_icmp"
+        name: 
+          type: "string"
+          description: "Specifies the name of the monitor."
+          minLength: 1
+        send: 
+          type: "string"
+          description: |
+            "Specifies the text string that the monitor sends to the target object.
+            You must include \r\n at the end of a non-empty Send String."
+          minLength: 1
+        recv: 
+          type: "string"
+          description: |
+            "Specifies the regular expression representing the text string that the 
+            monitor looks for in the returned resource. The most common receive 
+            expressions contain a text string that is included in an HTML file on
+            your site. The text string can be regular text, HTML tags, or image names."
+          minLength: 1
+      required: 
+        - "name"
+        - "type"
+
+    poolMemberType: 
+      id: "#/definitions/poolMemberType"
+      type: "object"
+      properties: 
+        connectionLimit:
+          type: "integer"
+          definition: |
+            "Specifies a maximum established connection limit for a pool member or node. When 
+            the current connections count reaches this number, the system does not send additional 
+            connections to that pool member or node. The default is 0, meaning that there is no
+            limit to the number of connections."
+          default: 0
+        enabled: 
+          default: true
+          type: "boolean"
+        ipAddress: 
+          type: "string"
+          definition: "Specifies the IP address for the pool member."
+        port: 
+          definition: "Specifies the service port for the pool member."
+          $ref: "#/definitions/portType"
+        priorityGroup: 
+          type: "integer"
+          definition: |
+            "Specifies a number representing the priority group for the pool member.
+            The default is 0, meaning that the member has no priority."
+          default: 0
+        ratio:
+          definition: "Specifies the ratio weight to assign to the pool member.
+          The default is 1, which means that each pool member has an equal ratio proportion."
+          minimum: 1
+          maximum: 65535
+          default: 1
+          type: "integer"
+      required: 
+        - "ipAddress"
+        - "port"
+
+    poolType: 
+      id: "#/definitions/poolType"
+      type: "object"
+      properties: 
+        name: 
+          default: ""
+          description: "Name of the pool object."
+          maxLength: 256
+          minLength: 1
+          type: "string"
+        description: 
+          default: ""
+          description: "Specifies descriptive text that identifies the virtual server."
+          maxLength: 256
+          minLength: 0
+          type: "string"
+        lbAlgorithm: 
+          default: "round-robin"
+          description: "Loadbalancing algorithm to use on pool."
+          enum: 
+            - "round-robin"
+            - "least-connections-member"
+            - "weighted-least-connections-member"
+            - "ratio-member"
+          type: "string"
+        members: 
+          items:
+            $ref: "#definitions/poolMemberType"
+            type: "array"
+        monitors: 
+          items: 
+            properties: 
+              refname: 
+                type: "string"
+                definitition: "List of monitor path names for this pool"
+                default: 0
+            required: 
+              - "refname"
+          type: "array"
+      required: 
+        - "name"
+
+    virtualServerType: 
+      id: "#/definitions/virtualServerType"
+      properties: 
+        name: 
+          description: "Specifies the virtual server name"
+          type: "string"
+          minLength: 1
+          maxLength: 256
+
+        description:
+          description: |
+            "Specifies descriptive text that identifies the virtual server."
+          type: "string"
+          minLength: 0
+          maxLength: 256
+
+        virtualType:
+          description: |
+            "Specifies the network service provided by this virtual server
+
+            Supported values:
+              standard:  Specifies a virtual server that directs client 
+              traffic to a load balancing pool and is the most basic type 
+              of virtual server.
+
+              performance_l4: Specifies a virtual server with which
+              you associate a Fast L4 profile"
+
+          type: "string"
+          enum:
+            - "standard"
+            - "performance_l4"
+          default: "standard"
+
+        destination: 
+          description: |
+            "Specifies destination IP address information to which 
+            the virtual server sends traffic.  This can be an IP address 
+            or a previously created virtual-address."
+          type: "string"
+
+        sourceAddress:
+          description: |
+            "Specifies an IP address or network from which the virtual server accepts
+            traffic.  Default is any"
+          type: "string"
+          default: "0.0.0.0/0"
+
+        routeDomain:
+          description: "The route domain of the virtual address."
+          $ref: "#/definitions/routeDomainType"
+
+        destinationMask:
+          description: "Specifies the netmask for a network virtual server only"
+          type: "string"
+          default: "255.255.255.255"
+
+        defaultPool: 
+          description: |
+            "Specifies the name of a default pool to which you want the virtual
+            server to automatically direct traffic."
+          type: "string"
+
+        servicePort:
+          description: "Virtual server port"
+          $ref: "#/definitions/portType"
+
+        state: 
+          description: "Specifies whether the virtual server is enabled or disabled"
+          type: "string"
+          enum: 
+            - "enabled"
+            - "disabled"
+          default: "enabled"
+
+        configuration:
+          description: "The virtual server configuration"
+          type: "object"
+          oneOf:
+            - { $ref: "#definitions/httpConfigType" }
+            - { $ref: "#definitions/httpsConfigType" }
+            - { $ref: "#definitions/tcpConfigType" }
+
+        ipProtocol: 
+          description: "Specifies the network protocol name you want the system to use."
+          type: "string"
+          enum: 
+            - "tcp"
+            - "udp"
+            - "any"
+          default: "tcp"
+
+        profileClientProtocol: 
+          type: "string"
+          description: |
+            "Specifies that the selected profile is a client-side profile
+            The enumeration specifies the allowed values.  At this time
+            we disallow any custom supplied profiles."
+          enum: 
+            - "/Common/tcp"
+            - "/Common/tcp-lan-optimized"
+            - "/Common/tcp-wan-optimized"
+            - "/Common/tcp-mobile-optimized"
+            - "/Common/tcp-legacy"
+          default: "/Common/tcp-wan-optimized"
+
+        profileServerProtocol: 
+          type: "string"
+          description: |
+            "Specifies that the selected profile is a server-side profile
+            The enumeration specifies the allowed values.  At this time
+            we disallow any custom supplied profiles.  The 'client' profile
+            is unique in that it indicates that the server side profile should
+            be the same as the client side."
+          enum: 
+            - "client"
+            - "/Common/tcp"
+            - "/Common/tcp-lan-optimized"
+            - "/Common/tcp-wan-optimized"
+            - "/Common/tcp-mobile-optimized"
+            - "/Common/tcp-legacy"
+          default: "/Common/tcp-lan-optimized"
+
+        profileHTTP: 
+          type: "string"
+          description: |
+            "Specifies the HTTP profile for managing HTTP traffic.  Note that
+            this should not be set with an L4 type virtual server.  Only the stock
+            profiles are supported.  The default is None."
+          enum: 
+            - "/Common/http"
+            - "/Common/http-explicit"
+            - "/Common/http-transparent"
+
+        profileOneConnect: 
+          type: "string"
+          description: |
+            "Specifies that the selected profile is a OneConnect profile. The
+            default is None."
+          enum: 
+            - "/Common/oneconnect"
+
+        connectionLimit: 
+          type: "integer"
+          description: |
+            "Specifies the maximum number of concurrent connections allowed for
+            the virtual server. Setting this to 0 turns off connection limits.
+            The default is 0."
+          default: 0
+
+        profileDefaultPersist: 
+          type: "string"
+          description: |
+            "Specifies the persistence profile you want the system to use as the
+            default for this virtual server. Options are: None, and entries for
+            each already defined persistence profile. The default is None."
+          enum: 
+            - "cookie"
+            - "hash"
+            - "dest_addr"
+            - "source_addr"
+
+        profileFallbackPersist: 
+          description: |
+            "Specifies the persistence profile you want the system to use if it 
+            cannot use the specified default persistence profile. Options are: 
+            None, and entries for each already defined persistence profile.
+            The default is None."
+          enum: 
+            - "dest_addr"
+            - "source_addr"
+          type: "string"
+
+        profileClientSSL: 
+          description: |
+            "Specifies the SSL profile for managing client-side SSL traffic.
+            Default is None.  Possible predeployed profiles are:
+              /Common/clientssl
+              /Common/clientssl-insecure-compatible
+              /Common/clientssl-secure
+              /Common/crypto-server-default-clientssl
+              /Common/wom-default-clientssl"
+          type: "string"
+
+        profileServerSSL: 
+          description: |
+            "Specifies the SSL profile for managing client-side SSL traffic.
+            Default is None. Possible predeployed profiles are:
+              /Common/serverssl
+              /Common/apm-default-serverssl
+              /Common/crypto-client-default-serverssl
+              /Common/pcoip-default-serverssl
+              /Common/serverssl-insecure-compatible
+              /Common/wom-default-serverssl"
+          type: "string"
+
+        snatConfig: 
+          type: "string"
+          description: |
+            "Specifies the type of address translation pool, used for implementing
+            selective and intelligent source address translation. The default is automap.
+            Supported values are:
+              automap
+              snatpool
+              None
+            If snatpool is set, then the snatpool configuration item must be defined."
+          maxLength: 256
+          minLength: 1
+          default: "automap"
+
+        snatPool:
+          type: "string"
+          description: |
+            "Specifies the SNAT pool for the system to use for this virtual server.
+            Options are: None, and entries for each already defined SNAT pool. The
+            default is None."
+
+        iRules:
+          description: "A list of iRule names that are enabled on this virtual server."
+          type: "array"
+          items: 
+            properties: 
+              refname: 
+                description: "The name of the iRule."
+                maxLength: 256
+                minLength: 0
+                type: "string"
+            required: 
+              - "name"
+            type: "object"
+
+        vlansEnabled: 
+          description: |
+            "Enables/disables the virtual server on the list of VLANS and
+            tunnels listed in the set of vlans.  The default is the virtual server is
+            enabled on all VLANS and tunnel.  This corresponds to the setting vlans-disabled
+            with an emptly vlans list."
+          type: "string"
+          enum: 
+            - "vlans-enabled"
+            - "vlans-disabled"
+
+        vlans: 
+          type: "array"
+          description: |
+            "The virtual server is enabled/disabled on this set of VLANs.
+            See vlans-disabled and vlans-enabled."
+          items: 
+            type: "string"
+            description: "VLANs and tunnels that you have specifically enabled."
+            maxLength: 256
+            minLength: 1
+
+      required: 
+        - "destination"
+        - "servicePort"
+        - "name"
+
+  properties: 
+    virtualServers:
+      items:
+        $ref: "#/definitions/virtualServerType"
+      type: "array"
+    l7Policies:
+      items:
+        $ref: "#/definitions/l7PolicyType"
+      type: "array"
+    pools: 
+      items: 
+        $ref: "#/definitions/poolType"
+      type: "array"
+    monitors: 
+      items: 
+        $ref: "#/definitions/healthMonitorType"
+      type: "array"
