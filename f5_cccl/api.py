@@ -36,9 +36,9 @@ class F5CloudServiceManager(object):
         :param partition: Name of BIG-IP partition to manage.
         :param prefix: Optional string to prepend to resource names.
         """
-        self.bigip = bigip
-        self.partition = partition
-        self.prefix = prefix
+        self._bigip = bigip
+        self._partition = partition
+        self._prefix = prefix
 
     def apply_config(self, services):
         """Apply service configurations to the BIG-IP partition.
