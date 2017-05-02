@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+# coding=utf-8
+#
 # Copyright 2017 F5 Networks Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +14,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-__version__ = '0.1.0'
-
-from .api import F5CloudServiceManager # noqa: F401, F403 pylint: disable=wildcard-import

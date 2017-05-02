@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+# coding=utf-8
+#
 # Copyright 2017 F5 Networks Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +15,22 @@
 # limitations under the License.
 #
 
-__version__ = '0.1.0'
 
-from .api import F5CloudServiceManager # noqa: F401, F403 pylint: disable=wildcard-import
+"""This module defines the exceptions used in f5_cccl."""
+
+
+class F5CcclError(Exception):
+    """Base class for f5_cccl exceptions."""
+
+    def __init__(self, msg=None):
+        """Initialize object members."""
+        super(F5CcclError, self).__init__()
+        self.msg = msg
+
+    def __str__(self):
+        """Generate a string representation of the object."""
+        classname = self.__class__.__name__
+        if self.msg:
+            return "%s - %s" % (classname, self.msg)
+        else:
+            return classname
