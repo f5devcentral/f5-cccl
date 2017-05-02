@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-from f5_cccl.service_manager import F5CloudServiceManager
+from f5_cccl import F5CloudServiceManager
 from mock import MagicMock
 import pytest
 
