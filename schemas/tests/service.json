@@ -1,0 +1,98 @@
+{
+      "name": "test1",
+      "partition": "Project",
+      "virtualServers": [{
+		"name": "vs1",
+		"destination": "192.168.0.1",
+		"servicePort": 80,
+		"defaultPool": "/Project/pool1",
+		"routeDomain": {
+		  "id": 0,
+		  "name": "/Project/rd-0"
+		},
+		"sourceAddress": "0.0.0.0/0"
+	  }],
+      "pools": [
+        { "name": "pool1",
+          "members": [
+            {"ipAddress": "172.16.0.100", "port": 8080, "routeDomain": 0},
+            {"ipAddress": "172.16.0.101", "port": 8080, "routeDomain": 0}
+          ],
+          "monitors": [{ "refname":  "/Common/http"}]
+        }
+      ],
+      "monitors": [
+        { "name": "/Common/http",
+		  "type": "http",
+		  "send": "GET /\r\n",
+		  "recv": "SERVER" },
+        { "name": "/Common/gateway_icmp",
+		  "type": "gateway_icmp" }
+      ],
+      "l7Policies": [{
+        "name": "wrapper_policy",
+		"strategy": "first",
+		"rules": [
+		  {
+			"conditions": [
+			  {
+				"missing": false,
+				"negate": false,
+				"caseSensitive": false,
+				"value": "www.mysite.com",
+				"operand": "http-uri-host",
+				"condition": "equals"
+			  }
+			],
+			"name": "rule1",
+			"actions": [
+			  {
+				"action": "reject"
+			  }
+			],
+			"order": 0
+		  },
+		  {
+			"conditions": [
+			  {
+				"caseSensitive": false,
+				"missing": false,
+				"value": "www.mysite.com",
+				"negate": true,
+				"operand": "http-uri-host",
+				"condition": "equals"
+			  }
+			],
+			"name": "rule2",
+			"actions": [
+			  {
+				"action": "forward-pool",
+				"target": "/Project/pool2"
+			  }
+			],
+			"order": 1
+		  },
+		  {
+			"conditions": [
+			  {
+				"caseSensitive": false,
+				"missing": false,
+				"httpHeaderName": "X-Foo",
+				"value": "ignore",
+				"negate": true,
+				"operand": "http-header",
+				"condition": "begins-with"
+			  }
+			],
+			"name": "rule3",
+			"actions": [
+			  {
+				"action": "redirect-uri",
+				"target": "www.othersite.com"
+			  }
+			],
+			"order": 2
+		  }
+		]
+      }]
+}
