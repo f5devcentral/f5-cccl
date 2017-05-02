@@ -137,7 +137,7 @@ class CloudBigIP(BigIP):
     """
 
     def __init__(self, hostname, port, username, password, partitions,
-                 token=None):
+                 token=None, manage_types=None):
         """Initialize the CloudBigIP object."""
         super_kwargs = {"port": port}
         if token:
@@ -170,6 +170,17 @@ class CloudBigIP(BigIP):
             "ratio-least-connections-member",
             "ratio-session"
             )
+        # This currently hard codes what resources we care about until we
+        # enable policy management.
+        if manage_types is None:
+            manage_types = ['/tm/ltm/virtual', '/tm/ltm/pool',
+                            '/tm/ltm/monitor', '/tm/sys/application/service']
+
+        self._manage_virtual = '/tm/ltm/virtual' in manage_types
+        self._manage_pool = '/tm/ltm/pool' in manage_types
+        self._manage_monitor = '/tm/ltm/monitor' in manage_types
+        self._manage_policy = '/tm/ltm/policy' in manage_types
+        self._manage_iapp = '/tm/sys/application/service' in manage_types
 
     def get_partitions(self):
         """Getter for partitions."""
@@ -256,21 +267,29 @@ class CloudBigIP(BigIP):
         for partition in unique_partitions:
             logger.debug("Doing config for partition '%s'", partition)
 
-            cloud_virtual_list = \
-                [x for x in config.keys()
-                 if config[x]['partition'] == partition and
-                 'iapp' not in config[x] and config[x]['virtual']]
-            cloud_pool_list = \
-                [x for x in config.keys()
-                 if config[x]['partition'] == partition and
-                 'iapp' not in config[x]]
-            cloud_iapp_list = \
-                [x for x in config.keys()
-                 if config[x]['partition'] == partition and
-                 'iapp' in config[x]]
+            cloud_virtual_list = []
+            if self._manage_virtual:
+                cloud_virtual_list = \
+                    [x for x in config.keys()
+                     if config[x]['partition'] == partition and
+                     'iapp' not in config[x] and config[x]['virtual']]
+            cloud_pool_list = []
+            if self._manage_pool:
+                cloud_pool_list = \
+                    [x for x in config.keys()
+                     if config[x]['partition'] == partition and
+                     'iapp' not in config[x]]
+            cloud_iapp_list = []
+            if self._manage_iapp:
+                cloud_iapp_list = \
+                    [x for x in config.keys()
+                     if config[x]['partition'] == partition and
+                     'iapp' in config[x]]
 
             # Configure iApps
-            f5_iapp_list = self.get_iapp_list(partition)
+            f5_iapp_list = []
+            if self._manage_iapp:
+                f5_iapp_list = self.get_iapp_list(partition)
             log_sequence('f5_iapp_list', f5_iapp_list)
             log_sequence('cloud_iapp_list', cloud_iapp_list)
 
@@ -293,26 +312,43 @@ class CloudBigIP(BigIP):
                 self.iapp_update(partition, iapp, config[iapp])
 
             cloud_healthcheck_list = []
-            for pool in cloud_pool_list:
-                for hc in config[pool].get('health', {}):
-                    if 'protocol' in hc:
-                        cloud_healthcheck_list.append(hc['name'])
+            if self._manage_monitor:
+                for pool in cloud_pool_list:
+                    for hc in config[pool].get('health', {}):
+                        if 'protocol' in hc:
+                            cloud_healthcheck_list.append(hc['name'])
 
-            f5_pool_list = self.get_pool_list(partition, False)
-            f5_virtual_list = self.get_virtual_list(partition)
+            cloud_policy_list = []
+            if self._manage_policy:
+                for virtual in cloud_virtual_list:
+                    for policy in config[virtual].get('policies', {}):
+                        cloud_policy_list.append(policy['name'])
+
+            f5_pool_list = []
+            if self._manage_pool:
+                f5_pool_list = self.get_pool_list(partition, False)
+            f5_virtual_list = []
+            if self._manage_virtual:
+                f5_virtual_list = self.get_virtual_list(partition)
+            f5_policy_list = []
+            if self._manage_policy:
+                f5_policy_list = self.get_policy_list(partition)
 
             # get_healthcheck_list() returns a dict with healthcheck names for
             # keys and a subkey of "type" with a value of "tcp", "http", etc.
             # We need to know the type to correctly reference the resource.
             # i.e. monitor types are different resources in the f5-sdk
-            f5_healthcheck_dict = self.get_healthcheck_list(partition)
-            logger.debug("f5_healthcheck_dict:   %s", f5_healthcheck_dict)
-            # and then we need just the list to identify differences from the
-            # list returned from the cloud environment
-            f5_healthcheck_list = f5_healthcheck_dict.keys()
+            f5_healthcheck_list = []
+            if self._manage_monitor:
+                f5_healthcheck_dict = self.get_healthcheck_list(partition)
+                logger.debug("f5_healthcheck_dict:   %s", f5_healthcheck_dict)
+                # and then we need just the list to identify differences from
+                # the list returned from the cloud environment
+                f5_healthcheck_list = f5_healthcheck_dict.keys()
 
             log_sequence('f5_pool_list', f5_pool_list)
             log_sequence('f5_virtual_list', f5_virtual_list)
+            log_sequence('f5_policy_list', f5_policy_list)
             log_sequence('f5_healthcheck_list', f5_healthcheck_list)
             log_sequence('cloud_pool_list', cloud_pool_list)
             log_sequence('cloud_virtual_list', cloud_virtual_list)
@@ -335,6 +371,14 @@ class CloudBigIP(BigIP):
             log_sequence('Pools to add', pool_add)
             for pool in pool_add:
                 self.pool_create(partition, pool, config[pool])
+
+            # policy add
+            policy_add = list_diff(cloud_policy_list, f5_policy_list)
+            log_sequence('Policies to add', policy_add)
+            for key in config:
+                for policy in config[key].get('policies', {}):
+                    if 'name' in policy and policy['name'] in policy_add:
+                        self.policy_create(partition, policy)
 
             # virtual add
             virt_add = list_diff(cloud_virtual_list, f5_virtual_list)
@@ -359,6 +403,14 @@ class CloudBigIP(BigIP):
             for pool in pool_intersect:
                 self.pool_update(partition, pool, config[pool])
 
+            # policy intersection
+            policy_intersect = list_intersect(cloud_policy_list,
+                                              f5_policy_list)
+            for key in config:
+                for policy in config[key].get('policies', {}):
+                    if 'name' in policy and policy['name'] in policy_intersect:
+                        self.policy_update(partition, policy)
+
             # virt intersection
             virt_intersect = list_intersect(cloud_virtual_list,
                                             f5_virtual_list)
@@ -372,6 +424,12 @@ class CloudBigIP(BigIP):
             log_sequence('Virtual Servers to delete', virt_delete)
             for virt in virt_delete:
                 self.virtual_delete(partition, virt)
+
+            # policy delete
+            policy_delete = list_diff(f5_policy_list, cloud_policy_list)
+            log_sequence('Policies to delete', policy_delete)
+            for policy in policy_delete:
+                self.policy_delete(partition, policy)
 
             # pool delete
             pool_delete_list = list_diff(f5_pool_list, cloud_pool_list)
@@ -1041,6 +1099,83 @@ class CloudBigIP(BigIP):
         self.healthcheck_create(partition, data)
         pool.monitor = name
         pool.update()
+
+    def get_policy(self, partition, policy):
+        """Get Policy object.
+
+        Args:
+            partition: Partition name
+            policy: Name of the policy
+        """
+        p = self.ltm.policys.policy.load(name=urllib.quote(policy),
+                                         partition=partition)
+        return p
+
+    def get_policy_list(self, partition):
+        """Get a list of policy names for a partition.
+
+        Args:
+            partition: Partition name
+        """
+        policy_list = []
+        policies = self.ltm.policys.get_collection()
+        for policy in policies:
+            appService = getattr(policy, 'appService', None)
+            # policy must match partition and not belong to an appService
+            if policy.partition == partition and appService is None:
+                policy_list.append(policy.name)
+        return policy_list
+
+    def policy_create(self, partition, data):
+        """Create a policy.
+
+        Args:
+            partition: Partition name
+            data: BIG-IP config dict
+        """
+        p = self.ltm.policys.policy
+        logger.debug("Creating policy %s", data['name'])
+        p.create(partition=partition, **data)
+
+    def policy_delete(self, partition, policy):
+        """Delete a policy.
+
+        Args:
+            partition: Partition name
+            policy: Name of policy to delete
+        """
+        logger.debug("Deleting Policy %s", policy)
+        p = self.get_policy(partition, policy)
+        p.delete()
+
+    def policy_update(self, partition, data):
+        """Update a policy.
+
+        Args:
+            partition: Partition name
+            data: BIG-IP config dict
+        """
+        policy = self.get_policy(partition, data['name'])
+
+        def find_change(p, d):
+            """Check if data for policy has been updated."""
+            for key, val in p.__dict__.iteritems():
+                if key in d:
+                    if val is not None and (d[key] != val.strip()):
+                            return True
+                    elif (d[key] != val):
+                            return True
+            for key, _ in d.iteritems():
+                if key not in p.__dict__:
+                    return True
+            return False
+
+        if find_change(policy, data):
+            logger.debug("Updating policy %s" % policy.name)
+            policy.modify(**data)
+            return True
+
+        return False
 
     def get_managed_partition_names(self, partitions):
         """Get a list of BIG-IP partition names.
