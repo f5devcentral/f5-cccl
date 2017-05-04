@@ -11,3 +11,6 @@ requests-mock==1.2.0
 flake8
 netaddr
 q
+PyYAML==3.12
+simplejson
+jsonschema

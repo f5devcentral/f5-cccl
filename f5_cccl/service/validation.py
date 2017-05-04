@@ -14,3 +14,80 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""This module defines the schema validator used by f5-cccl."""
+
+from __future__ import print_function
+import f5_cccl.exceptions as cccl_exc
+import simplejson as json
+import jsonschema
+from jsonschema import validators
+from jsonschema import Draft4Validator
+import yaml
+
+DEFAULT_SCHEMA = "./schemas/cccl-api-schema.yml"
+
+
+def read_yaml(target):
+    """Open and read a yaml file."""
+    with open(target, 'r') as yaml_file:
+        yaml_data = yaml.load(yaml_file)
+    return yaml_data
+
+
+def read_json(target):
+    """Open and read a json file."""
+    with open(target, 'r') as json_file:
+        json_data = json.loads(json_file.read())
+    return json_data
+
+
+def read_yaml_or_json(target):
+    """Read json or yaml, return a dict."""
+    if target.lower().endswith('.json'):
+        return read_json(target)
+    elif target.lower().endswith('.yaml') or target.lower().endswith('.yml'):
+        return read_yaml(target)
+    else:
+        raise cccl_exc.F5CcclError('json or yaml file expected.')
+
+
+class SchemaValidator(object):
+    """A schema validator used by f5-cccl service manager.
+
+    Accepts a json BIG-IP service configuration and validates it against
+    against the default schema.
+
+    Optionally accepts an alternate json or yaml schema to validate against.
+    """
+
+    def __init__(self, schema=DEFAULT_SCHEMA):
+        """Choose schema."""
+        self.schema = read_yaml_or_json(schema)
+        self.validate_properties = None
+
+    def __set_defaults(self, validator, properties, instance, schema):
+        """Helper function to simply return when setting defaults."""
+        for item, subschema in properties.iteritems():
+            if "default" in subschema:
+                instance.setdefault(item, subschema["default"])
+
+        for error in self.validate_properties(validator, properties, instance,
+                                              schema):
+            yield error
+
+    def _extend_with_default(self, validator_class):
+        self.validate_properties = validator_class.VALIDATORS["properties"]
+        return validators.extend(validator_class,
+                                 {"properties": self.__set_defaults})
+
+    def validate(self, cfg):
+        """Check a config against the schema, returns `None` at succeess."""
+        validator_with_defaults = self._extend_with_default(Draft4Validator)
+        try:
+            return validator_with_defaults(self.schema).validate(cfg)
+        except jsonschema.exceptions.SchemaError as err:
+            msg = str(err)
+            raise cccl_exc.SchemaError(msg)
+        except jsonschema.exceptions.ValidationError as err:
+            msg = str(err)
+            raise cccl_exc.ValidationError(msg)
