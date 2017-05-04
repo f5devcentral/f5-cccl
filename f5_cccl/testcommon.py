@@ -514,7 +514,7 @@ class BigIPTest(unittest.TestCase):
         self.test_pool.append(pool)
         return pool
 
-    def mock_get_pool_list(self, partition):
+    def mock_get_pool_list(self, partition, all_pools=False):
         """Mock: Return previouly created pools."""
         pool_list = []
         if self.test_pool is not None:
