@@ -647,7 +647,7 @@ class CloudBigIP(BigIP):
                     if 'protocol' in hc:
                         cloud_healthcheck_list.append(v)
 
-            f5_pool_list = self.get_pool_list(partition)
+            f5_pool_list = self.get_pool_list(partition, False)
             f5_virtual_list = self.get_virtual_list(partition)
 
             # get_healthcheck_list() returns a dict with healthcheck names for
@@ -659,17 +659,6 @@ class CloudBigIP(BigIP):
             # and then we need just the list to identify differences from the
             # list returned from the cloud environment
             f5_healthcheck_list = f5_healthcheck_dict.keys()
-
-            # The virtual servers, pools, and health monitors for iApps are
-            # managed by the iApps themselves, so remove them from the lists we
-            # manage
-            for iapp in cloud_iapp_list:
-                f5_virtual_list = \
-                    [x for x in f5_virtual_list if not x.startswith(iapp)]
-                f5_pool_list = \
-                    [x for x in f5_pool_list if not x.startswith(iapp)]
-                f5_healthcheck_list = \
-                    [x for x in f5_healthcheck_list if not x.startswith(iapp)]
 
             log_sequence('f5_pool_list', f5_pool_list)
             log_sequence('f5_virtual_list', f5_virtual_list)
@@ -823,7 +812,7 @@ class CloudBigIP(BigIP):
             partition: Partition name
         """
         node_list = self.get_node_list(partition)
-        pool_list = self.get_pool_list(partition)
+        pool_list = self.get_pool_list(partition, True)
 
         # Search pool members for nodes still in-use, if the node is still
         # being used, remove it from the node list
@@ -893,16 +882,21 @@ class CloudBigIP(BigIP):
         raise Exception("Failed to retrieve resource for pool {} "
                         "in partition {}".format(name, partition))
 
-    def get_pool_list(self, partition):
+    def get_pool_list(self, partition, all_pools):
         """Get a list of pool names for a partition.
 
         Args:
             partition: Partition name
+            all_pools: Return all pools (True) or only non-appService
+                       pools (False)
         """
         pool_list = []
         pools = self.ltm.pools.get_collection()
         for pool in pools:
-            if pool.partition == partition:
+            appService = getattr(pool, 'appService', None)
+            # pool must match partition and not belong to an appService
+            if pool.partition == partition and \
+               (appService is None or all_pools):
                 pool_list.append(pool.name)
         return pool_list
 
@@ -1079,7 +1073,9 @@ class CloudBigIP(BigIP):
         virtual_list = []
         virtuals = self.ltm.virtuals.get_collection()
         for virtual in virtuals:
-            if virtual.partition == partition:
+            appService = getattr(virtual, 'appService', None)
+            # virtual must match partition and not belong to an appService
+            if virtual.partition == partition and appService is None:
                 virtual_list.append(virtual.name)
 
         return virtual_list
@@ -1224,13 +1220,17 @@ class CloudBigIP(BigIP):
         # HTTP
         healthchecks = self.ltm.monitor.https.get_collection()
         for hc in healthchecks:
-            if hc.partition == partition:
+            appService = getattr(hc, 'appService', None)
+            # hc must match partition and not belong to an appService
+            if hc.partition == partition and appService is None:
                 healthcheck_dict.update({hc.name: {'type': 'http'}})
 
         # TCP
         healthchecks = self.ltm.monitor.tcps.get_collection()
         for hc in healthchecks:
-            if hc.partition == partition:
+            appService = getattr(hc, 'appService', None)
+            # hc must match partition and not belong to an appService
+            if hc.partition == partition and appService is None:
                 healthcheck_dict.update({hc.name: {'type': 'tcp'}})
 
         return healthcheck_dict
