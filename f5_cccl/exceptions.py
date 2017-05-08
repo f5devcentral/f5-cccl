@@ -34,3 +34,27 @@ class F5CcclError(Exception):
             return "%s - %s" % (classname, self.msg)
         else:
             return classname
+
+
+class F5CcclResourceCreateError(F5CcclError):
+    u"""General resource creation failure."""
+
+
+class F5CcclResourceConflictError(F5CcclError):
+    u"""Resource already exists on BIG-IP?."""
+
+
+class F5CcclResourceNotFoundError(F5CcclError):
+    u"""Resource not found on BIG-IP?."""
+
+
+class F5CcclResourceRequestError(F5CcclError):
+    u"""Resource request client error on BIG-IP?."""
+
+
+class F5CcclResourceUpdateError(F5CcclError):
+    u"""General resource update failure."""
+
+
+class F5CcclResourceDeleteError(F5CcclError):
+    u"""General resource delete failure."""

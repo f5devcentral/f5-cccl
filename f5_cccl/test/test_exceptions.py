@@ -44,3 +44,57 @@ def test_raise_f5ccclerror():
             raise exceptions.F5CcclError()
 
         f()
+
+
+def test_raise_f5cccl_resource_create_error():
+    """Test raising a F5CcclResourceCreateError."""
+    with pytest.raises(exceptions.F5CcclResourceCreateError):
+        def f():
+            raise exceptions.F5CcclResourceCreateError()
+
+        f()
+
+
+def test_raise_f5cccl_resource_conflict_error():
+    """Test raising a F5CcclConflictError."""
+    with pytest.raises(exceptions.F5CcclResourceConflictError):
+        def f():
+            raise exceptions.F5CcclResourceConflictError()
+
+        f()
+
+
+def test_raise_f5cccl_resource_notfound_error():
+    """Test raising a F5CcclResourceNotFoundError."""
+    with pytest.raises(exceptions.F5CcclResourceNotFoundError):
+        def f():
+            raise exceptions.F5CcclResourceNotFoundError()
+
+        f()
+
+
+def test_raise_f5cccl_resource_request_error():
+    """Test raising a F5CcclResourceRequestError."""
+    with pytest.raises(exceptions.F5CcclResourceRequestError):
+        def f():
+            raise exceptions.F5CcclResourceRequestError()
+
+        f()
+
+
+def test_raise_f5cccl_resource_update_error():
+    """Test raising a F5CcclResourceUpdateError."""
+    with pytest.raises(exceptions.F5CcclResourceUpdateError):
+        def f():
+            raise exceptions.F5CcclResourceUpdateError()
+
+        f()
+
+
+def test_raise_f5cccl_resource_delete_error():
+    """Test raising a F5CcclResourceDeleteError."""
+    with pytest.raises(exceptions.F5CcclResourceDeleteError):
+        def f():
+            raise exceptions.F5CcclResourceDeleteError()
+
+        f()
