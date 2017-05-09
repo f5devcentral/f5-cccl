@@ -33,7 +33,6 @@
       properties: 
         id: 
           type: "integer"
-          default: 0
         name: 
           type: "string"
           default: ""
@@ -234,15 +233,26 @@
             connections to that pool member or node. The default is 0, meaning that there is no
             limit to the number of connections."
           default: 0
-        enabled: 
-          default: true
-          type: "boolean"
-        ipAddress: 
+        description:
+          type: "string"
+          definition: "User defined description"
+          maximum: 256
+        state:
+          type: "string"
+          definition: "Marks the pool member up or down. The default value is user-up."
+          enum:
+            - "user-up"
+            - "user-down"
+          default: "user-up"
+        address:
           type: "string"
           definition: "Specifies the IP address for the pool member."
         port: 
           definition: "Specifies the service port for the pool member."
           $ref: "#/definitions/portType"
+        routeDomain:
+          definition: "Specifies the member IP address namespace."
+          $ref: "#/definitions/routeDomainType"
         priorityGroup: 
           type: "integer"
           definition: |
@@ -256,8 +266,13 @@
           maximum: 65535
           default: 1
           type: "integer"
+        rateLimit:
+          definition: |
+            "Specifies the maximum number of connections per second allowed for a pool member."
+          default: 0
+          type: "integer"
       required: 
-        - "ipAddress"
+        - "address"
         - "port"
 
     poolType: 
@@ -265,18 +280,16 @@
       type: "object"
       properties: 
         name: 
-          default: ""
           description: "Name of the pool object."
           maxLength: 256
           minLength: 1
           type: "string"
         description: 
-          default: ""
           description: "Specifies descriptive text that identifies the virtual server."
           maxLength: 256
           minLength: 0
           type: "string"
-        lbAlgorithm: 
+        loadBalancingMode: 
           default: "round-robin"
           description: "Loadbalancing algorithm to use on pool."
           enum: 
