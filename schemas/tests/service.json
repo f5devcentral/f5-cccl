@@ -15,8 +15,8 @@
       "pools": [
         { "name": "pool1",
           "members": [
-            {"ipAddress": "172.16.0.100", "port": 8080, "routeDomain": 0},
-            {"ipAddress": "172.16.0.101", "port": 8080, "routeDomain": 0}
+            {"address": "172.16.0.100", "port": 8080, "routeDomain": {"id": 0}},
+            {"address": "172.16.0.101", "port": 8080, "routeDomain": {"id": 0}}
           ],
           "monitors": [{ "refname":  "/Common/http"}]
         }
