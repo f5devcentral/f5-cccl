@@ -1,5 +1,5 @@
-u"""This module provides class for managing resource configuration."""
 # coding=utf-8
+"""This module provides class for managing resource configuration."""
 #
 # Copyright 2017 F5 Networks Inc.
 #
@@ -16,18 +16,20 @@ u"""This module provides class for managing resource configuration."""
 # limitations under the License.
 #
 
+import copy
+
 from f5.sdk_exception import F5SDKError
 import f5_cccl.exceptions as cccl_exc
 from icontrol.exceptions import iControlUnexpectedHTTPError
 
 
 class Resource(object):
-    u"""Resource super class to wrap BIG-IP? configuration objects.
+    u"""Resource super class to wrap BIG-IP configuration objects.
 
     A Resource represents a piece of CCCL configuration as represented
     by the cccl-api-schema.  It's purpose is to wrap configuration into
     an object that can later be used to perform Create, Read, Update,
-    and Delete operations on the BIG-IP?
+    and Delete operations on the BIG-IP
 
     Data should only be initialized on creation of the Resouce object
     and not modified.  If a new representation is required a Resouce
@@ -45,16 +47,37 @@ class Resource(object):
 
     """
 
-    def __init__(self, data):
-        u"""Initialize a BIG-IP? resource object from a CCCL schema object."""
-        self._data = data
-        self._name = data.get('name', None)
-        self._partition = data.get('partition', None)
+    def __init__(self, name, partition):
+        u"""Initialize a BIG-IP resource object from a CCCL schema object.
+
+        Args:
+            name (string): the name of the resource
+            partition (string): the resource partition
+        """
+        self._data = {}
+        self._data['name'] = name
+        self._data['partition'] = partition
+
+    def __dict__(self):
+        u"""Create a dictionary of the resource data."""
+        return self._data
+
+    def __eq__(self, resource):
+        u"""Compare two resources for equality.
+
+        Args:
+            resouce (Resource): The resource to compare
+        Return:
+            True if equal
+            False otherwise
+        """
+        return (self._data['name'] == resource.name and
+                self._data['partition'] == resource.partition)
 
     def create(self, bigip):
-        u"""Create resource on a BIG-IP® system.
+        u"""Create resource on a BIG-IP system.
 
-        The internal data model is applied to the BIG-IP?
+        The internal data model is applied to the BIG-IP
 
         Args:
             bigip (f5.bigip.ManagementRoot): F5 SDK session object
@@ -66,7 +89,7 @@ class Resource(object):
             unspecified reason.
 
             F5CcclResourceConflictError: resouce cannot be created because
-            it already exists on the BIG-IP?
+            it already exists on the BIG-IP
         """
         try:
             obj = self._uri_path(bigip).create(**self._data)
@@ -77,24 +100,24 @@ class Resource(object):
             raise cccl_exc.F5CcclResourceCreateError(str(err))
 
     def read(self, bigip):
-        u"""Retrieve a BIG-IP® resource from a BIG-IP®.
+        u"""Retrieve a BIG-IP resource from a BIG-IP.
 
         Returns a resource object with attributes for instance on a
-        BIG-IP® system.
+        BIG-IP system.
 
         Args:
             bigip (f5.bigip.ManagementRoot): F5 SDK session object
 
-        Returns: resource retrieved from BIG-IP?
+        Returns: resource retrieved from BIG-IP
 
         Raises:
             F5CcclResourceNotFoundError: resouce cannot be loaded because
-            it does not exist on the BIG-IP?
+            it does not exist on the BIG-IP
         """
         try:
             obj = self._uri_path(bigip).load(
-                name=self._name,
-                partition=self._partition)
+                name=self.name,
+                partition=self.partition)
             return obj
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
@@ -102,11 +125,11 @@ class Resource(object):
             raise cccl_exc.F5CcclError(str(err))
 
     def update(self, bigip):
-        u"""Update a resource (e.g., pool) on a BIG-IP® system.
+        u"""Update a resource (e.g., pool) on a BIG-IP system.
 
-        Modifies a resource on a BIG-IP® system using attributes
+        Modifies a resource on a BIG-IP system using attributes
         defined in the model object.
-        The internal data model is applied to the BIG-IP?
+        The internal data model is applied to the BIG-IP
 
         Args:
             bigip: BigIP instance to use for updating resource.
@@ -116,20 +139,21 @@ class Resource(object):
             unspecified reason.
 
             F5CcclResourceNotFoundError: resouce cannot be updated because
-            it does not exist on the BIG-IP?
+            it does not exist on the BIG-IP
         """
         try:
             obj = self._uri_path(bigip).load(
-                name=self._name,
-                partition=self._partition)
-            obj.modify(**self._data)
+                name=self.name,
+                partition=self.partition)
+            payload = copy.copy(self._data)
+            obj.update(**payload)
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
         except F5SDKError as err:
             raise cccl_exc.F5CcclResourceUpdateError(str(err))
 
     def delete(self, bigip):
-        u"""Delete a resource on a BIG-IP® system.
+        u"""Delete a resource on a BIG-IP system.
 
         Loads a resource and deletes it.
 
@@ -141,12 +165,12 @@ class Resource(object):
             unspecified reason.
 
             F5CcclResourceNotFoundError: resouce cannot be deleted because
-            it already exists on the BIG-IP?
+            it already exists on the BIG-IP
         """
         try:
             obj = self._uri_path(bigip).load(
-                name=self._name,
-                partition=self._partition)
+                name=self.name,
+                partition=self.partition)
             obj.delete()
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
@@ -156,12 +180,12 @@ class Resource(object):
     @property
     def name(self):
         u"""Get the name for this resource."""
-        return self._name
+        return self._data['name']
 
     @property
     def partition(self):
         u"""Get the partition for this resource."""
-        return self._partition
+        return self._data['partition']
 
     @property
     def data(self):
