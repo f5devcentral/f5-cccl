@@ -74,7 +74,7 @@ class TestSchemaValidator(object):
         self.validator.validate_properties = \
             Mock(return_value=[errors])
         default = dict(default='default')
-        properties.iteritems = Mock(return_value=[['item', default]])
+        properties.items = Mock(return_value=[['item', default]])
         result = set_defaults(validator, properties, instance, schema)
         assert errors in result, "Generator has our errors"
         self.validator.validate_properties.assert_called_once_with(

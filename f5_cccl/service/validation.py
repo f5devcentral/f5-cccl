@@ -67,7 +67,7 @@ class SchemaValidator(object):
 
     def __set_defaults(self, validator, properties, instance, schema):
         """Helper function to simply return when setting defaults."""
-        for item, subschema in properties.iteritems():
+        for item, subschema in properties.items():
             if "default" in subschema:
                 instance.setdefault(item, subschema["default"])
 
