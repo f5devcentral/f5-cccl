@@ -1,5 +1,5 @@
-u"""This module provides class for managing resource configuration."""
 # coding=utf-8
+"""This module provides class for managing resource configuration."""
 #
 # Copyright 2017 F5 Networks Inc.
 #
@@ -15,6 +15,8 @@ u"""This module provides class for managing resource configuration."""
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+import copy
 
 from f5.sdk_exception import F5SDKError
 import f5_cccl.exceptions as cccl_exc
@@ -45,11 +47,32 @@ class Resource(object):
 
     """
 
-    def __init__(self, data):
-        u"""Initialize a BIG-IP? resource object from a CCCL schema object."""
-        self._data = data
-        self._name = data.get('name', None)
-        self._partition = data.get('partition', None)
+    def __init__(self, name, partition):
+        u"""Initialize a BIG-IP? resource object from a CCCL schema object.
+
+        Args:
+            name (string): the name of the resource
+            partition (string): the resource partition
+        """
+        self._data = {}
+        self._data['name'] = name
+        self._data['partition'] = partition
+
+    def __dict__(self):
+        u"""Create a dictionary of the resource data."""
+        return self._data
+
+    def __eq__(self, resource):
+        u"""Compare two resources for equality.
+
+        Args:
+            resouce (Resource): The resource to compare
+        Return:
+            True if equal
+            False otherwise
+        """
+        return (self._data['name'] == resource.name and
+                self._data['partition'] == resource.partition)
 
     def create(self, bigip):
         u"""Create resource on a BIG-IP® system.
@@ -93,8 +116,8 @@ class Resource(object):
         """
         try:
             obj = self._uri_path(bigip).load(
-                name=self._name,
-                partition=self._partition)
+                name=self.name,
+                partition=self.partition)
             return obj
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
@@ -120,9 +143,10 @@ class Resource(object):
         """
         try:
             obj = self._uri_path(bigip).load(
-                name=self._name,
-                partition=self._partition)
-            obj.modify(**self._data)
+                name=self.name,
+                partition=self.partition)
+            payload = self.filter_immutable_properties()
+            obj.update(**payload)
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
         except F5SDKError as err:
@@ -145,8 +169,8 @@ class Resource(object):
         """
         try:
             obj = self._uri_path(bigip).load(
-                name=self._name,
-                partition=self._partition)
+                name=self.name,
+                partition=self.partition)
             obj.delete()
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
@@ -156,17 +180,25 @@ class Resource(object):
     @property
     def name(self):
         u"""Get the name for this resource."""
-        return self._name
+        return self._data['name']
 
     @property
     def partition(self):
         u"""Get the partition for this resource."""
-        return self._partition
+        return self._data['partition']
 
     @property
     def data(self):
         u"""Get the internal data model for this resource."""
         return self._data
+
+    def filter_immutable_properties(self):
+        u"""Get filtered data suitable for modify() operation.
+
+        Use this method to remove immutable attributes from the
+        payload of the modify() SDK operation.
+        """
+        return copy.copy(self._data)
 
     def _uri_path(self, bigip):
         u"""Get the URI resource path key for the F5 SDK.
