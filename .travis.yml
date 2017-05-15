@@ -18,6 +18,6 @@ install:
   - pip install -r requirements.docs.txt
   - python ./setup.py install
 script:
-  - tox -e flake
+  - tox -e style
   - tox -e unit
 before_deploy: PKG_VERSION=$(python -c "import f5; print(f5_cccl.__version__)")

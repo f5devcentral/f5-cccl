@@ -1,5 +1,4 @@
 # coding=utf-8
-"""This module provides class for managing resource configuration."""
 #
 # Copyright 2017 F5 Networks Inc.
 #
@@ -15,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+"""This module implements the F5 CCCL Resource super class."""
+
 
 import copy
 

@@ -13,7 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""F5 Common Controller Core Library.
+
+This module implements a Common Controller Core Library for use within other
+libraries that need to read, diff and apply configurations to a BIG-IP.
+"""
 
 __version__ = '0.1.0'
 
-from .api import F5CloudServiceManager # noqa: F401, F403 pylint: disable=wildcard-import
+from .api import F5CloudServiceManager # noqa: F401, F403

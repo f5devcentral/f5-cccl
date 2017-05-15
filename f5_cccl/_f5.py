@@ -169,7 +169,7 @@ class CloudBigIP(BigIP):
             "observed-member",
             "ratio-least-connections-member",
             "ratio-session"
-            )
+        )
         # This currently hard codes what resources we care about until we
         # enable policy management.
         if manage_types is None:
@@ -880,6 +880,7 @@ class CloudBigIP(BigIP):
 
     def virtual_address_delete(self, partition, name):
         """Delete a Virtual Address.
+
         Args:
             partition: Partition name
             name: Name of the virtual address
@@ -1316,7 +1317,7 @@ class CloudBigIP(BigIP):
             variables=iapp_def['variables'],
             tables=iapp_def['tables'],
             **config['iapp']['options']
-            )
+        )
 
     def iapp_delete(self, partition, name):
         """Delete an iApp Application Service.
@@ -1348,7 +1349,7 @@ class CloudBigIP(BigIP):
             variables=iapp_def['variables'],
             tables=iapp_def['tables'],
             **config['iapp']['options']
-            )
+        )
 
     def get_iapp(self, partition, name):
         """Get an iApp Application Service object.
@@ -1360,7 +1361,7 @@ class CloudBigIP(BigIP):
         a = self.sys.application.services.service.load(
             name=urllib.quote(name),
             partition=partition
-            )
+        )
         return a
 
     def get_iapp_list(self, partition):

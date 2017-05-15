@@ -26,7 +26,7 @@ import f5
 import icontrol
 
 
-class Pool():
+class Pool(object):
     """A mock BIG-IP Pool."""
 
     def __init__(self, name, **kwargs):
@@ -52,7 +52,7 @@ class Pool():
         pass
 
 
-class Member():
+class Member(object):
     """A mock BIG-IP Pool Member."""
 
     def __init__(self, name, **kwargs):
@@ -69,7 +69,7 @@ class Member():
         pass
 
 
-class Profiles():
+class Profiles(object):
     """A container of Virtual Server Profiles."""
 
     def __init__(self, **kwargs):
@@ -89,7 +89,7 @@ class Profiles():
         pass
 
 
-class ProfileSet():
+class ProfileSet(object):
     """A set of Virtual Server Profiles."""
 
     def __init__(self, **kwargs):
@@ -97,7 +97,7 @@ class ProfileSet():
         self.profiles = Profiles(**kwargs)
 
 
-class Virtual():
+class Virtual(object):
     """A mock BIG-IP Virtual Server."""
 
     def __init__(self, name, **kwargs):
@@ -131,7 +131,7 @@ class Virtual():
         pass
 
 
-class HealthCheck():
+class HealthCheck(object):
     """A mock BIG-IP Health Monitor."""
 
     def __init__(self, name, **kwargs):
@@ -151,7 +151,7 @@ class HealthCheck():
         pass
 
 
-class MockService():
+class MockService(object):
     """A mock Services service object."""
 
     def __init__(self):
@@ -168,7 +168,7 @@ class MockService():
         pass
 
 
-class MockServices():
+class MockServices(object):
     """A mock Application services object."""
 
     def __init__(self):
@@ -180,7 +180,7 @@ class MockServices():
         return []
 
 
-class MockApplication():
+class MockApplication(object):
     """A mock Sys application object."""
 
     def __init__(self):
@@ -188,18 +188,14 @@ class MockApplication():
         self.services = MockServices()
 
 
-class MockFolders():
+class MockFolders(object):
     """A mock Sys folders object."""
 
     def __init__(self):
         """Initialize the object."""
 
-    def get_collection():
-        """Get collection of partitions."""
-        pass
 
-
-class MockSys():
+class MockSys(object):
     """A mock BIG-IP sys object."""
 
     def __init__(self):
@@ -208,7 +204,7 @@ class MockSys():
         self.folders = MockFolders()
 
 
-class MockIapp():
+class MockIapp(object):
     """A mock BIG-IP iapp object."""
 
     def __init__(self, name=None, template=None, partition=None,
@@ -233,7 +229,7 @@ class MockIapp():
         pass
 
 
-class MockFolder():
+class MockFolder(object):
     """A mock BIG-IP folder object."""
 
     def __init__(self, name):
@@ -241,7 +237,7 @@ class MockFolder():
         self.name = name
 
 
-class MockHttp():
+class MockHttp(object):
     """A mock Https http object."""
 
     def __init__(self):
@@ -256,7 +252,7 @@ class MockHttp():
         pass
 
 
-class MockHttps():
+class MockHttps(object):
     """A mock Monitor https object."""
 
     def __init__(self):
@@ -268,7 +264,7 @@ class MockHttps():
         pass
 
 
-class MockTcp():
+class MockTcp(object):
     """A mock Tcps tcp object."""
 
     def __init__(self):
@@ -284,7 +280,7 @@ class MockTcp():
         pass
 
 
-class MockTcps():
+class MockTcps(object):
     """A mock Monitor tcps object."""
 
     def __init__(self):
@@ -296,7 +292,7 @@ class MockTcps():
         pass
 
 
-class MockMonitor():
+class MockMonitor(object):
     """A mock Ltm monitor object."""
 
     def __init__(self):
@@ -305,7 +301,7 @@ class MockMonitor():
         self.tcps = MockTcps()
 
 
-class MockVirtuals():
+class MockVirtuals(object):
     """A mock Ltm virtuals object."""
 
     def __init__(self):
@@ -313,7 +309,7 @@ class MockVirtuals():
         self.virtual = Virtual('test')
 
 
-class MockPools():
+class MockPools(object):
     """A mock Ltm pools object."""
 
     def __init__(self):
@@ -325,7 +321,7 @@ class MockPools():
         pass
 
 
-class MockLtm():
+class MockLtm(object):
     """A mock BIG-IP ltm object."""
 
     def __init__(self):
@@ -335,7 +331,7 @@ class MockLtm():
         self.pools = MockPools()
 
 
-class MockHealthMonitor():
+class MockHealthMonitor(object):
     """A mock BIG-IP healthmonitor object."""
 
     def __init__(self, name, partition):
@@ -358,14 +354,14 @@ class BigIPTest(unittest.TestCase):
     members = {}
     healthchecks = {}
 
-    def mock_get_pool_member_list(self, partition, pool):
+    def mock_get_pool_member_list(self, pool):
         """Mock: Get a mocked list of pool members."""
         try:
             return self.bigip_data[pool]
         except KeyError:
             return []
 
-    def mock_get_node_list(self, partition):
+    def mock_get_node_list(self):
         """Mock: Get a mocked list of nodes."""
         return ['10.141.141.10']
 
@@ -449,35 +445,35 @@ class BigIPTest(unittest.TestCase):
         healthcheck.modify = Mock()
         return healthcheck
 
-    def mock_get_pool(self, partition, name):
+    def mock_get_pool(self, name):
         """Lookup a mock pool object by name."""
         return self.pools.get(name, None)
 
-    def mock_get_virtual(self, partition, name):
+    def mock_get_virtual(self, name):
         """Lookup a mock virtual server object by name."""
         return self.virtuals.get(name, None)
 
-    def mock_get_virtual_address(self, partition, name):
+    def mock_get_virtual_address(self, name):
         """Lookup a mock virtual Address object by name."""
         return name
 
-    def mock_get_member(self, partition, pool, name):
+    def mock_get_member(self, name):
         """Lookup a mock pool member object by name."""
         return self.members.get(name, None)
 
-    def mock_get_healthcheck(self, partition, hc, hc_type):
+    def mock_get_healthcheck(self, hc):
         """Lookup a mock healthcheck object by name."""
         return self.healthchecks.get(hc, None)
 
-    def mock_get_virtual_profiles(self, virtual):
+    def mock_get_virtual_profiles(self):
         """Return a list of Virtual Server profiles."""
         return self.profiles
 
-    def mock_virtual_create(self, name=None, partition=None, **kwargs):
+    def mock_virtual_create(self, name=None, partition=None):
         """Mock: Creates a mocked virtual server."""
         self.test_virtual.append({'name': name, 'partition': partition})
 
-    def mock_pool_create(self, partition=None, name=None, **kwargs):
+    def mock_pool_create(self, partition=None, name=None):
         """Mock: Create a mocked pool."""
         self.test_pool.append({'name': name, 'partition': partition})
 
@@ -508,13 +504,13 @@ class BigIPTest(unittest.TestCase):
         self.test_pool = p_collection
         return p_collection
 
-    def mock_pool_load(self, name=None, partition=None, cow=3):
+    def mock_pool_load(self, name=None):
         """Mock: Return a mocked pool."""
         pool = Pool(name)
         self.test_pool.append(pool)
         return pool
 
-    def mock_get_pool_list(self, partition, all_pools=False):
+    def mock_get_pool_list(self, partition):
         """Mock: Return previouly created pools."""
         pool_list = []
         if self.test_pool is not None:
@@ -562,15 +558,15 @@ class BigIPTest(unittest.TestCase):
             with open(bigip_state) as json_data:
                 self.bigip_data = json.load(json_data)
             self.bigip.get_pool_list = Mock(
-                    return_value=self.bigip_data.keys())
+                return_value=self.bigip_data.keys())
             self.bigip.get_virtual_list = Mock(
-                    return_value=self.bigip_data.keys())
+                return_value=self.bigip_data.keys())
         else:
             self.bigip_data = {}
             self.bigip.get_pool_list = Mock(
-                    return_value=[])
+                return_value=[])
             self.bigip.get_virtual_list = Mock(
-                    return_value=[])
+                return_value=[])
 
         if hm_state:
             with open(hm_state) as json_data:
@@ -582,27 +578,27 @@ class BigIPTest(unittest.TestCase):
             with open(network_state) as json_data:
                 self.network_data = json.load(json_data)
 
-    def raiseTypeError(self, cfg):
+    def raiseTypeError(self):
         """Raise a TypeError exception."""
         raise TypeError
 
-    def raiseSDKError(self, cfg):
+    def raiseSDKError(self):
         """Raise an F5SDKError exception."""
         raise f5.sdk_exception.F5SDKError
 
-    def raiseConnectionError(self, cfg):
+    def raiseConnectionError(self):
         """Raise a ConnectionError exception."""
         raise requests.exceptions.ConnectionError
 
-    def raiseBigIPInvalidURL(self, cfg):
+    def raiseBigIPInvalidURL(self):
         """Raise a BigIPInvalidURL exception."""
         raise icontrol.exceptions.BigIPInvalidURL
 
-    def raiseBigiControlUnexpectedHTTPError(self, cfg):
+    def raiseBigiControlUnexpectedHTTPError(self):
         """Raise an iControlUnexpectedHTTPError exception."""
         raise icontrol.exceptions.iControlUnexpectedHTTPError
 
-    def setUp(self, partition, bigip):
+    def setUp(self, partition, bigip):  # pylint: disable=arguments-differ
         """Test suite set up."""
         self.bigip = bigip
         self.test_partition = partition
