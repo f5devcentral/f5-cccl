@@ -20,4 +20,8 @@ install:
 script:
   - tox -e style
   - tox -e unit
+# For security, travis CI not provide env vars on fork PRs.
+# So we only run coverage when the env var is present at merge.
+# https://docs.travis-ci.com/user/pull-requests/#Pull-Requests-and-Security-Restrictions
+  - if [ "$COVERALLS_REPO_TOKEN" != "" ]; then tox -e coverage; fi
 before_deploy: PKG_VERSION=$(python -c "import f5; print(f5_cccl.__version__)")

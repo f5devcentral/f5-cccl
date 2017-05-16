@@ -15,3 +15,4 @@ q
 PyYAML==3.12
 simplejson
 jsonschema
+python-coveralls==2.7.0
