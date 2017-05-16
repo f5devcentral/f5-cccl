@@ -1128,6 +1128,11 @@ class CloudBigIP(BigIP):
 
         v = self.get_virtual(partition, virtual)
 
+        ADDR_IDX = 2
+        IP_IDX = 0
+        old_addr = \
+            v.__dict__['destination'].split('/')[ADDR_IDX].split(':')[IP_IDX]
+
         no_change = all(data[key] == val for key, val in v.__dict__.iteritems()
                         if key in data)
 
@@ -1139,6 +1144,10 @@ class CloudBigIP(BigIP):
             return False
 
         v.modify(**data)
+
+        # If the virtual address has been updated cleanup the old one
+        if addr != old_addr:
+            self.virtual_address_delete(partition, old_addr)
 
         return True
 
@@ -1188,6 +1197,16 @@ class CloudBigIP(BigIP):
         """
         if virtual_address.enabled == 'no':
             virtual_address.modify(enabled='yes')
+
+    def virtual_address_delete(self, partition, name):
+        """Delete a Virtual Address.
+        Args:
+            partition: Partition name
+            name: Name of the virtual address
+        """
+        logger.debug("Deleting virtual address %s", name)
+        virtual_address = self.get_virtual_address(partition, name)
+        virtual_address.delete()
 
     def get_healthcheck(self, partition, hc, hc_type):
         """Get a Health Monitor object.
