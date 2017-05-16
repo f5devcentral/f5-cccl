@@ -76,6 +76,12 @@ class Resource(object):
         return (self._data['name'] == resource.name and
                 self._data['partition'] == resource.partition)
 
+    def __ne__(self, resource):
+        return not self.__eq__(resource)
+
+    def __hash__(self):
+        return hash(self._data['name'] + self._data['partition'])
+
     def create(self, bigip):
         u"""Create resource on a BIG-IP system.
 
@@ -210,13 +216,10 @@ class Resource(object):
         u"""Extract the error code and reraise a CCCL Error."""
         code = error.response.status_code
         if code == 404:
-            raise cccl_exc.F5CcclResourceNotFoundError(
-                error.response.message)
+            raise cccl_exc.F5CcclResourceNotFoundError(str(error))
         elif code == 409:
-            raise cccl_exc.F5CcclResourceConflictError(
-                error.response.message)
+            raise cccl_exc.F5CcclResourceConflictError(str(error))
         elif code >= 400 and code < 500:
-            raise cccl_exc.F5CcclResourceRequestError(
-                error.response.message)
+            raise cccl_exc.F5CcclResourceRequestError(str(error))
         else:
-            raise cccl_exc.F5CcclError(error.response.message)
+            raise cccl_exc.F5CcclError(str(error))

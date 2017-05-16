@@ -1,0 +1,30 @@
+{
+  "members": [
+  {
+    "state": "user-down", 
+    "kind": "tm:ltm:pool:members:membersstate", 
+    "inheritProfile": "enabled", 
+    "name": "192.168.200.2:80", 
+    "priorityGroup": 0, 
+    "generation": 137066, 
+    "partition": "Common", 
+    "ephemeral": "false", 
+    "fqdn": {
+      "autopopulate": "disabled"
+    }, 
+    "rateLimit": "disabled", 
+    "session": "user-enabled", 
+    "dynamicRatio": 1, 
+    "nameReference": {
+      "link": "https://localhost/mgmt/tm/ltm/node/~Common~192.168.200.2:80?ver=12.1.1"
+    }, 
+    "connectionLimit": 0, 
+    "address": "192.168.200.2", 
+    "logging": "disabled", 
+    "fullPath": "/Common/192.168.200.2:80", 
+    "ratio": 1, 
+    "selfLink": "https://localhost/mgmt/tm/ltm/pool/~Common~pool1/members/~Common~192.168.200.2:80?ver=12.1.1", 
+    "monitor": "default"
+  }
+  ]
+}
