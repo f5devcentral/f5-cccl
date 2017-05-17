@@ -45,46 +45,40 @@ class PoolMember(Resource):
         name = self._strip_route_domain_zero(name)
         super(PoolMember, self).__init__(name, partition)
         self._pool = pool
-        for prop_name, default_val in self.properties.items():
-            if prop_name == 'name' or prop_name == 'partition':
+        for key, value in self.properties.items():
+            if key == 'name' or key == 'partition':
                 continue
-
-            self._data[prop_name] = properties.get(prop_name,
-                                                   default_val)
+            self._data[key] = properties.get(key, value)
 
     def __eq__(self, other):
         """Check the equality of the two objects.
 
         Only compare the properties as defined in the
-        properties class dictionany.
+        properties class dictionary.
         """
         if not isinstance(other, PoolMember):
             return False
 
         for key in self.properties.keys():
             if self._data[key] != other.data.get(key, None):
-                if key == 'state':
-                    if self._compare_states(other.data['state']):
+
+                if key == "session":
+                    if self._check_states(other):
                         continue
-                    return False
+
+                return False
 
         return True
 
-    def _compare_states(self, state):
+    def _check_states(self, other):
         """Compare desired admin state to operational state."""
-        if not state:
-            return False
+        other_session = other['session']
 
-        if "up" in self._data['state']:
-            if state in ["up", "user-up", "unchecked"]:
-                return True
-        elif "down" in self._data['state']:
-            if state in ["down", "user-down", "unchecked"]:
-                return True
-        elif "unchecked":
+        if "monitor" in self._data['session'] or \
+           "monitor" in other_session:
             return True
-
-        return False
+        else:
+            return False
 
     def _strip_route_domain_zero(self, name):
         """Remove the route domain from the address, if 0."""
@@ -106,24 +100,18 @@ class PoolMember(Resource):
         with self._pool.read(bigip) as pool:
             return pool.members_s.members
 
+    @property
+    def name(self):
+        u"""Override the name property to get quoted format.
+
+        This handles the '%' route domain marker.
+        """
+        return urllib.quote(self._data['name'])
+
 
 class BigIPPoolMember(PoolMember):
     """PoolMember instantiated from F5 SDK pool member object."""
-    def __init__(self, name, partition, pool=None, **properties):
-
-        state = properties.get('state', None)
-        session = properties.get('session', None)
-        if state == "unchecked":
-            properties.pop('state')
-        if session == "user-enabled":
-            if state == "up":
-                properties['state'] = "user-up"
-            if state == "down":
-                properties['state'] = "user-down"
-        super(BigIPPoolMember, self).__init__(name=name,
-                                              partition=partition,
-                                              pool=pool,
-                                              **properties)
+    pass
 
 
 class F5CcclPoolMember(PoolMember):
@@ -189,11 +177,3 @@ class F5CcclPoolMember(PoolMember):
             name = name_format.format(address, port)
 
         return name
-
-    @property
-    def name(self):
-        u"""Override the name property to get quoted format.
-
-        This handles the '%' route domain marker.
-        """
-        return urllib.quote(self._data['name'])
