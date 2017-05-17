@@ -14,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""F5 Common Controller Core Library to read, diff and apply BIG-IP config."""
 
 
 class F5CloudServiceManager(object):
-    """F5 Common Controller Cloud Service Management
+    """F5 Common Controller Cloud Service Management.
 
     The F5 Common Controller Core Library (CCCL) is an orchestration package
     that provides a declarative API for defining BIG-IP LTM services in
@@ -28,6 +29,7 @@ class F5CloudServiceManager(object):
     namespace qualifiers to allow it to uniquely identify the resources
     under its control.
     """
+
     def __init__(self, bigip, partition, prefix=None):
         """Initialize an instance of the F5 CCCL service manager.
 
@@ -40,7 +42,7 @@ class F5CloudServiceManager(object):
         self._partition = partition
         self._prefix = prefix
 
-    def apply_config(self, services):
+    def apply_config(self, services):  # pylint: disable=unused-argument
         """Apply service configurations to the BIG-IP partition.
 
         :param services: A serializable object that defines one or more
@@ -51,7 +53,7 @@ class F5CloudServiceManager(object):
         return True
 
     def get_status(self):
-        """Gets status for each service in the managed partition.
+        """Get status for each service in the managed partition.
 
         :return: A serializable object of the statuses of each managed
         resource.
