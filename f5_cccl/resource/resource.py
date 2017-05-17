@@ -18,14 +18,14 @@ u"""This module provides class for managing resource configuration."""
 # limitations under the License.
 #
 
-"""This module implements the F5 CCCL Resource super class."""
-
-
 import copy
 
-from f5.sdk_exception import F5SDKError
 import f5_cccl.exceptions as cccl_exc
+
+from f5.sdk_exception import F5SDKError
 from icontrol.exceptions import iControlUnexpectedHTTPError
+
+"""This module implements the F5 CCCL Resource super class."""
 
 
 class Resource(object):
@@ -135,7 +135,7 @@ class Resource(object):
         except F5SDKError as err:
             raise cccl_exc.F5CcclError(str(err))
 
-    def update(self, bigip):
+    def update(self, bigip, data=None, modify=True):
         u"""Update a resource (e.g., pool) on a BIG-IP system.
 
         Modifies a resource on a BIG-IP system using attributes
@@ -144,6 +144,10 @@ class Resource(object):
 
         Args:
             bigip: BigIP instance to use for updating resource.
+            data: Applies mostly for 'patching' or modify, but contains targets
+                for update operation specifically
+            modify: Specifies if this is a modify, or patch of specific
+                Key/Value Pairs rather than the whole object
 
         Raises:
             F5CcclResourceUpdateError: resouce cannot be updated for an
@@ -152,12 +156,17 @@ class Resource(object):
             F5CcclResourceNotFoundError: resouce cannot be updated because
             it does not exist on the BIG-IP
         """
+        if not data:
+            data = self.__dict__
         try:
             obj = self._uri_path(bigip).load(
                 name=self.name,
                 partition=self.partition)
             payload = copy.copy(self._data)
-            obj.update(**payload)
+            if modify:
+                obj.modify(**payload)
+            else:
+                obj.update(**payload)
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
         except F5SDKError as err:
@@ -183,6 +192,10 @@ class Resource(object):
                 name=self.name,
                 partition=self.partition)
             obj.delete()
+        except AttributeError as err:
+            msg = "Could not delete {}, is it present on the BIG-IP?".format(
+                str(self))
+            raise cccl_exc.F5CcclResourceDeleteError(msg)
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
         except F5SDKError as err:
