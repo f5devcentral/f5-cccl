@@ -1,5 +1,5 @@
 # f5-cccl
-[![Build Status](https://travis-ci.org/michaeldayreads/f5-cccl.svg?branch=master)](https://travis-ci.org/michaeldayreads/f5-cccl) [![Coverage Status](https://coveralls.io/repos/github/f5devcentral/f5-cccl/badge.svg?branch=master)](https://coveralls.io/github/f5devcentral/f5-cccl?branch=master) 
+[![Build Status](https://travis-ci.org/michaeldayreads/f5-cccl.svg?branch=master)](https://travis-ci.org/michaeldayreads/f5-cccl) [![Coverage Status](https://coveralls.io/repos/github/f5devcentral/f5-cccl/badge.svg?branch=HEAD)](https://coveralls.io/github/f5devcentral/f5-cccl?branch=HEAD)
 
 # Introduction
 
