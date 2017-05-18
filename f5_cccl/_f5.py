@@ -616,29 +616,6 @@ class CloudBigIP(BigIP):
                  if config[x]['partition'] == partition and
                  'iapp' in config[x]]
 
-            # Configure iApps
-            f5_iapp_list = self.get_iapp_list(partition)
-            log_sequence('f5_iapp_list', f5_iapp_list)
-            log_sequence('cloud_iapp_list', cloud_iapp_list)
-
-            # iapp delete
-            iapp_delete = list_diff(f5_iapp_list, cloud_iapp_list)
-            log_sequence('iApps to delete', iapp_delete)
-            for iapp in iapp_delete:
-                self.iapp_delete(partition, iapp)
-
-            # iapp add
-            iapp_add = list_diff(cloud_iapp_list, f5_iapp_list)
-            log_sequence('iApps to add', iapp_add)
-            for iapp in iapp_add:
-                self.iapp_create(partition, iapp, config[iapp])
-
-            # iapp update
-            iapp_intersect = list_intersect(cloud_iapp_list, f5_iapp_list)
-            log_sequence('iApps to update', iapp_intersect)
-            for iapp in iapp_intersect:
-                self.iapp_update(partition, iapp, config[iapp])
-
             # this is kinda kludgey: health monitor has the same name as the
             # virtual, and there is no more than 1 monitor per virtual.
             cloud_healthcheck_list = []
@@ -647,6 +624,7 @@ class CloudBigIP(BigIP):
                     if 'protocol' in hc:
                         cloud_healthcheck_list.append(v)
 
+            f5_iapp_list = self.get_iapp_list(partition)
             f5_pool_list = self.get_pool_list(partition, False)
             f5_virtual_list = self.get_virtual_list(partition)
 
@@ -660,11 +638,19 @@ class CloudBigIP(BigIP):
             # list returned from the cloud environment
             f5_healthcheck_list = f5_healthcheck_dict.keys()
 
+            log_sequence('f5_iapp_list', f5_iapp_list)
             log_sequence('f5_pool_list', f5_pool_list)
             log_sequence('f5_virtual_list', f5_virtual_list)
             log_sequence('f5_healthcheck_list', f5_healthcheck_list)
+            log_sequence('cloud_iapp_list', cloud_iapp_list)
             log_sequence('cloud_pool_list', cloud_pool_list)
             log_sequence('cloud_virtual_list', cloud_virtual_list)
+
+            # iapp delete
+            iapp_delete = list_diff(f5_iapp_list, cloud_iapp_list)
+            log_sequence('iApps to delete', iapp_delete)
+            for iapp in iapp_delete:
+                self.iapp_delete(partition, iapp)
 
             # virtual delete
             virt_delete = list_diff(f5_virtual_list, cloud_virtual_list)
@@ -685,6 +671,12 @@ class CloudBigIP(BigIP):
             for hc in health_delete:
                 self.healthcheck_delete(partition, hc,
                                         f5_healthcheck_dict[hc]['type'])
+
+            # iapp add
+            iapp_add = list_diff(cloud_iapp_list, f5_iapp_list)
+            log_sequence('iApps to add', iapp_add)
+            for iapp in iapp_add:
+                self.iapp_create(partition, iapp, config[iapp])
 
             # healthcheck config needs to happen before pool config because
             # the pool is where we add the healthcheck
@@ -707,6 +699,12 @@ class CloudBigIP(BigIP):
             log_sequence('Virtual Servers to add', virt_add)
             for virt in virt_add:
                 self.virtual_create(partition, virt, config[virt])
+
+            # iapp intersect
+            iapp_intersect = list_intersect(cloud_iapp_list, f5_iapp_list)
+            log_sequence('iApps to update', iapp_intersect)
+            for iapp in iapp_intersect:
+                self.iapp_update(partition, iapp, config[iapp])
 
             # healthcheck intersection
             healthcheck_intersect = list_intersect(cloud_virtual_list,
