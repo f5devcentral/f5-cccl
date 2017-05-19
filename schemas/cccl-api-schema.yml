@@ -224,7 +224,11 @@
     poolMemberType: 
       id: "#/definitions/poolMemberType"
       type: "object"
-      properties: 
+      properties:
+        name:
+          type: "string"
+          definition: |
+            "Specifies the name of the pool member.  This has the form: <address>:<port>"
         connectionLimit:
           type: "integer"
           definition: |
@@ -302,7 +306,7 @@
           items:
             $ref: "#definitions/poolMemberType"
             type: "array"
-        monitors: 
+        monitor:
           items: 
             properties: 
               refname: 
