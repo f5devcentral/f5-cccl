@@ -25,8 +25,6 @@ import f5_cccl.exceptions as cccl_exc
 from f5.sdk_exception import F5SDKError
 from icontrol.exceptions import iControlUnexpectedHTTPError
 
-"""This module implements the F5 CCCL Resource super class."""
-
 
 class Resource(object):
     u"""Resource super class to wrap BIG-IP configuration objects.
@@ -129,7 +127,7 @@ class Resource(object):
         except F5SDKError as err:
             raise cccl_exc.F5CcclError(str(err))
 
-    def update(self, bigip, data=None, modify=True):
+    def update(self, bigip, data=None, modify=False):
         u"""Update a resource (e.g., pool) on a BIG-IP system.
 
         Modifies a resource on a BIG-IP system using attributes
