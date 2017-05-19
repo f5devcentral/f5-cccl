@@ -1,0 +1,174 @@
+{
+    "pools": [
+        {
+            "allowNat": "yes",
+            "allowSnat": "yes",
+            "fullPath": "/Common/test_pool",
+            "generation": 15837,
+            "ignorePersi$stedWeight": "disabled",
+            "ipTosToClient": "pass-through",
+            "ipTosToServer": "pass-through",
+            "kind": "tm:ltm:pool:poolstate",
+            "linkQosToClient": "pass-through",
+            "linkQosToServer": "pass-through",
+            "loadBalancingMode": "least-connections-member",
+            "membersReference": {
+                "isSubcollection": true,
+                "items": [
+                    {
+                        "address": "1.2.3.4",
+                        "connectionLimit": 0,
+                        "dynamicRatio": 1,
+                        "ephemeral": "false",
+                        "fqdn": {
+                            "autopopulate": "disabled"
+                        },
+                        "fullPath": "/Common/1.2.3.4:20001",
+                        "generation": 15835,
+                        "inheritProfile": "enabled",
+                        "kind": "tm:ltm:pool:members:membersstate",
+                        "logging": "disabled",
+                        "monitor": "default",
+                        "name": "1.2.3.4:20001",
+                        "nameReference": {
+                            "link": "https://localhost/mgmt/tm/ltm/node/~Common~1.2.3.4:20001?ver=12.1.0"
+                        },
+                        "partition": "Common",
+                        "priorityGroup": 0,
+                        "rateLimit": "disabled",
+                        "ratio": 1,
+                        "selfLink": "https://localhost/mgmt/tm/ltm/pool/~Common~test_pool/members/~Common~1.2.3.4:20001?ver=12.1.0",
+                        "session": "monitor-enabled",
+                        "state": "down"
+                    },
+                    {
+                        "address": "1.2.3.4",
+                        "connectionLimit": 0,
+                        "dynamicRatio": 1,
+                        "ephemeral": "false",
+                        "fqdn": {
+                            "autopopulate": "disabled"
+                        },
+                        "fullPath": "/Common/1.2.3.4:20002",
+                        "generation": 15837,
+                        "inheritProfile": "enabled",
+                        "kind": "tm:ltm:pool:members:membersstate",
+                        "logging": "disabled",
+                        "monitor": "default",
+                        "name": "1.2.3.4:20002",
+                        "nameReference": {
+                            "link": "https://localhost/mgmt/tm/ltm/node/~Common~1.2.3.4:20002?ver=12.1.0"
+                        },
+                        "partition": "Common",
+                        "priorityGroup": 0,
+                        "rateLimit": "disabled",
+                        "ratio": 1,
+                        "selfLink": "https://localhost/mgmt/tm/ltm/pool/~Common~test_pool/members/~Common~1.2.3.4:20002?ver=12.1.0",
+                        "session": "monitor-enabled",
+                        "state": "down"
+                    }
+                ],
+                "link": "https://localhost/mgmt/tm/ltm/pool/~Common~test_pool/members?ver=12.1.0"
+            },
+            "minActiveMembers": 0,
+            "minUpMembers": 0,
+            "minUpMembersAction": "failover",
+            "minUpMembersChecking": "disabled",
+            "monitor": "/Common/http ",
+            "name": "test_pool",
+            "partition": "Common",
+            "queueDepthLimit": 0,
+            "queueOnConnectionLimit": "disabled",
+            "queueTimeLimit": 0,
+            "reselectTries": 0,
+            "selfLink": "https://localhost/mgmt/tm/ltm/pool/~Common~test_pool?ver=12.1.0",
+            "serviceDownAction": "no$ne",
+            "slowRampTime": 10
+        },
+        {
+            "allowNat": "yes",
+            "allowSnat": "yes",
+            "fullPath": "/test/pool1",
+            "generation": 15844,
+            "ignorePersistedWeight": "disabled",
+            "ipTosToClient": "pass-through",
+            "ipTosToServer": "pass-through",
+            "kind": "tm:ltm:pool:poolstate",
+            "linkQosToClient": "pass-through",
+            "linkQosToServer": "pass-through",
+            "loadBalancingMode": "round-robin",
+            "membersReference": {
+                "isSubcollection": true,
+                "items": [
+                    {
+                        "address": "5.6.7.8",
+                        "connectionLimit": 0,
+                        "dynamicRatio": 1,
+                        "ephemeral": "false",
+                        "fqdn": {
+                            "autopopulate": "disabled"
+                        },
+                        "fullPath": "/test/5.6.7.8:30001",
+                        "generation": 15842,
+                        "inheritProfile": "enabled",
+                        "kind": "tm:ltm:pool:members:membersstate",
+                        "logging": "disabled",
+                        "monitor": "default",
+                        "name": "5.6.7.8:30001",
+                        "nameReference": {
+                            "link": "https://localhost/mgmt/tm/ltm/node/~test~5.6.7.8:30001?ver=12.1.0"
+                        },
+                        "partition": "test",
+                        "priorityGroup": 0,
+                        "rateLimit": "disabled",
+                        "ratio": 1,
+                        "selfLink": "https://localhost/mgmt/tm/ltm/pool/~test~pool1/members/~test~5.6.7.8:30001?ver=12.1.0",
+                        "session": "monitor-enabled",
+                        "state": "down"
+                    },
+                    {
+                        "address": "5.6.7.8",
+                        "connectionLimit": 0,
+                        "dynamicRatio": 1,
+                        "ephemeral": "false",
+                        "fqdn": {
+                            "autopopulate": "disabled"
+                        },
+                        "fullPath": "/test/5.6.7.8:30002",
+                        "generation": 15844,
+                        "inheritProfile": "enabled",
+                        "kind": "tm:ltm:pool:members:membersstate",
+                        "logging": "disabled",
+                        "monitor": "default",
+                        "name": "5.6.7.8:30002",
+                        "nameReference": {
+                            "link": "https://localhost/mgmt/tm/ltm/node/~test~5.6.7.8:30002?ver=12.1.0"
+                        },
+                        "partition": "test",
+                        "priorityGroup": 0,
+                        "rateLimit": "disabled",
+                        "ratio": 1,
+                        "selfLink": "https://localhost/mgmt/tm/ltm/pool/~test~pool1/members/~test~5.6.7.8:30002?ver=12.1.0",
+                        "session": "monitor-enabled",
+                        "state": "down"
+                    }
+                ],
+                "link": "https://localhost/mgmt/tm/ltm/pool/~test~pool1/members?ver=12.1.0"
+            },
+            "minActiveMembers": 0,
+            "minUpMembers": 0,
+            "minUpMembersAction": "failover",
+            "minUpMembersChecking": "disabled",
+            "monitor": "/Common/tcp ",
+            "name": "pool1",
+            "partition": "test",
+            "queueDepthLimit": 0,
+            "queueOnConnectionLimit": "disabled",
+            "queueTimeLimit": 0,
+            "reselectTries": 0,
+            "selfLink": "https://localhost/mgmt/tm/ltm/pool/~test~pool1?ver=12.1.0",
+            "serviceDownAction": "none",
+            "slowRampTime": 10
+        }
+    ]
+}
