@@ -1,5 +1,4 @@
 # coding=utf-8
-# vim: set fileencoding=utf-8
 # -*- coding: utf-8 -*-
 u"""This module provides class for managing resource configuration."""
 #
