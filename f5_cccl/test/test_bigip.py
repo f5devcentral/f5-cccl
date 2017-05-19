@@ -436,5 +436,6 @@ def test_bigip_refresh(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
     for p in test_pools:
         p._data['loadBalancingMode'] = 'Not a valid LB mode'
 
-    for a, b in map(None, big_ip._pools, test_pools):
+    assert len(big_ip._pools) == len(test_pools)
+    for a, b in zip(big_ip._pools, test_pools):
         assert a != b
