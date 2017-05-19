@@ -243,7 +243,11 @@ logging-modules=logging
 [MISCELLANEOUS]
 
 # List of note tags to take in consideration, separated by a comma.
-notes=FIXME
+# List of note tags to call out, separated by a comma. These exceptions will
+# fail the build - by convention this repo permits the format of
+# FIXME
+# as a discouraged, but acceptable and should point to a filed issue.
+notes=XXX,TODO,todo,Todo,ToDo
 
 
 [SIMILARITIES]
