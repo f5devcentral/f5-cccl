@@ -57,5 +57,3 @@ def _entry():
 if __name__ != '__main__':
     # Don't want bad users directly executing this...
     _entry()
-
-# vim: set expandtab tabstop=4
