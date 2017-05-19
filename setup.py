@@ -17,6 +17,7 @@
 
 from pip.req import parse_requirements as parse_reqs
 from setuptools import setup
+from setuptools import find_packages
 
 import f5_cccl
 
@@ -34,7 +35,7 @@ setup(
     url='https://github.com/f5devcentral/f5-cccl',
     keywords=['F5', 'big-ip'],
     install_requires=install_requires,
-    packages=["f5_cccl"],
+    packages=find_packages(),
     data_files=[],
     classifiers=[
     ],
