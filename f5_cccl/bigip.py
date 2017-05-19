@@ -1,3 +1,4 @@
+u"""This module provides a class for managing a BIG-IP."""
 # coding=utf-8
 #
 # Copyright 2017 F5 Networks Inc.
