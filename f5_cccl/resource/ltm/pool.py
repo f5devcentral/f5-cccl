@@ -57,7 +57,7 @@ class Pool(Resource):
                 "of type {}".format(type(other)))
 
         for key in self.properties:
-            if key == 'membersReference':
+            if key == 'membersReference' or key == 'monitor':
                 continue
 
             if self._data[key] != other.data.get(key, None):
@@ -67,8 +67,21 @@ class Pool(Resource):
             return False
         if set(self.members) - set(other.members):
             return False
+        if not self._monitors_equal(other):
+            return False
 
         return True
+
+    def _monitors_equal(self, other):
+        self_monitor_list = sorted(
+            [m.rstrip() for m in self._data['monitor'].split(" and ")]
+        )
+
+        other_monitor_list = sorted(
+            [m.rstrip() for m in other.data['monitor'].split(" and ")]
+        )
+
+        return self_monitor_list == other_monitor_list
 
     def __hash__(self):  # pylint: disable=useless-super-delegation
         return super(Pool, self).__hash__()
@@ -86,12 +99,15 @@ class F5CcclPool(Pool):
         """Parse the CCCL schema input."""
         pool_config = dict()
         for k, v in properties.items():
-            if k == "members" or k == "monitor":
+            if k == "members" or k == "monitors":
                 continue
             pool_config[k] = v
 
         members_config = properties.get('members', None)
         members = self._get_members(partition, members_config)
+
+        monitors_config = properties.pop('monitors', None)
+        pool_config['monitor'] = self._get_monitors(monitors_config)
 
         super(F5CcclPool, self).__init__(name, partition,
                                          members,
@@ -109,6 +125,16 @@ class F5CcclPool(Pool):
                 members_list.append(m)
 
         return members_list
+
+    def _get_monitors(self, monitors):
+        if not monitors:
+            return "default"
+
+        monitor_list = [monitor['refname'] for monitor in monitors]
+        if monitor_list:
+            return " and ".join(sorted(monitor_list))
+
+        return "default"
 
 
 class BigIPPool(Pool):
