@@ -24,31 +24,31 @@ from f5_cccl.resource import Resource
 
 class Pool(Resource):
     u"""Pool class for deploying configuration on BIG-IP"""
-    pool_properties = dict(name=None,
-                           partition=None,
-                           loadBalancingMode="round-robin",
-                           description=None,
-                           monitor="default",
-                           membersReference={})
+    properties = dict(name=None,
+                      partition=None,
+                      loadBalancingMode="round-robin",
+                      description=None,
+                      monitor="default",
+                      membersReference={})
 
     def __init__(self, name, partition, members=None, **properties):
         u"""Create a Pool instance from CCCL poolType."""
         super(Pool, self).__init__(name, partition)
 
-        self._data['loadBalancingMode'] = properties.get(
-            'loadBalancingMode', 'round-robin')
-        self._data['description'] = properties.get(
-            'description', None)
-        self._data['monitor'] = properties.get(
-            'monitor', 'default')
+        for key, value in self.properties.items():
+            if key == "name" or key == "partition":
+                continue
+            self._data[key] = properties.get(key, value)
+
         self._data['membersReference'] = {
             'isSubcollection': True, 'items': []}
 
-        self.members = list()
         if members:
             self.members = members
             self._data['membersReference']['items'] = [
                 m.__dict__() for m in members]
+        else:
+            self.members = list()
 
     def __eq__(self, other):
         if not isinstance(other, Pool):
@@ -56,29 +56,28 @@ class Pool(Resource):
                 "Invalid comparison of Pool object with object "
                 "of type {}".format(type(other)))
 
-        other_properties = other.data
-        for key, _ in self._data.items():
-            if self._data[key] != other_properties[key]:
+        for key in self.properties:
+            if key == 'membersReference':
+                continue
+
+            if self._data[key] != other.data.get(key, None):
                 return False
-        if len(self.members) != len(other):
+
+        if len(self) != len(other):
             return False
         if set(self.members) - set(other.members):
             return False
+
         return True
 
-    def __len__(self):
-        if 'items' in self._data['membersReference']:
-            return len(self._data['membersReference']['items'])
-        return 0
+    def __hash__(self):
+        return super(Pool, self).__hash__()
 
-    def __dict__(self):
-        return self._data
+    def __len__(self):
+        return len(self.members)
 
     def _uri_path(self, bigip):
         return bigip.tm.ltm.pools.pool
-
-    def __repr__(self):
-        pass
 
 
 class F5CcclPool(Pool):
@@ -91,14 +90,14 @@ class F5CcclPool(Pool):
                 continue
             pool_config[k] = v
 
-        members = (
-            self._get_members(partition, properties['members'])
-        )
+        members_config = properties.get('members', None)
+        members = self._get_members(partition, members_config)
+
         super(F5CcclPool, self).__init__(name, partition,
                                          members,
                                          **pool_config)
 
-    def _get_members(self, partition, members=None):
+    def _get_members(self, partition, members):
         """Get a list of members from the pool definition"""
         members_list = list()
         if members:
