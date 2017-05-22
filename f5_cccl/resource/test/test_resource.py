@@ -136,7 +136,48 @@ def test_resource_not_equal():
     res2 = Resource(name="other_resource", partition="Common")
 
     assert not res1.__eq__(res2)
+    assert res1 != res2
     assert not res1 == res2
+
+
+def test_resource_less_than():
+    u"""Test the __eq__ operation for Resouces."""
+    data = resource_data()
+
+    res1 = Resource(**data)
+    res2 = Resource(name="other_resource", partition="Common")
+
+    assert not res1 < res2
+    assert res1 != res2
+    assert res2 < res1
+
+
+def test_resource_get_dict():
+    u"""Test the __eq__ operation for Resouces."""
+    data = resource_data()
+
+    res1 = Resource(**data)
+
+    assert res1.data == res1.__dict__()
+
+
+def test_resource_hash():
+    u"""Test the __eq__ operation for Resouces."""
+    data = resource_data()
+
+    res1 = Resource(**data)
+    res2 = Resource(**data)
+
+    assert hash(res1) == hash(res2)
+
+
+def test_resource_fullpath():
+    u"""Test the __eq__ operation for Resouces."""
+    data = resource_data()
+
+    res1 = Resource(**data)
+
+    assert res1.full_path() == "/Common/test_resource"
 
 
 def test_delete_resource(bigip):
@@ -228,6 +269,22 @@ def test_update_subresource(bigip):
     assert not obj
     bigip.tm.ltm.subresources.subresource.load.assert_called()
     bigip.tm.ltm.subresources.subresource.obj.update.assert_called()
+
+
+def test_modify_subresource(bigip):
+    u"""Test that a subclass of Resource will execute 'update'."""
+    data = resource_data()
+    subres = SubResource(name=data['name'], partition=data['partition'])
+
+    bigip.tm.ltm.subresources.subresource.modify.return_value = (None)
+    bigip.tm.ltm.subresources.subresource.load.return_value = (
+        bigip.tm.ltm.subresources.subresource.obj
+    )
+    obj = subres.update(bigip, data=data, modify=True)
+
+    assert not obj
+    bigip.tm.ltm.subresources.subresource.load.assert_called()
+    bigip.tm.ltm.subresources.subresource.obj.modify.assert_called()
 
 
 def test_delete_subresource(bigip):

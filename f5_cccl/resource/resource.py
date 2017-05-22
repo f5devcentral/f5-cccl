@@ -73,14 +73,16 @@ class Resource(object):
             True if equal
             False otherwise
         """
-        return (self._data['name'] == resource.name and
-                self._data['partition'] == resource.partition)
+        return self._data == resource.data
 
     def __ne__(self, resource):
         return not self.__eq__(resource)
 
     def __hash__(self):
-        return hash(self._data['name'] + self._data['partition'])
+        return hash((self.name, self.partition))
+
+    def __lt__(self, resource):
+        return self.full_path() < resource.full_path()
 
     def create(self, bigip):
         u"""Create resource on a BIG-IP system.
@@ -212,6 +214,10 @@ class Resource(object):
     def data(self):
         u"""Get the internal data model for this resource."""
         return self._data
+
+    def full_path(self):
+        u"""Concatenate the partition and name to form fullPath."""
+        return "/{}/{}".format(self.partition, self.name)
 
     def _uri_path(self, bigip):
         u"""Get the URI resource path key for the F5 SDK.

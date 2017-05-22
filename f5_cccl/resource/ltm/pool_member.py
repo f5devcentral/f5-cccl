@@ -44,11 +44,15 @@ class PoolMember(Resource):
         """Initialize the PoolMember object."""
         name = self._strip_route_domain_zero(name)
         super(PoolMember, self).__init__(name, partition)
+
         self._pool = pool
         for key, value in self.properties.items():
             if key == 'name' or key == 'partition':
                 continue
             self._data[key] = properties.get(key, value)
+
+    def __hash__(self):  # pylint: disable=useless-super-delegation
+        return super(PoolMember, self).__hash__()
 
     def __eq__(self, other):
         """Check the equality of the two objects.
@@ -72,9 +76,9 @@ class PoolMember(Resource):
 
     def _check_states(self, other):
         """Compare desired admin state to operational state."""
-        other_session = other['session']
+        other_session = other.data['session']
 
-        return ("monitor" in self._data['session'] or
+        return ("monitor" in self.data['session'] or
                 "monitor" in other_session)
 
     def _strip_route_domain_zero(self, name):
@@ -142,6 +146,7 @@ class F5CcclPoolMember(PoolMember):
                 address,
                 port,
                 route_domain)
+
         super(F5CcclPoolMember, self).__init__(name=name,
                                                partition=partition,
                                                pool=pool,
