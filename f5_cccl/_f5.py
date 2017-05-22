@@ -35,10 +35,11 @@ import urllib
 import ipaddress
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from common import list_diff, list_intersect
+from f5_cccl.common import list_diff, list_intersect
 
 import f5
 from f5.bigip import BigIP
+from f5_cccl.resource import Resource
 import icontrol.session
 
 logger = logging.getLogger('controller')
@@ -262,41 +263,43 @@ class CloudBigIP(BigIP):
         Args:
             config: BIG-IP config dict
         """
-        unique_partitions = self.get_managed_partition_names(self._partitions)
+        svcs = config.get('services', {})
+        policies = config.get('policies', [])
 
+        unique_partitions = self.get_managed_partition_names(self._partitions)
         for partition in unique_partitions:
             logger.debug("Doing config for partition '%s'", partition)
 
             cloud_virtual_list = []
             if self._manage_virtual:
-                cloud_virtual_list = \
-                    [x for x in config.keys()
-                     if config[x]['partition'] == partition and
-                     'iapp' not in config[x] and config[x]['virtual']]
+                for key in svcs.keys():
+                    cloud_virtual_list = \
+                        [x for x in svcs.keys()
+                         if svcs[x]['partition'] == partition and
+                         'iapp' not in svcs[x] and svcs[x]['virtual']]
             cloud_pool_list = []
             if self._manage_pool:
                 cloud_pool_list = \
-                    [x for x in config.keys()
-                     if config[x]['partition'] == partition and
-                     'iapp' not in config[x]]
+                    [x for x in svcs.keys()
+                     if svcs[x]['partition'] == partition and
+                     'iapp' not in svcs[x]]
             cloud_iapp_list = []
             if self._manage_iapp:
                 cloud_iapp_list = \
-                    [x for x in config.keys()
-                     if config[x]['partition'] == partition and
-                     'iapp' in config[x]]
+                    [x for x in svcs.keys()
+                     if svcs[x]['partition'] == partition and
+                     'iapp' in svcs[x]]
 
             cloud_healthcheck_list = []
             if self._manage_monitor:
                 for pool in cloud_pool_list:
-                    for hc in config[pool].get('health', {}):
+                    for hc in svcs[pool].get('health', {}):
                         if 'protocol' in hc:
                             cloud_healthcheck_list.append(hc['name'])
 
             cloud_policy_list = []
             if self._manage_policy:
-                for virtual in cloud_virtual_list:
-                    for policy in config[virtual].get('policies', {}):
+                for policy in policies:
                         cloud_policy_list.append(policy['name'])
 
             f5_iapp_list = []
@@ -369,7 +372,7 @@ class CloudBigIP(BigIP):
             iapp_add = list_diff(cloud_iapp_list, f5_iapp_list)
             log_sequence('iApps to add', iapp_add)
             for iapp in iapp_add:
-                self.iapp_create(partition, iapp, config[iapp])
+                self.iapp_create(partition, iapp, svcs[iapp])
 
             # healthcheck config needs to happen before pool config because
             # the pool is where we add the healthcheck
@@ -379,8 +382,8 @@ class CloudBigIP(BigIP):
             log_sequence('Healthchecks to add', healthcheck_add)
 
             # healthcheck add
-            for key in config:
-                for hc in config[key].get('health', {}):
+            for key in svcs:
+                for hc in svcs[key].get('health', {}):
                     if 'name' in hc and hc['name'] in healthcheck_add:
                         self.healthcheck_create(partition, hc)
 
@@ -388,27 +391,26 @@ class CloudBigIP(BigIP):
             pool_add = list_diff(cloud_pool_list, f5_pool_list)
             log_sequence('Pools to add', pool_add)
             for pool in pool_add:
-                self.pool_create(partition, pool, config[pool])
+                self.pool_create(partition, pool, svcs[pool])
 
             # policy add
             policy_add = list_diff(cloud_policy_list, f5_policy_list)
             log_sequence('Policies to add', policy_add)
-            for key in config:
-                for policy in config[key].get('policies', {}):
-                    if 'name' in policy and policy['name'] in policy_add:
-                        self.policy_create(partition, policy)
+            for policy in policies:
+                if 'name' in policy and policy['name'] in policy_add:
+                    self.policy_create(policy)
 
             # virtual add
             virt_add = list_diff(cloud_virtual_list, f5_virtual_list)
             log_sequence('Virtual Servers to add', virt_add)
             for virt in virt_add:
-                self.virtual_create(partition, virt, config[virt])
+                self.virtual_create(partition, virt, svcs[virt])
 
             # iapp intersect
             iapp_intersect = list_intersect(cloud_iapp_list, f5_iapp_list)
             log_sequence('iApps to update', iapp_intersect)
             for iapp in iapp_intersect:
-                self.iapp_update(partition, iapp, config[iapp])
+                self.iapp_update(partition, iapp, svcs[iapp])
 
             # healthcheck intersection
             healthcheck_intersect = list_intersect(cloud_healthcheck_list,
@@ -416,8 +418,8 @@ class CloudBigIP(BigIP):
             log_sequence('Healthchecks to update', healthcheck_intersect)
 
             # healthcheck intersect
-            for key in config:
-                for hc in config[key].get('health', {}):
+            for key in svcs:
+                for hc in svcs[key].get('health', {}):
                     if 'name' in hc and hc['name'] in healthcheck_intersect:
                         self.healthcheck_update(partition, key, hc)
 
@@ -425,15 +427,14 @@ class CloudBigIP(BigIP):
             pool_intersect = list_intersect(cloud_pool_list, f5_pool_list)
             log_sequence('Pools to update', pool_intersect)
             for pool in pool_intersect:
-                self.pool_update(partition, pool, config[pool])
+                self.pool_update(partition, pool, svcs[pool])
 
             # policy intersection
             policy_intersect = list_intersect(cloud_policy_list,
                                               f5_policy_list)
-            for key in config:
-                for policy in config[key].get('policies', {}):
-                    if 'name' in policy and policy['name'] in policy_intersect:
-                        self.policy_update(partition, policy)
+            for policy in policies:
+                if 'name' in policy and policy['name'] in policy_intersect:
+                    self.policy_update(partition, policy)
 
             # virt intersection
             virt_intersect = list_intersect(cloud_virtual_list,
@@ -441,7 +442,7 @@ class CloudBigIP(BigIP):
             log_sequence('Virtual Servers to update', virt_intersect)
 
             for virt in virt_intersect:
-                self.virtual_update(partition, virt, config[virt])
+                self.virtual_update(partition, virt, svcs[virt])
 
             # add/update/remove pool members
             # need to iterate over pool_add and pool_intersect (note that
@@ -451,7 +452,7 @@ class CloudBigIP(BigIP):
                 logger.debug("Pool: %s", pool)
 
                 f5_member_list = self.get_pool_member_list(partition, pool)
-                cloud_member_list = (config[pool]['nodes']).keys()
+                cloud_member_list = (svcs[pool]['nodes']).keys()
 
                 member_delete_list = list_diff(f5_member_list,
                                                cloud_member_list)
@@ -463,7 +464,7 @@ class CloudBigIP(BigIP):
                 log_sequence('Pool members to add', member_add)
                 for member in member_add:
                     self.member_create(partition, pool, member,
-                                       config[pool]['nodes'][member])
+                                       svcs[pool]['nodes'][member])
 
                 # Since we're only specifying hostname and port for members,
                 # 'member_update' will never actually get called. Changing
@@ -476,7 +477,7 @@ class CloudBigIP(BigIP):
 
                 for member in member_update_list:
                     self.member_update(partition, pool, member,
-                                       config[pool]['nodes'][member])
+                                       svcs[pool]['nodes'][member])
 
             # Delete any unreferenced nodes
             self.cleanup_nodes(partition)
@@ -886,7 +887,6 @@ class CloudBigIP(BigIP):
 
     def virtual_address_delete(self, partition, name):
         """Delete a Virtual Address.
-
         Args:
             partition: Partition name
             name: Name of the virtual address
@@ -1126,15 +1126,17 @@ class CloudBigIP(BigIP):
         pool.monitor = name
         pool.update()
 
-    def get_policy(self, partition, policy):
+    def get_policy(self, partition, policy, requests_params={}):
         """Get Policy object.
 
         Args:
             partition: Partition name
             policy: Name of the policy
+            requests_params: Object with query parameters
         """
         p = self.ltm.policys.policy.load(name=urllib.quote(policy),
-                                         partition=partition)
+                                         partition=partition,
+                                         requests_params=requests_params)
         return p
 
     def get_policy_list(self, partition):
@@ -1152,7 +1154,7 @@ class CloudBigIP(BigIP):
                 policy_list.append(policy.name)
         return policy_list
 
-    def policy_create(self, partition, data):
+    def policy_create(self, data):
         """Create a policy.
 
         Args:
@@ -1161,7 +1163,7 @@ class CloudBigIP(BigIP):
         """
         p = self.ltm.policys.policy
         logger.debug("Creating policy %s", data['name'])
-        p.create(partition=partition, **data)
+        p.create(**data)
 
     def policy_delete(self, partition, policy):
         """Delete a policy.
@@ -1181,26 +1183,18 @@ class CloudBigIP(BigIP):
             partition: Partition name
             data: BIG-IP config dict
         """
-        policy = self.get_policy(partition, data['name'])
+        request_params = {'params': 'expandSubcollections=true'}
+        bigip_policy = self.get_policy(partition, data['name'], request_params)
+        # Convert old and new policy objects to the policy class for comparison
+        old_policy = Policy(bigip_policy)
+        new_policy = Policy(data)
 
-        def find_change(p, d):
-            """Check if data for policy has been updated."""
-            for key, val in p.__dict__.iteritems():
-                if key in d:
-                    if val is not None and (d[key] != val.strip()):
-                            return True
-                    elif (d[key] != val):
-                            return True
-            for key, _ in d.iteritems():
-                if key not in p.__dict__:
-                    return True
-            return False
-
-        if find_change(policy, data):
-            logger.debug("Updating policy %s" % policy.name)
-            policy.modify(**data)
+        if old_policy != new_policy:
+            logger.debug("Updating policy %s" % bigip_policy.name)
+            bigip_policy.modify(**data)
             return True
 
+        logger.debug("No change to policy %s" % bigip_policy.name)
         return False
 
     def get_managed_partition_names(self, partitions):
@@ -1383,3 +1377,260 @@ class CloudBigIP(BigIP):
                 iapp_list.append(iapp.name)
 
         return iapp_list
+
+
+class Policy(Resource):
+    """"""
+    # The property names class attribute defines the names of the
+    # properties that we wish to compare.
+    properties = dict(
+        name=None,
+        partition=None,
+        controls=None,
+        strategy=None,
+        legacy=True,
+        requires=None,
+        rules=None
+    )
+
+    def __init__(self, data):
+        """Create the policy and nested class objects"""
+        if isinstance(data, f5.bigip.tm.ltm.policy.Policy):
+            data = self._flatten_policy(data)
+        super(Policy, self).__init__(data['name'], data['partition'])
+        for key, value in self.properties.items():
+            if key == 'rules':
+                self._data[key] = self._create_rules(
+                    data['partition'], data[key])
+                continue
+            if key == 'name' or key == 'partition':
+                continue
+            self._data[key] = data.get(key, value)
+
+    def __eq__(self, other):
+        """Check the equality of the two objects.
+
+        Only compare the properties as defined in the
+        properties class dictionany.
+        """
+        if not isinstance(other, Policy):
+            return False
+
+        for key in self.properties:
+            if key == 'rules':
+                if len(self._data[key]) != len(other.data[key]):
+                    logger.debug('Rule length is unequal')
+                    return False
+                for index, rule in enumerate(self._data[key]):
+                    if rule != other.data[key][index]:
+                        return False
+                continue
+            if self._data[key] != other.data.get(key, None):
+                logger.debug(
+                    'Policies are unequal, %s does not match: %s - %s',
+                    key, self._data[key], other.data.get(key, None))
+                return False
+        return True
+
+    def __str__(self):
+        return str(self._data)
+
+    def _create_rules(self, partition, rules):
+        new_rules = []
+        for rule in rules:
+            new_rules.append(Rule(partition, rule))
+        new_rules.sort(key=lambda x: x.data['ordinal'])
+        return new_rules
+
+    def _uri_path(self, bigip):
+        return bigip.tm.ltm.policy
+
+    def _flatten_policy(self, bigip_policy):
+        policy = {}
+        for key in Policy.properties:
+            if key == 'rules':
+                policy['rules'] = self._flatten_rules(
+                    bigip_policy.__dict__['rulesReference']['items'])
+            elif key == 'legacy':
+                policy['legacy'] = True
+            else:
+                policy[key] = bigip_policy.__dict__.get(key)
+        return policy
+
+    def _flatten_rules(self, rules_list):
+        rules = []
+        for rule in rules_list:
+            flat_rule = {}
+            for key in Rule.properties:
+                if key == 'actions':
+                    flat_rule[key] = self._flatten_actions(rule)
+                elif key == 'conditions':
+                    flat_rule[key] = self._flatten_condition(rule)
+                else:
+                    flat_rule[key] = rule.get(key)
+            rules.append(flat_rule)
+        return rules
+
+    def _flatten_actions(self, rule):
+        actions = []
+        for action in rule['actionsReference']['items']:
+            flat_action = {}
+            for key in Action.properties:
+                flat_action[key] = action.get(key)
+            actions.append(flat_action)
+        return actions
+
+    def _flatten_condition(self, rule):
+        conditions = []
+        for condition in rule['conditionsReference']['items']:
+            flat_condition = {}
+            for key in Condition.properties:
+                flat_condition[key] = condition.get(key)
+            conditions.append(flat_condition)
+        return conditions
+
+
+class Rule(Resource):
+    """"""
+    # The property names class attribute defines the names of the
+    # properties that we wish to compare.
+    properties = dict(
+        name=None,
+        ordinal=None,
+        actions=None,
+        conditions=None
+    )
+
+    def __init__(self, partition, data):
+        super(Rule, self).__init__(data['name'], partition)
+        for key in self.properties:
+            if key == 'actions':
+                self._data[key] = self._create_actions(
+                    partition, data[key])
+                continue
+            if key == 'conditions':
+                self._data[key] = self._create_conditions(
+                    partition, data[key])
+                continue
+            if key == 'name':
+                continue
+            self._data[key] = data.get(key)
+
+    def __eq__(self, other):
+        """Check the equality of the two objects.
+
+        Only compare the properties as defined in the
+        properties class dictionany.
+        """
+        if not isinstance(other, Rule):
+            return False
+
+        for key in self.properties:
+            if key == 'actions' or key == 'conditions':
+                if len(self._data[key]) != len(other.data[key]):
+                    logger.debug('%s length is unequal', key)
+                    return False
+                for index, obj in enumerate(self._data[key]):
+                    if obj != other.data[key][index]:
+                        return False
+                continue
+            if self._data[key] != other.data.get(key, None):
+                logger.debug(
+                    'Rules are unequal, %s does not match: %s - %s',
+                    key, self._data[key], other.data.get(key, None))
+                return False
+        return True
+
+    def __str__(self):
+        return str(self._data)
+
+    def _create_actions(self, partition, actions):
+        new_actions = []
+        for action in actions:
+            new_actions.append(Action(partition, action))
+        return new_actions
+
+    def _create_conditions(self, partition, conditions):
+        new_conditions = []
+        for condition in conditions:
+            new_conditions.append(Condition(partition, condition))
+        return new_conditions
+
+
+class Action(Resource):
+    """"""
+    # The property names class attribute defines the names of the
+    # properties that we wish to compare.
+    properties = dict(
+        name=None,
+        pool=None,
+        forward=None,
+        request=None
+    )
+
+    def __init__(self, partition, data):
+        super(Action, self).__init__(data['name'], partition)
+        for key in self.properties:
+            self._data[key] = data.get(key)
+
+    def __eq__(self, other):
+        """Check the equality of the two objects.
+
+        Only compare the properties as defined in the
+        properties class dictionany.
+        """
+        if not isinstance(other, Action):
+            return False
+
+        for key in self.properties:
+            if self._data[key] != other.data.get(key, None):
+                logger.debug(
+                    'Actions are unequal, %s does not match: %s - %s',
+                    key, self._data[key], other.data.get(key, None))
+                return False
+        return True
+
+    def __str__(self):
+        return str(self._data)
+
+
+class Condition(Resource):
+    """"""
+    # The property names class attribute defines the names of the
+    # properties that we wish to compare.
+    properties = dict(
+        name=None,
+        index=None,
+        request=None,
+        equals=None,
+        httpHost=False,
+        host=False,
+        httpUri=False,
+        pathSegment=False,
+        values=None
+    )
+
+    def __init__(self, partition, data):
+        super(Condition, self).__init__(data['name'], partition)
+        for key in self.properties:
+            self._data[key] = data.get(key)
+
+    def __eq__(self, other):
+        """Check the equality of the two objects.
+
+        Only compare the properties as defined in the
+        properties class dictionany.
+        """
+        if not isinstance(other, Condition):
+            return False
+
+        for key in self.properties:
+            if self._data[key] != other.data.get(key, None):
+                logger.debug(
+                    'Conditions are unequal, %s does not match: %s - %s',
+                    key, self._data[key], other.data.get(key, None))
+                return False
+        return True
+
+    def __str__(self):
+        return str(self._data)
