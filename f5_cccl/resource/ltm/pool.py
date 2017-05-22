@@ -70,7 +70,7 @@ class Pool(Resource):
 
         return True
 
-    def __hash__(self):
+    def __hash__(self):  # pylint: disable=useless-super-delegation
         return super(Pool, self).__hash__()
 
     def __len__(self):

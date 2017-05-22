@@ -73,9 +73,7 @@ class Resource(object):
             True if equal
             False otherwise
         """
-        # return (self._data['name'] == resource.name and
-        #        self._data['partition'] == resource.partition)
-        return (self._data == resource.data)
+        return self._data == resource.data
 
     def __ne__(self, resource):
         return not self.__eq__(resource)

@@ -51,7 +51,7 @@ class PoolMember(Resource):
                 continue
             self._data[key] = properties.get(key, value)
 
-    def __hash__(self):
+    def __hash__(self):  # pylint: disable=useless-super-delegation
         return super(PoolMember, self).__hash__()
 
     def __eq__(self, other):
