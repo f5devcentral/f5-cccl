@@ -241,13 +241,13 @@
           type: "string"
           definition: "User defined description"
           maximum: 256
-        state:
+        session:
           type: "string"
           definition: "Marks the pool member up or down. The default value is user-up."
           enum:
-            - "user-up"
-            - "user-down"
-          default: "user-up"
+            - "user-enabled"
+            - "user-disabled"
+          default: "user-enabled"
         address:
           type: "string"
           definition: "Specifies the IP address for the pool member."
@@ -306,7 +306,7 @@
           items:
             $ref: "#definitions/poolMemberType"
             type: "array"
-        monitor:
+        monitors:
           items: 
             properties: 
               refname: 

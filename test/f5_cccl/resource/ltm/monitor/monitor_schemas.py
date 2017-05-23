@@ -14,14 +14,26 @@
 # limitations under the License.
 #
 
-import conftest
-import f5_cccl.resource.ltm.icmp_monitor as target
+import f5_cccl.resource.ltm.monitor.monitor as default_monitor
+import f5_cccl.resource.ltm.monitor.http_monitor as http
+import f5_cccl.resource.ltm.monitor.https_monitor as https
+import f5_cccl.resource.ltm.monitor.icmp_monitor as icmp
+import f5_cccl.resource.ltm.monitor.tcp_monitor as tcp
 
+"""A repository of default schemas importable abstracted for tests.
+"""
 
-class Test_ICMPMonitor(conftest.TestLtmResource):
-    pass  # any further deviation should be tested here...
+# Monitor:
+default_schema = default_monitor.default_schema
 
+# HTTP:
+http_default = http.default_schema
 
-def test_entry():
-    assert target.ICMPMonitor.monitor_schema_kvps._asdict() == \
-        target.default_schema, "Verified entry vector assignment"
+# HTTPS:
+https_default = https.default_schema
+
+# ICMP:
+icmp_default = icmp.default_schema
+
+# TCP:
+tcp_default = tcp.default_schema

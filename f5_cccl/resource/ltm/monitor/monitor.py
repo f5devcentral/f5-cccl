@@ -64,7 +64,6 @@ class Monitor(Resource):
             if not my_value == value and (my_value or value):
                 # empty strings should be seen as "None" coming back from the
                 # BIG-IP...
-                print(item, my_value, value)
                 return False
         return True
 

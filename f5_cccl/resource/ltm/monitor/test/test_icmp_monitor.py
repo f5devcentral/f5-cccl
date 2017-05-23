@@ -15,13 +15,13 @@
 #
 
 import conftest
-import f5_cccl.resource.ltm.tcp_monitor as target
+import f5_cccl.resource.ltm.monitor.icmp_monitor as target
 
 
-class Test_TCPMonitor(conftest.TestLtmResource):
+class Test_ICMPMonitor(conftest.TestLtmResource):
     pass  # any further deviation should be tested here...
 
 
 def test_entry():
-    assert target.TCPMonitor.monitor_schema_kvps._asdict() == \
+    assert target.ICMPMonitor.monitor_schema_kvps._asdict() == \
         target.default_schema, "Verified entry vector assignment"
