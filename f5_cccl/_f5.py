@@ -816,6 +816,14 @@ class CloudBigIP(BigIP):
 
         # Compare the actual and desired profiles
         profiles = self.get_virtual_profiles(v)
+
+        # Remove inherited tcp profile of an http profile from SDK profiles
+        http_profiles = [p for p in data['profiles'] if p['name'] == 'http']
+        for http_p in http_profiles:
+            inherited_tcp_p = {'name': 'tcp', 'partition': http_p['partition']}
+            if inherited_tcp_p in profiles:
+                profiles.remove(inherited_tcp_p)
+
         no_profile_change = sorted(profiles) == sorted(data['profiles'])
 
         if no_change and no_profile_change:
