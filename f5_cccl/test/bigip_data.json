@@ -1,4 +1,101 @@
 {
+    "virtuals": [
+        {
+            "addressStatus": "yes",
+            "autoLasthop": "default",
+            "cmpEnabled": "yes",
+            "connectionLimit": 0,
+            "destination": "/Common/10.190.1.2:443",
+            "enabled": true,
+            "fullPath": "/Common/virtual1",
+            "generation": 15839,
+            "gtmScore": 0,
+            "ipProtocol": "tcp",
+            "kind": "tm:ltm:virtual:virtualstate",
+            "mask": "255.255.255.255",
+            "mirror": "disabled",
+            "mobileAppTunnel": "disabled",
+            "name": "virtual1",
+            "nat64": "disabled",
+            "partition": "Common",
+            "policiesReference": {
+                "isSubcollection": true,
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Common~virtual1/policies?ver=12.1.0"
+            },
+            "pool": "/Common/test_pool",
+            "poolReference": {
+                "link": "https://localhost/mgmt/tm/ltm/pool/~Common~test_pool?ver=12.1.0"
+            },
+            "profilesReference": {
+                "isSubcollection": true,
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Common~virtual1/profiles?ver=12.1.0"
+            },
+            "rateLimit": "disabled",
+            "rateLimitDstMask": 0,
+            "rateLimitMode": "object",
+            "rateLimitSrcMask": 0,
+            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~virtual1?ver=12.1.0",
+            "serviceDownImmediateAction": "none",
+            "source": "0.0.0.0/0",
+            "sourceAddressTranslation": {
+                "type": "none"
+            },
+            "sourcePort": "preserve",
+            "synCookieStatus": "not-activated",
+            "translateAddress": "enabled",
+            "translatePort": "enabled",
+            "vlansDisabled": true,
+            "vsIndex": 111
+        },
+        {
+            "addressStatus": "yes",
+            "autoLasthop": "default",
+            "cmpEnabled": "yes",
+            "connectionLimit": 0,
+            "description": "This is a virtual server",
+            "destination": "/test/10.190.6.7:80",
+            "enabled": true,
+            "fullPath": "/test/virtuual2",
+            "generation": 15857,
+            "gtmScore": 0,
+            "ipProtocol": "tcp",
+            "kind": "tm:ltm:virtual:virtualstate",
+            "mask": "255.255.255.255",
+            "mirror": "disabled",
+            "mobileAppTunnel": "disabled",
+            "name": "virtuual2",
+            "nat64": "disabled",
+            "partition": "test",
+            "policiesReference": {
+                "isSubcollection": true,
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~test~virtuual2/policies?ver=12.1.0"
+            },
+            "pool": "/test/pool1",
+            "poolReference": {
+                "link": "https://localhost/mgmt/tm/ltm/pool/~test~pool1?ver=12.1.0"
+            },
+            "profilesReference": {
+                "isSubcollection": true,
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~test~virtuual2/profiles?ver=12.1.0"
+            },
+            "rateLimit": "disabled",
+            "rateLimitDstMask": 0,
+            "rateLimitMode": "object",
+            "rateLimitSrcMask": 0,
+            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~test~virtuual2?ver=12.1.0",
+            "serviceDownImmediateAction": "none",
+            "source": "0.0.0.0/0",
+            "sourceAddressTranslation": {
+                "type": "none"
+            },
+            "sourcePort": "preserve",
+            "synCookieStatus": "not-activated",
+            "translateAddress": "enabled",
+            "translatePort": "enabled",
+            "vlansDisabled": true,
+            "vsIndex": 112
+        }
+    ],
     "pools": [
         {
             "allowNat": "yes",
