@@ -22,7 +22,7 @@ from mock import patch
 import conftest
 import f5
 import f5_cccl.exceptions as exceptions
-import f5_cccl.resource.ltm.monitor as target
+import f5_cccl.resource.ltm.monitor.monitor as target
 
 
 class Test_Monitor(conftest.TestLtmResource):
@@ -48,8 +48,6 @@ class Test_Monitor(conftest.TestLtmResource):
         mock_name = Mock()
         mock_partition = Mock()
         self.monitor = target.Monitor(self.name, self.partition, **self.args)
-        self.monitor._name = mock_name
-        self.monitor._partition = mock_partition
 
     def crud_run(self, test, expected=None):
         bigip = Mock()

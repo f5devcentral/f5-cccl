@@ -13,27 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""This module implements the F5 CCCL Resource super class."""
 
-import f5_cccl.resource.ltm.monitor as default_monitor
-import f5_cccl.resource.ltm.http_monitor as http
-import f5_cccl.resource.ltm.https_monitor as https
-import f5_cccl.resource.ltm.icmp_monitor as icmp
-import f5_cccl.resource.ltm.tcp_monitor as tcp
 
-"""A repository of default schemas importable abstracted for tests.
-"""
-
-# Monitor:
-default_schema = default_monitor.default_schema
-
-# HTTP:
-http_default = http.default_schema
-
-# HTTPS:
-https_default = https.default_schema
-
-# ICMP:
-icmp_default = icmp.default_schema
-
-# TCP:
-tcp_default = tcp.default_schema
+from .monitor import Monitor  # noqa: F401, F403 pylint: disable=wildcard-import

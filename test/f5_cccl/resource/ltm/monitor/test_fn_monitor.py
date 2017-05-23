@@ -27,11 +27,11 @@ import f5.bigip.resource
 from f5.bigip import ManagementRoot
 
 import f5_cccl.exceptions as exceptions
-import f5_cccl.resource.ltm.monitor as target
-import f5_cccl.resource.ltm.http_monitor as http
-import f5_cccl.resource.ltm.https_monitor as https
-import f5_cccl.resource.ltm.icmp_monitor as icmp
-import f5_cccl.resource.ltm.tcp_monitor as tcp
+import f5_cccl.resource.ltm.monitor.monitor as target
+import f5_cccl.resource.ltm.monitor.http_monitor as http
+import f5_cccl.resource.ltm.monitor.https_monitor as https
+import f5_cccl.resource.ltm.monitor.icmp_monitor as icmp
+import f5_cccl.resource.ltm.monitor.tcp_monitor as tcp
 
 from icontrol.exceptions import iControlUnexpectedHTTPError
 

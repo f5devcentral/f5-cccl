@@ -22,14 +22,16 @@ from mock import patch
 
 class TestLtmResource(object):
     """Creates a TestLtmResource Object
-This object is useful in inheriting it within other, branching
-Resource's sub-objects' testing.  This object uses built-in features that can
-be used by any number of Resource objects for their testing.
+    This object is useful in inheriting it within other, branching
+    Resource's sub-objects' testing.  This object uses built-in
+    features that can be used by any number of Resource objects for
+    their testing.
     """
     @pytest.fixture
     def create_ltm_resource(self):
         """Useful for mocking f5_cccl.resource.Resource.__init__()
-This test-class method is useful for mocking out the Resource parent object.
+        This test-class method is useful for mocking out the Resource
+        parent object.
         """
         Resource = Mock()
         # future proofing:

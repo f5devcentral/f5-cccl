@@ -5,7 +5,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#    https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,13 +15,13 @@
 #
 
 import conftest
-import f5_cccl.resource.ltm.http_monitor as target
+import f5_cccl.resource.ltm.monitor.https_monitor as target
 
 
-class Test_HTTPMonitor(conftest.TestLtmResource):
+class Test_HTTPSMonitor(conftest.TestLtmResource):
     pass  # any further deviation should be tested here...
 
 
 def test_entry():
-    assert target.HTTPMonitor.monitor_schema_kvps._asdict() == \
-        target.default_schema, "Verified entry vector assignment"
+    assert target.HTTPSMonitor.monitor_schema_kvps._asdict() \
+        == target.default_schema, "Verified entry vector assignment"
