@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 from f5_cccl import bigip
-from f5.bigip import BigIP
+from f5.bigip import ManagementRoot
 from f5_cccl.resource.ltm.pool import BigIPPool
 from f5_cccl.resource.ltm.virtual import VirtualServer
 import json
@@ -30,6 +30,7 @@ class Pool():
         self.name = name
         for key in kwargs:
             setattr(self, key, kwargs[key])
+        self.raw = self.__dict__
 
     def modify(self, **kwargs):
         """Placeholder: This will be mocked."""
@@ -102,6 +103,8 @@ class Virtual():
         self.name = name
         for key in kwargs:
             setattr(self, key, kwargs[key])
+
+        self.raw = self.__dict__
 
     def modify(self, **kwargs):
         """Placeholder: This will be mocked."""
@@ -270,7 +273,7 @@ class MockHttps():
 
     def get_collection(self):
         """Get collection of http healthchecks."""
-        pass
+        return []
 
 
 class MockTcp():
@@ -298,6 +301,62 @@ class MockTcps():
 
     def get_collection(self):
         """Get collection of tcp healthchecks."""
+        return []
+
+
+class MockIcmp():
+    """A mock Icmps tcp object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        pass
+
+    def create(self, partition=None, **kwargs):
+        """Create a tcp healthcheck object."""
+        pass
+
+    def load(self, name=None, partition=None):
+        """Load a tcp healthcheck object."""
+        pass
+
+
+class MockIcmps():
+    """A mock Monitor tcps object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.gateway_icmp = MockIcmp()
+
+    def get_collection(self):
+        """Get collection of tcp healthchecks."""
+        return []
+
+
+class MockHttpS():
+    """A mock Icmps tcp object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        pass
+
+    def create(self, partition=None, **kwargs):
+        """Create a tcp healthcheck object."""
+        pass
+
+    def load(self, name=None, partition=None):
+        """Load a tcp healthcheck object."""
+        pass
+
+
+class MockHttpSs():
+    """A mock Monitor tcps object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.https = MockHttpS()
+
+    def get_collection(self):
+        """Get collection of tcp healthchecks."""
         pass
 
 
@@ -308,7 +367,8 @@ class MockMonitor():
         """Initialize the object."""
         self.https = MockHttps()
         self.tcps = MockTcps()
-
+        self.https_s = MockHttpSs()
+        self.gateway_icmps = MockIcmps()
 
 class MockVirtuals():
     """A mock Ltm virtuals object."""
@@ -342,6 +402,11 @@ class MockLtm():
         self.monitor = MockMonitor()
         self.virtuals = MockVirtuals()
         self.pools = MockPools()
+
+
+class MockTm():
+    def __init__(self):
+        self.ltm = MockLtm()
 
 
 class MockHealthMonitor():
@@ -392,6 +457,10 @@ class BigIPTest(bigip.CommonBigIP):
 
         return pools
 
+    def mock_monitors_get_collection(self, requests_params=None):
+        monitors = []
+        return monitors
+
     def read_test_data(self, bigip_state):
         """Read test data for the Big-IP state."""
         # Read the BIG-IP state
@@ -404,18 +473,25 @@ def big_ip():
     """Fixture to supply a moked BIG-IP."""
     # Mock the call to _get_tmos_version(), which tries to make a
     # connection
-    with patch.object(BigIP, '_get_tmos_version'):
-        big_ip = BigIPTest('1.2.3.4', '443', 'admin', 'admin', ['test1'])
+    with patch.object(ManagementRoot, '_get_tmos_version'):
+        big_ip = BigIPTest('1.2.3.4', 'admin', 'admin', 'test1')
     #big_ip = BigIPTest('10.190.24.182', '443', 'admin', 'admin', ['test1'])
 
+    big_ip.tm = MockTm()
     big_ip.sys = MockSys()
-    big_ip.ltm = MockLtm()
 
-    big_ip.ltm.pools.get_collection = \
+    big_ip.tm.ltm.pools.get_collection = \
         Mock(side_effect=big_ip.mock_pools_get_collection)
-    big_ip.ltm.virtuals.get_collection = \
+    big_ip.tm.ltm.virtuals.get_collection = \
         Mock(side_effect=big_ip.mock_virtuals_get_collection)
-
+    big_ip.tm.ltm.monitor.https.get_collection = \
+        Mock(side_effect=big_ip.mock_monitors_get_collection)
+    big_ip.tm.ltm.monitor.https_s.get_collection = \
+        Mock(side_effect=big_ip.mock_monitors_get_collection)
+    big_ip.tm.ltm.monitor.tcps.get_collection = \
+        Mock(side_effect=big_ip.mock_monitors_get_collection)
+    big_ip.tm.ltm.monitor.gateway_icmps.get_collection = \
+        Mock(side_effect=big_ip.mock_monitors_get_collection)
     return big_ip
 
 
@@ -431,29 +507,57 @@ def test_bigip_refresh(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
     for v in big_ip.bigip_data['virtuals']:
         test_virtuals.append(VirtualServer(**v))
 
-
     # refresh the BIG-IP state
     big_ip.refresh()
 
     # verify pools and pool members
-    assert big_ip.ltm.pools.get_collection.called
+    assert big_ip.tm.ltm.pools.get_collection.called
     assert len(big_ip._pools) == 2
 
     assert len(big_ip._pools) == len(test_pools)
-    for a, b in zip(big_ip._pools, test_pools):
-        assert a == b
+    for pool in test_pools:
+        assert big_ip._pools[pool.name] == pool
 
     # Make a change, pools will not be equal
     for p in test_pools:
         p._data['loadBalancingMode'] = 'Not a valid LB mode'
 
-    for a, b in zip(big_ip._pools, test_pools):
-        assert a != b
+    for pool in test_pools:
+        assert big_ip._pools[pool.name] != pool
 
     # verify virtual servers 
-    assert big_ip.ltm.virtuals.get_collection.called
+    assert big_ip.tm.ltm.virtuals.get_collection.called
     assert len(big_ip._virtuals) == 2
 
     assert len(big_ip._virtuals) == len(test_virtuals)
-    for a, b in zip(big_ip._virtuals, test_virtuals):
-        assert a == b
+    for v in test_virtuals:
+        assert big_ip._virtuals[v.name] == v
+
+
+def test_bigip_properties(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
+    """Test BIG-IP properties function."""
+    big_ip.read_test_data(bigip_state)
+
+    test_pools = []
+    for p in big_ip.bigip_data['pools']:
+        pool = BigIPPool(**p)
+        test_pools.append(pool)
+    test_virtuals = []
+    for v in big_ip.bigip_data['virtuals']:
+        test_virtuals.append(VirtualServer(**v))
+
+    # refresh the BIG-IP state
+    big_ip.refresh()
+
+    assert len(big_ip.pools) == len(test_pools)
+    for p in test_pools:
+        assert big_ip._pools[p.name] == p
+
+    assert len(big_ip.virtuals) == len(test_virtuals)
+    for v in test_virtuals:
+        assert big_ip.virtuals[v.name] == v
+
+    http_hc = big_ip.http_monitors
+    https_hc = big_ip.https_monitors
+    tcp_hc = big_ip.tcp_monitors
+    icmp_hc = big_ip.icmp_monitors
