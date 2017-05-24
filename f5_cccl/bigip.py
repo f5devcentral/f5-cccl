@@ -96,5 +96,4 @@ class CommonBigIP(BigIP):
 
         self._virtuals = new_virtuals
 
-
         # FIXME: Refresh iapps, monitors, and policies
