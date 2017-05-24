@@ -16,6 +16,7 @@
 from f5_cccl import bigip
 from f5.bigip import BigIP
 from f5_cccl.resource.ltm.pool import BigIPPool
+from f5_cccl.resource.ltm.virtual import VirtualServer
 import json
 from mock import Mock, patch
 import pytest
@@ -99,15 +100,8 @@ class Virtual():
         """Initialize the object."""
         self.profiles_s = ProfileSet(**kwargs)
         self.name = name
-        self.enabled = kwargs.get('enabled', None)
-        self.disabled = kwargs.get('disabled', None)
-        self.ipProtocol = kwargs.get('ipProtocol', None)
-        self.destination = kwargs.get('destination', None)
-        self.pool = kwargs.get('pool', None)
-        self.sourceAddressTranslation = kwargs.get('sourceAddressTranslation',
-                                                   None)
-        self.profiles = kwargs.get('profiles', [])
-        self.partition = kwargs.get('partition', None)
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
 
     def modify(self, **kwargs):
         """Placeholder: This will be mocked."""
@@ -380,6 +374,15 @@ class BigIPTest(bigip.CommonBigIP):
         member.modify = Mock()
         return member
 
+    def mock_virtuals_get_collection(self, requests_params=None):
+        """Mock: Return a mocked collection of pools."""
+        virtuals = []
+        for v in self.bigip_data['virtuals']:
+            virtual = Virtual(**v)
+            virtuals.append(virtual)
+
+        return virtuals
+
     def mock_pools_get_collection(self, requests_params=None):
         """Mock: Return a mocked collection of pools."""
         pools = []
@@ -403,12 +406,15 @@ def big_ip():
     # connection
     with patch.object(BigIP, '_get_tmos_version'):
         big_ip = BigIPTest('1.2.3.4', '443', 'admin', 'admin', ['test1'])
+    #big_ip = BigIPTest('10.190.24.182', '443', 'admin', 'admin', ['test1'])
 
     big_ip.sys = MockSys()
     big_ip.ltm = MockLtm()
 
     big_ip.ltm.pools.get_collection = \
         Mock(side_effect=big_ip.mock_pools_get_collection)
+    big_ip.ltm.virtuals.get_collection = \
+        Mock(side_effect=big_ip.mock_virtuals_get_collection)
 
     return big_ip
 
@@ -421,6 +427,10 @@ def test_bigip_refresh(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
     for p in big_ip.bigip_data['pools']:
         pool = BigIPPool(**p)
         test_pools.append(pool)
+    test_virtuals = []
+    for v in big_ip.bigip_data['virtuals']:
+        test_virtuals.append(VirtualServer(**v))
+
 
     # refresh the BIG-IP state
     big_ip.refresh()
@@ -439,3 +449,11 @@ def test_bigip_refresh(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
 
     for a, b in zip(big_ip._pools, test_pools):
         assert a != b
+
+    # verify virtual servers 
+    assert big_ip.ltm.virtuals.get_collection.called
+    assert len(big_ip._virtuals) == 2
+
+    assert len(big_ip._virtuals) == len(test_virtuals)
+    for a, b in zip(big_ip._virtuals, test_virtuals):
+        assert a == b

@@ -16,6 +16,7 @@ u"""This module provides a class for managing a BIG-IP."""
 # limitations under the License.
 
 from f5_cccl.resource.ltm.pool import BigIPPool
+from f5_cccl.resource.ltm.virtual import VirtualServer
 from f5.bigip import BigIP
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -86,4 +87,13 @@ class CommonBigIP(BigIP):
 
         self._pools = new_pools
 
-        # FIXME: Refresh iapps, virtuals, monitors, and policies
+        new_virtuals = []
+        virtuals = self.ltm.virtuals.get_collection()
+
+        for v in virtuals:
+            virtual = VirtualServer(**v.__dict__)
+            new_virtuals.append(virtual)
+
+        self._virtuals = new_virtuals
+
+        # FIXME: Refresh iapps, monitors, and policies
