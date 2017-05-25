@@ -26,7 +26,7 @@ def validate(validator, services):
         return 'Schema Valid'
     except jsonschema.exceptions.SchemaError:
         return 'Schema Error'
-    except cccl_exc.ValidationError:
+    except cccl_exc.ValidationError as e:
         return 'Validator Error'
 
 
@@ -171,7 +171,8 @@ def test_resources():
     resources = {'virtualServerType': 'virtualServers',
                  'poolType': 'pools',
                  'l7PolicyType': 'l7Policies',
-                 'healthMonitorType': 'monitors'}
+                 'healthMonitorType': 'monitors',
+                 'iAppType': 'iapps'}
 
     schema = validation.read_yaml_or_json(validation.DEFAULT_SCHEMA)
 

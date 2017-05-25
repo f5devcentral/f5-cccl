@@ -84,7 +84,7 @@ class Resource(object):
     def __lt__(self, resource):
         return self.full_path() < resource.full_path()
 
-    def create(self, bigip):
+    def create(self, bigip, data=None):
         u"""Create resource on a BIG-IP system.
 
         The internal data model is applied to the BIG-IP
@@ -101,8 +101,10 @@ class Resource(object):
             F5CcclResourceConflictError: resouce cannot be created because
             it already exists on the BIG-IP
         """
+        if not data:
+            data = self._data
         try:
-            obj = self._uri_path(bigip).create(**self._data)
+            obj = self._uri_path(bigip).create(**data)
             return obj
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
@@ -156,12 +158,12 @@ class Resource(object):
             it does not exist on the BIG-IP
         """
         if not data:
-            data = self.__dict__
+            data = self.data
         try:
             obj = self._uri_path(bigip).load(
                 name=self.name,
                 partition=self.partition)
-            payload = copy.copy(self._data)
+            payload = copy.copy(data)
             if modify:
                 obj.modify(**payload)
             else:

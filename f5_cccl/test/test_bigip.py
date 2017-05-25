@@ -17,6 +17,7 @@ from f5_cccl import bigip
 from f5.bigip import ManagementRoot
 from f5_cccl.resource.ltm.pool import BigIPPool
 from f5_cccl.resource.ltm.virtual import VirtualServer
+from f5_cccl.resource.ltm.app_service import ApplicationService
 import json
 from mock import Mock, patch
 import pytest
@@ -216,20 +217,15 @@ class MockSys():
         self.folders = MockFolders()
 
 
-class MockIapp():
+class Iapp():
     """A mock BIG-IP iapp object."""
 
-    def __init__(self, name=None, template=None, partition=None,
-                 variables=None, tables=None, trafficGroup=None,
-                 description=None):
+    def __init__(self, name=None, **kwargs):
         """Initialize the object."""
         self.name = name
-        self.partition = partition
-        self.template = template
-        self.variables = variables
-        self.tables = tables
-        self.trafficGroup = trafficGroup
-        self.description = description
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        self.raw = self.__dict__
 
     def delete(self):
         """Mock delete method."""
@@ -407,6 +403,7 @@ class MockLtm():
 class MockTm():
     def __init__(self):
         self.ltm = MockLtm()
+        self.sys = MockSys()
 
 
 class MockHealthMonitor():
@@ -440,7 +437,7 @@ class BigIPTest(bigip.CommonBigIP):
         return member
 
     def mock_virtuals_get_collection(self, requests_params=None):
-        """Mock: Return a mocked collection of pools."""
+        """Mock: Return a mocked collection of virtuals."""
         virtuals = []
         for v in self.bigip_data['virtuals']:
             virtual = Virtual(**v)
@@ -457,6 +454,15 @@ class BigIPTest(bigip.CommonBigIP):
 
         return pools
 
+    def mock_iapps_get_collection(self, requests_params=None):
+        """Mock: Return a mocked collection of app svcs."""
+        iapps = []
+        for i in self.bigip_data['iapps']:
+            iapp = Iapp(**i)
+            iapps.append(iapp)
+
+        return iapps
+
     def mock_monitors_get_collection(self, requests_params=None):
         monitors = []
         return monitors
@@ -470,15 +476,13 @@ class BigIPTest(bigip.CommonBigIP):
 
 @pytest.fixture()
 def big_ip():
-    """Fixture to supply a moked BIG-IP."""
+    """Fixture to supply a mocked BIG-IP."""
     # Mock the call to _get_tmos_version(), which tries to make a
     # connection
     with patch.object(ManagementRoot, '_get_tmos_version'):
         big_ip = BigIPTest('1.2.3.4', 'admin', 'admin', 'test1')
-    #big_ip = BigIPTest('10.190.24.182', '443', 'admin', 'admin', ['test1'])
 
     big_ip.tm = MockTm()
-    big_ip.sys = MockSys()
 
     big_ip.tm.ltm.pools.get_collection = \
         Mock(side_effect=big_ip.mock_pools_get_collection)
@@ -492,6 +496,8 @@ def big_ip():
         Mock(side_effect=big_ip.mock_monitors_get_collection)
     big_ip.tm.ltm.monitor.gateway_icmps.get_collection = \
         Mock(side_effect=big_ip.mock_monitors_get_collection)
+    big_ip.tm.sys.application.services.get_collection = \
+        Mock(side_effect=big_ip.mock_iapps_get_collection)
     return big_ip
 
 
@@ -501,11 +507,13 @@ def test_bigip_refresh(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
 
     test_pools = []
     for p in big_ip.bigip_data['pools']:
-        pool = BigIPPool(**p)
-        test_pools.append(pool)
+        test_pools.append(BigIPPool(**p))
     test_virtuals = []
     for v in big_ip.bigip_data['virtuals']:
         test_virtuals.append(VirtualServer(**v))
+    test_iapps = []
+    for i in big_ip.bigip_data['iapps']:
+        test_iapps.append(ApplicationService(**i))
 
     # refresh the BIG-IP state
     big_ip.refresh()
@@ -517,12 +525,8 @@ def test_bigip_refresh(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
     assert len(big_ip._pools) == len(test_pools)
     for pool in test_pools:
         assert big_ip._pools[pool.name] == pool
-
-    # Make a change, pools will not be equal
-    for p in test_pools:
-        p._data['loadBalancingMode'] = 'Not a valid LB mode'
-
-    for pool in test_pools:
+        # Make a change, pools will not be equal
+        pool._data['loadBalancingMode'] = 'Not a valid LB mode'
         assert big_ip._pools[pool.name] != pool
 
     # verify virtual servers 
@@ -532,6 +536,20 @@ def test_bigip_refresh(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
     assert len(big_ip._virtuals) == len(test_virtuals)
     for v in test_virtuals:
         assert big_ip._virtuals[v.name] == v
+        # Make a change, virtuals will not be equal
+        v._data['partition'] = 'NoPartition'
+        assert big_ip._virtuals[v.name] != v
+
+    # verify application services
+    assert big_ip.tm.sys.application.services.get_collection.called
+    assert len(big_ip._iapps) == 2
+
+    assert len(big_ip._iapps) == len(test_iapps)
+    for i in test_iapps:
+        assert big_ip._iapps[i.name] == i
+        # Make a change, iapps will not be equal
+        i._data['template'] = '/Common/NoTemplate'
+        assert big_ip._iapps[i.name] != i
 
 
 def test_bigip_properties(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):

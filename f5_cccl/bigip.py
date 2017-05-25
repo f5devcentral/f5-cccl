@@ -21,6 +21,7 @@ from f5_cccl.resource.ltm.monitor.icmp_monitor import ICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import TCPMonitor
 from f5_cccl.resource.ltm.pool import BigIPPool
 from f5_cccl.resource.ltm.virtual import VirtualServer
+from f5_cccl.resource.ltm.app_service import ApplicationService
 
 from f5.bigip import ManagementRoot
 import requests
@@ -112,7 +113,11 @@ class CommonBigIP(ManagementRoot):
         pools = self.tm.ltm.pools.get_collection(
             requests_params={"params": query})
 
+        iapps = self.tm.sys.application.services.get_collection(
+            requests_params={"params": query})
+
         #  Retrieve the list of policies in the managed partition
+        # FIXME: Refresh policies
         # policies = self.tm.ltm.policys.get_collection(
         #    requests_params={"params": query})
         self._virtuals = {
@@ -124,6 +129,12 @@ class CommonBigIP(ManagementRoot):
         self._pools = {
             p.name: BigIPPool(**p.raw) for p in pools
             if p.name.startswith(self._prefix)
+        }
+
+        #  Refresh the iapp cache
+        self._iapps = {
+            i.name: ApplicationService(**i.raw) for i in iapps
+            if i.name.startswith(self._prefix)
         }
 
         #  Refresh the health monitor cache
@@ -144,8 +155,6 @@ class CommonBigIP(ManagementRoot):
             if m.name.startswith(self._prefix)
         }
 
-        # FIXME: Refresh iapps and policies
-
     @property
     def virtuals(self):
         """Return the index of virtual servers."""
@@ -155,6 +164,11 @@ class CommonBigIP(ManagementRoot):
     def pools(self):
         """Return the index of pools."""
         return self._pools
+
+    @property
+    def app_svcs(self):
+        """Return the index of app services."""
+        return self._iapps
 
     @property
     def http_monitors(self):
