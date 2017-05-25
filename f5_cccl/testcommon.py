@@ -13,10 +13,8 @@
 # limitations under the License.
 
 """Controller Unit Tests.
-
 Units tests for testing command-line args, Marathon state parsing, and
 BIG-IP resource management.
-
 """
 import unittest
 import json
@@ -342,7 +340,6 @@ class MockHealthMonitor(object):
 
 class BigIPTest(unittest.TestCase):
     """BIG-IP configuration tests.
-
     Test BIG-IP configuration given various cloud states and existing
     BIG-IP states
     """
