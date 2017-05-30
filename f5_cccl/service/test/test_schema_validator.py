@@ -160,10 +160,10 @@ def validate_types(validator, schema, services, rsc_type, rscs):
 
 def test_resources():
     """Load a service description and validate it with the schema."""
-    svcfile = 'schemas/tests/service.json'
+    svcfile = 'f5_cccl/schemas/tests/service.json'
     services = json.loads(open(svcfile, 'r').read())
 
-    validator = validation.SchemaValidator()
+    validator = validation.ServiceConfigValidator()
     result = validate(validator, services)
     assert result == 'Schema Valid'
 
