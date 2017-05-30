@@ -19,7 +19,7 @@ from f5_cccl.resource.ltm.monitor.http_monitor import HTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import HTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import ICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import TCPMonitor
-from f5_cccl.resource.ltm.pool import BigIPPool
+from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual import VirtualServer
 from f5_cccl.resource.ltm.app_service import ApplicationService
 
@@ -126,7 +126,7 @@ class CommonBigIP(ManagementRoot):
 
         #  Refresh the pool cache
         self._pools = {
-            p.name: BigIPPool(**p.raw) for p in pools
+            p.name: IcrPool(**p.raw) for p in pools
             if p.name.startswith(self._prefix)
         }
 

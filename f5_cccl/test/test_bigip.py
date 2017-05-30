@@ -15,7 +15,7 @@
 #
 from f5_cccl import bigip
 from f5.bigip import ManagementRoot
-from f5_cccl.resource.ltm.pool import BigIPPool
+from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual import VirtualServer
 from f5_cccl.resource.ltm.app_service import ApplicationService
 import json
@@ -507,7 +507,8 @@ def test_bigip_refresh(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
 
     test_pools = []
     for p in big_ip.bigip_data['pools']:
-        test_pools.append(BigIPPool(**p))
+        pool = IcrPool(**p)
+        test_pools.append(pool)
     test_virtuals = []
     for v in big_ip.bigip_data['virtuals']:
         test_virtuals.append(VirtualServer(**v))
@@ -558,7 +559,7 @@ def test_bigip_properties(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
 
     test_pools = []
     for p in big_ip.bigip_data['pools']:
-        pool = BigIPPool(**p)
+        pool = IcrPool(**p)
         test_pools.append(pool)
     test_virtuals = []
     for v in big_ip.bigip_data['virtuals']:

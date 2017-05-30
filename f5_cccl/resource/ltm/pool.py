@@ -17,8 +17,8 @@ u"""This module provides class for managing resource configuration."""
 #
 
 
-from f5_cccl.resource.ltm.pool_member import BigIPPoolMember
-from f5_cccl.resource.ltm.pool_member import F5CcclPoolMember
+from f5_cccl.resource.ltm.pool_member import ApiPoolMember
+from f5_cccl.resource.ltm.pool_member import IcrPoolMember
 from f5_cccl.resource import Resource
 
 
@@ -93,7 +93,7 @@ class Pool(Resource):
         return bigip.tm.ltm.pools.pool
 
 
-class F5CcclPool(Pool):
+class ApiPool(Pool):
     """Parse the CCCL input to create the canonical Pool."""
     def __init__(self, name, partition, **properties):
         """Parse the CCCL schema input."""
@@ -109,19 +109,19 @@ class F5CcclPool(Pool):
         monitors_config = properties.pop('monitors', None)
         pool_config['monitor'] = self._get_monitors(monitors_config)
 
-        super(F5CcclPool, self).__init__(name, partition,
-                                         members,
-                                         **pool_config)
+        super(ApiPool, self).__init__(name, partition,
+                                      members,
+                                      **pool_config)
 
     def _get_members(self, partition, members):
         """Get a list of members from the pool definition"""
         members_list = list()
         if members:
             for member in members:
-                m = F5CcclPoolMember(name=None,
-                                     partition=partition,
-                                     pool=self,
-                                     **member)
+                m = ApiPoolMember(name=None,
+                                  partition=partition,
+                                  pool=self,
+                                  **member)
                 members_list.append(m)
 
         return members_list
@@ -137,14 +137,14 @@ class F5CcclPool(Pool):
         return "default"
 
 
-class BigIPPool(Pool):
-    """Filter the F5 SDK input to create the canonical Pool."""
+class IcrPool(Pool):
+    """Filter the iControl REST input to create the canonical Pool."""
     def __init__(self, name, partition, **properties):
-        """Parse the BigIP SDK representation of the Pool"""
+        """Parse the iControl REST representation of the Pool"""
         members = self._get_members(**properties)
-        super(BigIPPool, self).__init__(name, partition,
-                                        members,
-                                        **properties)
+        super(IcrPool, self).__init__(name, partition,
+                                      members,
+                                      **properties)
 
     def _get_members(self, **properties):
         """Get a list of members from the pool definition"""
@@ -156,6 +156,6 @@ class BigIPPool(Pool):
             return list()
 
         return [
-            BigIPPoolMember(pool=self,
-                            **member)
+            IcrPoolMember(pool=self,
+                          **member)
             for member in members]

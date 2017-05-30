@@ -18,7 +18,7 @@ import json
 import os
 from pprint import pprint as pp
 
-from f5_cccl.resource.ltm.pool_member import BigIPPoolMember
+from f5_cccl.resource.ltm.pool_member import IcrPoolMember
 from f5_cccl.resource.ltm.pool_member import PoolMember
 
 
@@ -82,7 +82,7 @@ def test_create_bigip_member(pool, bigip_members):
     pp(bigip_members)
     pp(member_cfg)
     # pdb.set_trace()
-    member = BigIPPoolMember(
+    member = IcrPoolMember(
         pool=pool,
         **member_cfg
     )
