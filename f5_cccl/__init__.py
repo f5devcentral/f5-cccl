@@ -21,4 +21,4 @@ libraries that need to read, diff and apply configurations to a BIG-IP.
 
 __version__ = '0.1.0'
 
-from .api import F5CloudServiceManager # noqa: F401, F403
+from .api import F5CloudServiceManager  # noqa: F401, F403
