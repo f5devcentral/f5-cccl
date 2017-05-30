@@ -84,6 +84,9 @@ class Resource(object):
     def __lt__(self, resource):
         return self.full_path() < resource.full_path()
 
+    def __str__(self):
+        return str(self._data)
+
     def create(self, bigip):
         u"""Create resource on a BIG-IP system.
 
