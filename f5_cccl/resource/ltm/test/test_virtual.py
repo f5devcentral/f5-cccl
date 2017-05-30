@@ -24,8 +24,7 @@ import pytest
 cfg_test = {
     'name': 'Virtual-1',
     'partition': 'my_partition',
-    'destination': '1.2.3.4',
-    'servicePort': 80,
+    'destination': '1.2.3.4:80',
     'pool': '/my_partition/pool1',
     'ipProtocol': 'tcp'
 }
@@ -97,7 +96,7 @@ def test_eq():
     assert virtual == virtual2
 
     # not equal
-    virtual2.data['servicePort'] = 8080
+    virtual2.data['destination'] = '1.2.3.4:8080'
     assert virtual != virtual2
 
     # different objects

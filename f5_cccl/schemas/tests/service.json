@@ -43,13 +43,8 @@
       }],
       "virtualServers": [{
 		"name": "vs1",
-		"destination": "192.168.0.1",
-		"servicePort": 80,
-		"defaultPool": "/Project/pool1",
-		"routeDomain": {
-		  "id": 0,
-		  "name": "/Project/rd-0"
-		},
+		"destination": "192.168.0.1:80",
+		"pool": "/Test/pool1",
 		"sourceAddress": "0.0.0.0/0"
 	  }],
       "pools": [

@@ -27,7 +27,6 @@ class VirtualServer(Resource):
                       partition=None,
                       description=None,
                       destination=None,
-                      servicePort=None,
                       ipProtocol=None,
                       pool=None,
                       profilesReference={},
@@ -59,3 +58,13 @@ class VirtualServer(Resource):
 
     def _uri_path(self, bigip):
         return bigip.tm.ltm.virtuals.virtual
+
+
+class ApiVirtualServer(VirtualServer):
+    """Parse the CCCL input to create the canonical Virtual Server."""
+    pass
+
+
+class IcrVirtualServer(VirtualServer):
+    """Parse the iControl REST input to create the canonical Virtual Server."""
+    pass

@@ -15,13 +15,13 @@ u"""This module provides a class for managing a BIG-IP."""
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from f5_cccl.resource.ltm.app_service import ApplicationService
 from f5_cccl.resource.ltm.monitor.http_monitor import HTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import HTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import ICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import TCPMonitor
 from f5_cccl.resource.ltm.pool import IcrPool
-from f5_cccl.resource.ltm.virtual import VirtualServer
-from f5_cccl.resource.ltm.app_service import ApplicationService
+from f5_cccl.resource.ltm.virtual import IcrVirtualServer
 
 from f5.bigip import ManagementRoot
 import requests
@@ -120,7 +120,7 @@ class CommonBigIP(ManagementRoot):
         # policies = self.tm.ltm.policys.get_collection(
         #    requests_params={"params": query})
         self._virtuals = {
-            v.name: VirtualServer(**v.raw) for v in virtuals
+            v.name: IcrVirtualServer(**v.raw) for v in virtuals
             if v.name.startswith(self._prefix)
         }
 

@@ -412,7 +412,8 @@
           description: |
             "Specifies destination IP address information to which 
             the virtual server sends traffic.  This can be an IP address 
-            or a previously created virtual-address."
+            or a previously created virtual-address.  This is of the
+            form <ip_address>%<route_domain>:<service_port>"
           type: "string"
 
         sourceAddress:
@@ -422,24 +423,16 @@
           type: "string"
           default: "0.0.0.0/0"
 
-        routeDomain:
-          description: "The route domain of the virtual address."
-          $ref: "#/definitions/routeDomainType"
-
         destinationMask:
           description: "Specifies the netmask for a network virtual server only"
           type: "string"
           default: "255.255.255.255"
 
-        defaultPool: 
+        pool:
           description: |
             "Specifies the name of a default pool to which you want the virtual
             server to automatically direct traffic."
           type: "string"
-
-        servicePort:
-          description: "Virtual server port"
-          $ref: "#/definitions/portType"
 
         state: 
           description: "Specifies whether the virtual server is enabled or disabled"
@@ -629,7 +622,6 @@
 
       required: 
         - "destination"
-        - "servicePort"
         - "name"
 
   properties: 
