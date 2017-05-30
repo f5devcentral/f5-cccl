@@ -82,7 +82,7 @@ class CommonBigIP(ManagementRoot):
         # BIG-IP resources
         self._virtuals = dict()
         self._pools = dict()
-        self._polices = dict()
+        self._policies = dict()
         self._iapps = dict()
         self._monitors = dict()
 
@@ -154,37 +154,38 @@ class CommonBigIP(ManagementRoot):
             if m.name.startswith(self._prefix)
         }
 
-    @property
-    def virtuals(self):
+    def get_virtuals(self):
         """Return the index of virtual servers."""
         return self._virtuals
 
-    @property
-    def pools(self):
+    def get_pools(self):
         """Return the index of pools."""
         return self._pools
 
-    @property
-    def app_svcs(self):
+    def get_app_svcs(self):
         """Return the index of app services."""
         return self._iapps
 
-    @property
-    def http_monitors(self):
+    def get_http_monitors(self):
         """Return the index of HTTP monitors."""
         return self._monitors.get('http', dict())
 
-    @property
-    def tcp_monitors(self):
+    def get_tcp_monitors(self):
         """Return the index of TCP monitors."""
         return self._monitors.get('tcp', dict())
 
-    @property
-    def https_monitors(self):
+    def get_https_monitors(self):
         """Return the index of HTTPS monitors."""
         return self._monitors.get('https', dict())
 
-    @property
-    def icmp_monitors(self):
+    def get_icmp_monitors(self):
         """Return the index of gateway ICMP monitors."""
         return self._monitors.get('icmp', dict())
+
+    def get_l7policies(self):
+        """Return the index of L7 policies."""
+        return self._policies
+
+    def get_iapps(self):
+        """Return the index of iApps."""
+        return self._iapps

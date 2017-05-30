@@ -568,15 +568,15 @@ def test_bigip_properties(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
     # refresh the BIG-IP state
     big_ip.refresh()
 
-    assert len(big_ip.pools) == len(test_pools)
+    assert len(big_ip.get_pools()) == len(test_pools)
     for p in test_pools:
         assert big_ip._pools[p.name] == p
 
-    assert len(big_ip.virtuals) == len(test_virtuals)
+    assert len(big_ip.get_virtuals()) == len(test_virtuals)
     for v in test_virtuals:
-        assert big_ip.virtuals[v.name] == v
+        assert big_ip._virtuals[v.name] == v
 
-    http_hc = big_ip.http_monitors
-    https_hc = big_ip.https_monitors
-    tcp_hc = big_ip.tcp_monitors
-    icmp_hc = big_ip.icmp_monitors
+    http_hc = big_ip.get_http_monitors()
+    https_hc = big_ip.get_https_monitors()
+    tcp_hc = big_ip.get_tcp_monitors()
+    icmp_hc = big_ip.get_icmp_monitors()
