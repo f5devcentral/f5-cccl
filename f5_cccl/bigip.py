@@ -176,21 +176,30 @@ class CommonBigIP(ManagementRoot):
         """Return the index of app services."""
         return self._iapps
 
+    def get_monitors(self, hm_type=None):
+        """Get all monitors or those of type, hm_type."""
+        if hm_type:
+            monitors = self._monitors.get(hm_type, dict())
+        else:
+            monitors = self._monitors
+
+        return monitors
+
     def get_http_monitors(self):
         """Return the index of HTTP monitors."""
-        return self._monitors.get('http', dict())
+        return self.get_monitors('http')
 
     def get_tcp_monitors(self):
         """Return the index of TCP monitors."""
-        return self._monitors.get('tcp', dict())
+        return self.get_monitors('tcp')
 
     def get_https_monitors(self):
         """Return the index of HTTPS monitors."""
-        return self._monitors.get('https', dict())
+        return self.get_monitors('https')
 
     def get_icmp_monitors(self):
         """Return the index of gateway ICMP monitors."""
-        return self._monitors.get('icmp', dict())
+        return self.get_monitors('icmp')
 
     def get_l7policies(self):
         """Return the index of L7 policies."""

@@ -198,7 +198,7 @@
             - "http"
             - "tcp"
             - "https"
-            - "gateway_icmp"
+            - "icmp"
         name: 
           type: "string"
           description: "Specifies the name of the monitor."
@@ -428,7 +428,7 @@
           type: "string"
           default: "255.255.255.255"
 
-        pool:
+        pool: 
           description: |
             "Specifies the name of a default pool to which you want the virtual
             server to automatically direct traffic."

@@ -53,16 +53,22 @@
             {"address": "172.16.0.100", "port": 8080, "routeDomain": {"id": 0}},
             {"address": "172.16.0.101", "port": 8080, "routeDomain": {"id": 0}}
           ],
-          "monitors": [{ "refname":  "/Common/http"}]
+          "monitors": [{ "refname":  "/Test/myhttp"}]
         }
       ],
       "monitors": [
-        { "name": "/Common/http",
+        { "name": "myhttp",
 		  "type": "http",
 		  "send": "GET /\r\n",
 		  "recv": "SERVER" },
-        { "name": "/Common/gateway_icmp",
-		  "type": "gateway_icmp" }
+        { "name": "myhttps",
+		  "type": "https",
+		  "send": "GET /\r\n",
+		  "recv": "HTTPS-SERVER" },
+        { "name": "my_ping",
+		  "type": "icmp" },
+        { "name": "my_tcp",
+		  "type": "tcp" }
       ],
       "l7Policies": [{
         "name": "wrapper_policy",

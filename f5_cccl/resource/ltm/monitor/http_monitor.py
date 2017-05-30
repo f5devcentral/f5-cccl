@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Hosts an interface for the BIG-IP Monitor Resource.
 
 This module references and holds items relevant to the orchestration of the F5
@@ -20,14 +19,7 @@ BIG-IP for purposes of abstracting the F5-SDK library.
 # limitations under the License.
 #
 
-import logging
-
-from collections import namedtuple
-
 from f5_cccl.resource.ltm.monitor import Monitor
-
-logger = logging.getLogger(__name__)
-default_schema = dict(interval=5, recv="", send="GET /\\r\\n", timeout=16)
 
 
 class HTTPMonitor(Monitor):
@@ -38,7 +30,15 @@ class HTTPMonitor(Monitor):
 
     The major difference is the afforded schema for HTTP specifically.
     """
-    monitor_schema_kvps = None
+    http_properties = dict(interval=5,
+                           timeout=16,
+                           send="GET /\\r\\n",
+                           recv="")
+
+    def __init__(self, name, partition, **kwargs):
+        super(HTTPMonitor, self).__init__(name, partition, **kwargs)
+        for key in ['send', 'recv']:
+            self._data[key] = kwargs.get(key, self.http_properties.get(key))
 
     def _uri_path(self, bigip):
         """Get the URI resource path key for the F5-SDK for HTTP monitor
@@ -48,12 +48,11 @@ class HTTPMonitor(Monitor):
         return bigip.tm.ltm.monitor.https.http
 
 
-def _entry():
-    target = default_schema
-    HTTPMonitor.monitor_schema_kvps = \
-        namedtuple('HTTPMonitor', target.keys())(**target)
+class ApiHTTPMonitor(HTTPMonitor):
+    """Create the canonical HTTP monitor from API input."""
+    pass
 
 
-if __name__ != '__main__':
-    # Don't want bad users directly executing this...
-    _entry()
+class IcrHTTPMonitor(HTTPMonitor):
+    """Create the canonical HTTP monitor from iControl REST response."""
+    pass
