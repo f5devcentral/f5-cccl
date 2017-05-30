@@ -302,9 +302,31 @@ class CloudBigIP(BigIP):
                 for policy in policies:
                         cloud_policy_list.append(policy['name'])
 
+            # Configure iApps
             f5_iapp_list = []
             if self._manage_iapp:
                 f5_iapp_list = self.get_iapp_list(partition)
+            log_sequence('f5_iapp_list', f5_iapp_list)
+            log_sequence('cloud_iapp_list', cloud_iapp_list)
+
+            # iapp delete
+            iapp_delete = list_diff(f5_iapp_list, cloud_iapp_list)
+            log_sequence('iApps to delete', iapp_delete)
+            for iapp in iapp_delete:
+                self.iapp_delete(partition, iapp)
+
+            # iapp add
+            iapp_add = list_diff(cloud_iapp_list, f5_iapp_list)
+            log_sequence('iApps to add', iapp_add)
+            for iapp in iapp_add:
+                self.iapp_create(partition, iapp, svcs[iapp])
+
+            # iapp upate
+            iapp_intersect = list_intersect(cloud_iapp_list, f5_iapp_list)
+            log_sequence('iApps to update', iapp_intersect)
+            for iapp in iapp_intersect:
+                self.iapp_update(partition, iapp, svcs[iapp])
+
             f5_pool_list = []
             if self._manage_pool:
                 f5_pool_list = self.get_pool_list(partition, False)
@@ -327,52 +349,12 @@ class CloudBigIP(BigIP):
                 # the list returned from the cloud environment
                 f5_healthcheck_list = f5_healthcheck_dict.keys()
 
-            log_sequence('f5_iapp_list', f5_iapp_list)
             log_sequence('f5_pool_list', f5_pool_list)
             log_sequence('f5_virtual_list', f5_virtual_list)
             log_sequence('f5_policy_list', f5_policy_list)
             log_sequence('f5_healthcheck_list', f5_healthcheck_list)
-            log_sequence('cloud_iapp_list', cloud_iapp_list)
             log_sequence('cloud_pool_list', cloud_pool_list)
             log_sequence('cloud_virtual_list', cloud_virtual_list)
-
-            # iapp delete
-            iapp_delete = list_diff(f5_iapp_list, cloud_iapp_list)
-            log_sequence('iApps to delete', iapp_delete)
-            for iapp in iapp_delete:
-                self.iapp_delete(partition, iapp)
-
-            # virtual delete
-            virt_delete = list_diff(f5_virtual_list, cloud_virtual_list)
-            log_sequence('Virtual Servers to delete', virt_delete)
-            for virt in virt_delete:
-                self.virtual_delete(partition, virt)
-
-            # policy delete
-            policy_delete = list_diff(f5_policy_list, cloud_policy_list)
-            log_sequence('Policies to delete', policy_delete)
-            for policy in policy_delete:
-                self.policy_delete(partition, policy)
-
-            # pool delete
-            pool_delete_list = list_diff(f5_pool_list, cloud_pool_list)
-            log_sequence('Pools to delete', pool_delete_list)
-            for pool in pool_delete_list:
-                self.pool_delete(partition, pool)
-
-            # healthcheck delete
-            health_delete = list_diff(f5_healthcheck_list,
-                                      cloud_healthcheck_list)
-            log_sequence('Healthchecks to delete', health_delete)
-            for hc in health_delete:
-                self.healthcheck_delete(partition, hc,
-                                        f5_healthcheck_dict[hc]['type'])
-
-            # iapp add
-            iapp_add = list_diff(cloud_iapp_list, f5_iapp_list)
-            log_sequence('iApps to add', iapp_add)
-            for iapp in iapp_add:
-                self.iapp_create(partition, iapp, svcs[iapp])
 
             # healthcheck config needs to happen before pool config because
             # the pool is where we add the healthcheck
@@ -406,12 +388,6 @@ class CloudBigIP(BigIP):
             for virt in virt_add:
                 self.virtual_create(partition, virt, svcs[virt])
 
-            # iapp intersect
-            iapp_intersect = list_intersect(cloud_iapp_list, f5_iapp_list)
-            log_sequence('iApps to update', iapp_intersect)
-            for iapp in iapp_intersect:
-                self.iapp_update(partition, iapp, svcs[iapp])
-
             # healthcheck intersection
             healthcheck_intersect = list_intersect(cloud_healthcheck_list,
                                                    f5_healthcheck_list)
@@ -443,6 +419,32 @@ class CloudBigIP(BigIP):
 
             for virt in virt_intersect:
                 self.virtual_update(partition, virt, svcs[virt])
+
+            # virtual delete
+            virt_delete = list_diff(f5_virtual_list, cloud_virtual_list)
+            log_sequence('Virtual Servers to delete', virt_delete)
+            for virt in virt_delete:
+                self.virtual_delete(partition, virt)
+
+            # policy delete
+            policy_delete = list_diff(f5_policy_list, cloud_policy_list)
+            log_sequence('Policies to delete', policy_delete)
+            for policy in policy_delete:
+                self.policy_delete(partition, policy)
+
+            # pool delete
+            pool_delete_list = list_diff(f5_pool_list, cloud_pool_list)
+            log_sequence('Pools to delete', pool_delete_list)
+            for pool in pool_delete_list:
+                self.pool_delete(partition, pool)
+
+            # healthcheck delete
+            health_delete = list_diff(f5_healthcheck_list,
+                                      cloud_healthcheck_list)
+            log_sequence('Healthchecks to delete', health_delete)
+            for hc in health_delete:
+                self.healthcheck_delete(partition, hc,
+                                        f5_healthcheck_dict[hc]['type'])
 
             # add/update/remove pool members
             # need to iterate over pool_add and pool_intersect (note that
