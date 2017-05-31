@@ -104,6 +104,8 @@ class CommonBigIP(ManagementRoot):
             self.tm.ltm.monitor.gateway_icmps.get_collection(
                 requests_params={"params": query})
         )
+        iapps = self.tm.sys.application.services.get_collection(
+            requests_params={"params": query})
 
         #  Retrieve the list of pools in managed partition
         query = "{}&expandSubcollections=true".format(partition_filter)
@@ -111,9 +113,6 @@ class CommonBigIP(ManagementRoot):
             requests_params={"params": query})
 
         pools = self.tm.ltm.pools.get_collection(
-            requests_params={"params": query})
-
-        iapps = self.tm.sys.application.services.get_collection(
             requests_params={"params": query})
 
         #  Retrieve the list of policies in the managed partition

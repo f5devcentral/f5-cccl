@@ -127,7 +127,6 @@ resource_update_save = Resource.update
 @pytest.fixture
 def bigip():
     bigip = Mock()
-    #bigip = CommonBigIP('10.190.24.182', '443', 'admin', 'admin', ['test'])
     return bigip
 
 
@@ -254,4 +253,4 @@ def test_uri_path(bigip):
     )
     assert appsvc
 
-    assert appsvc._uri_path(bigip) == bigip.sys.application.services.service
+    assert appsvc._uri_path(bigip) == bigip.tm.sys.application.services.service

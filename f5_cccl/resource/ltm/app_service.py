@@ -38,23 +38,34 @@ class ApplicationService(Resource):
                 continue
             self._data[key] = properties.get(key, value)
 
+        # format data for BIG-IP
+        self._cfg = {
+            'name': self.name,
+            'partition': self.partition,
+            'template': self._data['template'],
+            'variables': self._data['variables'],
+            'tables': self._data['tables']
+        }
+        if self._data['options'] is not None:
+            self._cfg.update(self._data['options'])
+
     def __eq__(self, other):
         if not isinstance(other, ApplicationService):
             raise ValueError(
                 "Invalid comparison of Application Service object with object "
                 "of type {}".format(type(other)))
 
+        # check properties
         for key in self.properties:
             if self._data[key] != other.data.get(key, None):
                 return False
-
         return True
 
     def __hash__(self):  # pylint: disable=useless-super-delegation
         return super(ApplicationService, self).__hash__()
 
     def _uri_path(self, bigip):
-        return bigip.sys.application.services.service
+        return bigip.tm.sys.application.services.service
 
     def create(self, bigip):
         """Create an iApp Application Service.
@@ -62,16 +73,7 @@ class ApplicationService(Resource):
         Args:
             bigip (f5.bigip.ManagementRoot): F5 SDK session object
         """
-        data = {
-            'name': self.name,
-            'partition': self.partition,
-            'template': self._data['template'],
-            'variables': self._data['variables'],
-            'tables': self._data['tables']
-        }
-        if self._data['options'] is not None:
-            data.update(self._data['options'])
-        super(ApplicationService, self).create(bigip, data)
+        super(ApplicationService, self).create(bigip, self._cfg)
 
     def update(self, bigip):
         """Update an iApp Application Service.
@@ -79,14 +81,5 @@ class ApplicationService(Resource):
         Args:
             bigip (f5.bigip.ManagementRoot): F5 SDK session object
         """
-        data = {
-            'executeAction': 'definition',
-            'name': self.name,
-            'partition': self.partition,
-            'template': self._data['template'],
-            'variables': self._data['variables'],
-            'tables': self._data['tables']
-        }
-        if self._data['options'] is not None:
-            data.update(self._data['options'])
-        super(ApplicationService, self).update(bigip, data)
+        self._cfg['executeAction'] = 'definition'
+        super(ApplicationService, self).update(bigip, self._cfg)
