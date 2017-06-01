@@ -392,6 +392,10 @@ class BigIPTest(unittest.TestCase):
         self.test_iapp = MockIapp(name=name, partition=partition)
         return self.test_iapp
 
+    def mock_iapp_update_service_load(self, name, partition):
+        """Mock: Wrapper to get previouly created mocked iapp."""
+        return self.test_iapp
+
     def mock_iapp_services_get_collection(self):
         """Mock: Get a mocked collection of iapps."""
         self.test_iapp_list = \
@@ -602,6 +606,7 @@ class BigIPTest(unittest.TestCase):
         self.test_virtual = []
         self.test_pool = []
         self.test_monitor = []
+        self.test_iapp = []
 
         self.bigip.sys = MockSys()
 
