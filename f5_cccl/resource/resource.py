@@ -156,12 +156,12 @@ class Resource(object):
             it does not exist on the BIG-IP
         """
         if not data:
-            data = self.__dict__
+            data = self._data
         try:
             obj = self._uri_path(bigip).load(
                 name=self.name,
                 partition=self.partition)
-            payload = copy.copy(self._data)
+            payload = copy.copy(data)
             if modify:
                 obj.modify(**payload)
             else:
