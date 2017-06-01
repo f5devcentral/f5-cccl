@@ -54,14 +54,15 @@ class SubResource(Resource):
 
 def test_create_resource_without_data():
     u"""Test Resource instantiation with data."""
-    res = Resource(name=None, partition=None)
+    with pytest.raises(ValueError):
+        res = Resource(name=None, partition=None)
 
-    assert res
-    assert not res.name
-    assert not res.partition
-    assert res.data
-    assert not res.data['name']
-    assert not res.data['partition']
+    # assert res
+    # assert not res.name
+    # assert not res.partition
+    # assert res.data
+    # assert not res.data['name']
+    # assert not res.data['partition']
 
 
 def test_create_resource_with_data():
@@ -80,22 +81,26 @@ def test_create_resource_with_data():
 
 def test_create_resource_without_name():
     u"""Test Resource instantiation without name."""
-    res = Resource(name=None, partition=resource_data()['partition'])
+    with pytest.raises(ValueError):
+        res = Resource(name=None,
+                       partition=resource_data()['partition'])
 
-    assert res
-    assert not res.name
-    assert res.partition
-    assert res.partition == "Common"
+    # assert res
+    # assert not res.name
+    # assert res.partition
+    # assert res.partition == "Common"
 
 
 def test_create_resource_without_partition():
     u"""Test Resource instantiation without name."""
-    res = Resource(name=resource_data()['name'], partition=None)
+    with pytest.raises(ValueError):
+        res = Resource(name=resource_data()['name'],
+                       partition=None)
 
-    assert res
-    assert res.name
-    assert res.name == "test_resource"
-    assert not res.partition
+    # assert res
+    # assert res.name
+    # assert res.name == "test_resource"
+    # assert not res.partition
 
 
 def test_get_uri_path(bigip):
