@@ -22,9 +22,7 @@ from f5_cccl.resource import Resource
 class ApplicationService(Resource):
     """Application Service class for managing configuration on BIG-IP."""
 
-    properties = dict(name=None,
-                      partition=None,
-                      template=None,
+    properties = dict(template=None,
                       options={},
                       variables=[],
                       tables=[])
@@ -34,20 +32,10 @@ class ApplicationService(Resource):
         super(ApplicationService, self).__init__(name, partition)
 
         for key, value in self.properties.items():
-            if key == "name" or key == "partition":
-                continue
-            self._data[key] = properties.get(key, value)
-
-        # format data for BIG-IP
-        self._cfg = {
-            'name': self.name,
-            'partition': self.partition,
-            'template': self._data['template'],
-            'variables': self._data['variables'],
-            'tables': self._data['tables']
-        }
-        if self._data['options'] is not None:
-            self._cfg.update(self._data['options'])
+            if key == "options":
+                self._data.update(properties.get(key, value))
+            else:
+                self._data[key] = properties.get(key, value)
 
     def __eq__(self, other):
         if not isinstance(other, ApplicationService):
@@ -55,8 +43,7 @@ class ApplicationService(Resource):
                 "Invalid comparison of Application Service object with object "
                 "of type {}".format(type(other)))
 
-        # check properties
-        for key in self.properties:
+        for key in self._data:
             if self._data[key] != other.data.get(key, None):
                 return False
         return True
@@ -73,7 +60,7 @@ class ApplicationService(Resource):
         Args:
             bigip (f5.bigip.ManagementRoot): F5 SDK session object
         """
-        super(ApplicationService, self).create(bigip, self._cfg)
+        super(ApplicationService, self).create(bigip)
 
     def update(self, bigip):
         """Update an iApp Application Service.
@@ -81,5 +68,5 @@ class ApplicationService(Resource):
         Args:
             bigip (f5.bigip.ManagementRoot): F5 SDK session object
         """
-        self._cfg['executeAction'] = 'definition'
-        super(ApplicationService, self).update(bigip, self._cfg)
+        self._data['executeAction'] = 'definition'
+        super(ApplicationService, self).update(bigip)

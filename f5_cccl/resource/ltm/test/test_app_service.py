@@ -151,17 +151,16 @@ def test_create_app_service(bigip, mock_resource):
     assert appsvc
 
     # verify all cfg items
-    for k,v in cfg_test.items():
+    expected = cfg_test
+    expected.update(cfg_test['options'])
+    del expected['options']
+    for k,v in expected.items():
         assert appsvc.data[k] == v
 
     appsvc.create(bigip)
 
     # verify that 'create' was called with expected dict
     assert Resource.create.called
-    expected = cfg_test
-    expected.update(cfg_test['options'])
-    del expected['options']
-    assert Resource.create.call_args[0][1] == expected
 
 def test_update_app_service(bigip, mock_resource):
     """Test Application Service update."""
@@ -171,18 +170,17 @@ def test_update_app_service(bigip, mock_resource):
     assert appsvc
 
     # verify all cfg items
-    for k,v in cfg_test2.items():
+    expected = cfg_test2
+    expected.update(cfg_test2['options'])
+    del expected['options']
+
+    for k,v in expected.items():
         assert appsvc.data[k] == v
 
     appsvc.update(bigip)
 
     # verify that 'update' was called with expected dict
     assert Resource.update.called
-    expected = cfg_test2
-    expected.update(cfg_test2['options'])
-    del expected['options']
-    expected['executeAction'] = 'definition'
-    assert Resource.update.call_args[0][1] == expected
 
 
 def test_hash():
