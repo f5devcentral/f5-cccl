@@ -1344,6 +1344,21 @@ class CloudBigIP(BigIP):
 
         iapp_def = self.iapp_build_definition(config)
 
+        # Remove encrypted key and its value from SDK variables
+        for v in a.__dict__['variables']:
+            v.pop('encrypted', None)
+
+        no_variable_change = all(v in a.__dict__['variables'] for v in
+                                 iapp_def['variables'])
+        no_table_change = all(t in a.__dict__['tables'] for t in
+                              iapp_def['tables'])
+        no_option_change = all(config['iapp']['options'][k] == v for k, v in
+                               a.__dict__.iteritems() if k in
+                               config['iapp']['options'])
+
+        if no_variable_change and no_table_change and no_option_change:
+            return
+
         a.update(
             executeAction='definition',
             name=name,
