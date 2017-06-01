@@ -110,12 +110,12 @@ class PoolMember(Resource):
         return urlquote(self._data['name'])
 
 
-class BigIPPoolMember(PoolMember):
-    """PoolMember instantiated from F5 SDK pool member object."""
+class IcrPoolMember(PoolMember):
+    """PoolMember instantiated from iControl REST pool member object."""
     pass
 
 
-class F5CcclPoolMember(PoolMember):
+class ApiPoolMember(PoolMember):
     """PoolMember instantiated from F5 CCCL schema input."""
     def __init__(self, name, partition, pool=None, **properties):
         u"""Create a PoolMember instance from CCCL PoolMemberType.
@@ -147,10 +147,10 @@ class F5CcclPoolMember(PoolMember):
                 port,
                 route_domain)
 
-        super(F5CcclPoolMember, self).__init__(name=name,
-                                               partition=partition,
-                                               pool=pool,
-                                               **properties)
+        super(ApiPoolMember, self).__init__(name=name,
+                                            partition=partition,
+                                            pool=pool,
+                                            **properties)
 
     @staticmethod
     def _init_member_name(address, port, route_domain):

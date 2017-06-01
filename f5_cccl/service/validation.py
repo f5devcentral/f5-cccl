@@ -18,13 +18,13 @@
 
 from __future__ import print_function
 import f5_cccl.exceptions as cccl_exc
-import simplejson as json
 import jsonschema
-from jsonschema import validators
 from jsonschema import Draft4Validator
+from jsonschema import validators
+import simplejson as json
 import yaml
 
-DEFAULT_SCHEMA = "./schemas/cccl-api-schema.yml"
+DEFAULT_SCHEMA = "./f5_cccl/schemas/cccl-api-schema.yml"
 
 
 def read_yaml(target):
@@ -51,7 +51,7 @@ def read_yaml_or_json(target):
         raise cccl_exc.F5CcclError('json or yaml file expected.')
 
 
-class SchemaValidator(object):
+class ServiceConfigValidator(object):
     """A schema validator used by f5-cccl service manager.
 
     Accepts a json BIG-IP service configuration and validates it against

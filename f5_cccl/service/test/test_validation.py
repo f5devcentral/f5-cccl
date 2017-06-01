@@ -33,7 +33,7 @@ mock_validators_extend = Mock()
 
 
 class TestSchemaValidator(object):
-    """Test Class for testing validator.SchemaValidator"""
+    """Test Class for testing validator.ServiceConfigValidator"""
 
     @pytest.fixture()
     def store_code_space(self):
@@ -46,7 +46,7 @@ class TestSchemaValidator(object):
         with patch('f5_cccl.service.validation.read_yaml_or_json',
                    read_yaml_or_json, create=True):
             self.validator = \
-                f5_cccl.service.validation.SchemaValidator(schema=self.schema)
+                f5_cccl.service.validation.ServiceConfigValidator(schema=self.schema)
         self.read_yaml_or_json = read_yaml_or_json
 
     @pytest.fixture()
@@ -64,10 +64,10 @@ class TestSchemaValidator(object):
     def test__init__(self):
         self.read_yaml_or_json.assert_called_once_with(self.schema)
         assert self.read_yaml_or_json() == self.validator.schema, \
-            "SchemaValidator.schema is what we expect.."
+            "ServiceConfigValidator.schema is what we expect.."
 
     def test__set_defaults(self):
-        set_defaults = self.validator._SchemaValidator__set_defaults
+        set_defaults = self.validator._ServiceConfigValidator__set_defaults
         validator, properties, instance, schema = \
             ('validator', Mock(), Mock(), 'schema')
         errors = [1, 2, 3]
@@ -86,7 +86,7 @@ class TestSchemaValidator(object):
         self.validator._extend_with_default(validator_class)
         validators.extend.assert_called_once_with(
             validator_class,
-            dict(properties=self.validator._SchemaValidator__set_defaults))
+            dict(properties=self.validator._ServiceConfigValidator__set_defaults))
         assert self.validator.validate_properties == \
             validator_class.VALIDATORS["properties"], \
             "Confirm validator properties"

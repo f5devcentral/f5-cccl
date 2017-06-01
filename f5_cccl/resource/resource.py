@@ -56,7 +56,12 @@ class Resource(object):
             name (string): the name of the resource
             partition (string): the resource partition
         """
-        self._data = {}
+        if not name or not partition:
+            raise ValueError(
+                "must have at least name({}) and partition({})".format(
+                    name, partition))
+
+        self._data = dict()
         self._data['name'] = name
         self._data['partition'] = partition
 
@@ -83,6 +88,9 @@ class Resource(object):
 
     def __lt__(self, resource):
         return self.full_path() < resource.full_path()
+
+    def __str__(self):
+        return str(self._data)
 
     def create(self, bigip):
         u"""Create resource on a BIG-IP system.

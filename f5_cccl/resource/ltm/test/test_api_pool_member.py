@@ -16,7 +16,7 @@
 
 import copy
 
-from f5_cccl.resource.ltm.pool_member import F5CcclPoolMember
+from f5_cccl.resource.ltm.pool_member import ApiPoolMember
 from f5_cccl.resource.ltm.pool_member import PoolMember
 
 from mock import MagicMock
@@ -84,12 +84,12 @@ POOL_PROPERTIES = PoolMember.properties
 
 
 def test_create_cccl_member_min_config(pool, members):
-    """Test creation of F5CcclPoolMember from bare config."""
+    """Test creation of ApiPoolMember from bare config."""
     cfg_name = "member_min_config"
     partition = "Common"
 
     # pdb.set_trace()
-    member = F5CcclPoolMember(
+    member = ApiPoolMember(
         name=None,
         partition=partition,
         pool=pool,
@@ -122,11 +122,11 @@ def test_create_cccl_member_min_config(pool, members):
 
 
 def test_create_cccl_member_w_route_domain(pool, members):
-    """Test creation of F5CcclPoolMember from bare config w route domain."""
+    """Test creation of ApiPoolMember from bare config w route domain."""
     cfg_name = "member_w_route_domain"
     partition = "Common"
 
-    member = F5CcclPoolMember(
+    member = ApiPoolMember(
         name=None,
         partition=partition,
         pool=pool,
@@ -159,12 +159,12 @@ def test_create_cccl_member_w_route_domain(pool, members):
 
 
 def test_create_cccl_member_no_port(pool, members):
-    """Test of F5CcclPoolMember create without name or port."""
+    """Test of ApiPoolMember create without name or port."""
     cfg_name = "member_no_port"
     partition = "Common"
 
     with pytest.raises(TypeError):
-        member = F5CcclPoolMember(
+        member = ApiPoolMember(
             name=None,
             partition=partition,
             pool=pool,
@@ -174,12 +174,12 @@ def test_create_cccl_member_no_port(pool, members):
 
 
 def test_create_cccl_member_no_address(pool, members):
-    """Test of F5CcclPoolMember create without name or address."""
+    """Test of ApiPoolMember create without name or address."""
     cfg_name = "member_no_address"
     partition = "Common"
 
     with pytest.raises(TypeError):
-        member = F5CcclPoolMember(
+        member = ApiPoolMember(
             name=None,
             partition=partition,
             pool=pool,
@@ -189,11 +189,11 @@ def test_create_cccl_member_no_address(pool, members):
 
 
 def test_create_cccl_member_w_nonzero_route_domain(pool, members):
-    """Test of F5CcclPoolMember create with non-zero route-domain."""
+    """Test of ApiPoolMember create with non-zero route-domain."""
     cfg_name = "member_w_nonzero_route_domain"
     partition = "Common"
 
-    member = F5CcclPoolMember(
+    member = ApiPoolMember(
         name=None,
         partition=partition,
         pool=pool,
@@ -226,12 +226,12 @@ def test_create_cccl_member_w_nonzero_route_domain(pool, members):
 
 
 def test_create_cccl_member_min_ipv6_config(pool, members):
-    """Test of F5CcclPoolMember create with IPv6 address."""
+    """Test of ApiPoolMember create with IPv6 address."""
     cfg_name = "member_min_ipv6_config"
     partition = "Common"
 
     # pdb.set_trace()
-    member = F5CcclPoolMember(
+    member = ApiPoolMember(
         name=None,
         partition=partition,
         pool=pool,
@@ -265,12 +265,12 @@ def test_create_cccl_member_min_ipv6_config(pool, members):
 
 
 def test_create_cccl_member_min_ipv6_rd_config(pool, members):
-    """Test of F5CcclPoolMember create with IPv6 address and route domain."""
+    """Test of ApiPoolMember create with IPv6 address and route domain."""
     cfg_name = "member_min_ipv6_rd_config"
     partition = "Common"
 
     # pdb.set_trace()
-    member = F5CcclPoolMember(
+    member = ApiPoolMember(
         name=None,
         partition=partition,
         pool=pool,
@@ -304,12 +304,12 @@ def test_create_cccl_member_min_ipv6_rd_config(pool, members):
 
 
 def test_create_cccl_member_min_config_w_name(pool, members):
-    """Test of F5CcclPoolMember create with a name."""
+    """Test of ApiPoolMember create with a name."""
     cfg_name = "member_min_config_w_name"
     partition = "Common"
 
     # pdb.set_trace()
-    member = F5CcclPoolMember(
+    member = ApiPoolMember(
         partition=partition,
         pool=pool,
         **members[cfg_name]

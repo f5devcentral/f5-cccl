@@ -15,13 +15,13 @@ u"""This module provides a class for managing a BIG-IP."""
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from f5_cccl.resource.ltm.app_service import ApplicationService
 from f5_cccl.resource.ltm.monitor.http_monitor import HTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import HTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import ICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import TCPMonitor
-from f5_cccl.resource.ltm.pool import BigIPPool
-from f5_cccl.resource.ltm.virtual import VirtualServer
-from f5_cccl.resource.ltm.app_service import ApplicationService
+from f5_cccl.resource.ltm.pool import IcrPool
+from f5_cccl.resource.ltm.virtual import IcrVirtualServer
 
 from f5.bigip import ManagementRoot
 import requests
@@ -82,7 +82,7 @@ class CommonBigIP(ManagementRoot):
         # BIG-IP resources
         self._virtuals = dict()
         self._pools = dict()
-        self._polices = dict()
+        self._policies = dict()
         self._iapps = dict()
         self._monitors = dict()
 
@@ -120,13 +120,13 @@ class CommonBigIP(ManagementRoot):
         # policies = self.tm.ltm.policys.get_collection(
         #    requests_params={"params": query})
         self._virtuals = {
-            v.name: VirtualServer(**v.raw) for v in virtuals
+            v.name: IcrVirtualServer(**v.raw) for v in virtuals
             if v.name.startswith(self._prefix)
         }
 
         #  Refresh the pool cache
         self._pools = {
-            p.name: BigIPPool(**p.raw) for p in pools
+            p.name: IcrPool(**p.raw) for p in pools
             if p.name.startswith(self._prefix)
         }
 
@@ -154,37 +154,38 @@ class CommonBigIP(ManagementRoot):
             if m.name.startswith(self._prefix)
         }
 
-    @property
-    def virtuals(self):
+    def get_virtuals(self):
         """Return the index of virtual servers."""
         return self._virtuals
 
-    @property
-    def pools(self):
+    def get_pools(self):
         """Return the index of pools."""
         return self._pools
 
-    @property
-    def app_svcs(self):
+    def get_app_svcs(self):
         """Return the index of app services."""
         return self._iapps
 
-    @property
-    def http_monitors(self):
+    def get_http_monitors(self):
         """Return the index of HTTP monitors."""
         return self._monitors.get('http', dict())
 
-    @property
-    def tcp_monitors(self):
+    def get_tcp_monitors(self):
         """Return the index of TCP monitors."""
         return self._monitors.get('tcp', dict())
 
-    @property
-    def https_monitors(self):
+    def get_https_monitors(self):
         """Return the index of HTTPS monitors."""
         return self._monitors.get('https', dict())
 
-    @property
-    def icmp_monitors(self):
+    def get_icmp_monitors(self):
         """Return the index of gateway ICMP monitors."""
         return self._monitors.get('icmp', dict())
+
+    def get_l7policies(self):
+        """Return the index of L7 policies."""
+        return self._policies
+
+    def get_iapps(self):
+        """Return the index of iApps."""
+        return self._iapps
