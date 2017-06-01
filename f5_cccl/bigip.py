@@ -22,7 +22,6 @@ from f5_cccl.resource.ltm.monitor.icmp_monitor import ICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import TCPMonitor
 from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual import IcrVirtualServer
-from f5_cccl.resource.ltm.app_service import ApplicationService
 from f5_cccl.resource.ltm.node import Node
 
 from f5.bigip import ManagementRoot
