@@ -16,4 +16,4 @@
 """This module implements the F5 CCCL Resource super class."""
 
 
-from .monitor import Monitor  # noqa: F401, F403 pylint: disable=wildcard-import
+from .monitor import Monitor  # noqa: F401, F403
