@@ -17,10 +17,38 @@ from f5_cccl import bigip
 from f5.bigip import ManagementRoot
 from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual import VirtualServer
+from f5_cccl.resource.ltm.node import Node
 from f5_cccl.resource.ltm.app_service import ApplicationService
 import json
 from mock import Mock, patch
 import pytest
+
+
+class MockNode():
+    """A mock BIG-IP node."""
+
+    def __init__(self, name, **kwargs):
+        """Initialize the object."""
+        self.name = name
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        self.raw = self.__dict__
+
+    def modify(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def update(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def create(self, partition=None, name=None, **kwargs):
+        """Create the node object."""
+        pass
+
+    def delete(self):
+        """Delete the node object."""
+        pass
 
 
 class Pool():
@@ -46,7 +74,7 @@ class Pool():
         pass
 
     def delete(self):
-        """Delet the pool object."""
+        """Delete the pool object."""
         pass
 
 
@@ -390,6 +418,18 @@ class MockPools():
         pass
 
 
+class MockNodes():
+    """A mock Ltm nodes object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.node = MockNode('test')
+
+    def get_collection(self):
+        """Get collection of nodes."""
+        pass
+
+
 class MockLtm():
     """A mock BIG-IP ltm object."""
 
@@ -398,6 +438,7 @@ class MockLtm():
         self.monitor = MockMonitor()
         self.virtuals = MockVirtuals()
         self.pools = MockPools()
+        self.nodes = MockNodes()
 
 
 class MockTm():
@@ -467,6 +508,15 @@ class BigIPTest(bigip.CommonBigIP):
         monitors = []
         return monitors
 
+    def mock_nodes_get_collection(self, requests_params=None):
+        """Mock: Return a mocked collection of nodes."""
+        nodes = []
+        for n in self.bigip_data['nodes']:
+            node = MockNode(**n)
+            nodes.append(node)
+
+        return nodes
+
     def read_test_data(self, bigip_state):
         """Read test data for the Big-IP state."""
         # Read the BIG-IP state
@@ -481,6 +531,7 @@ def big_ip():
     # connection
     with patch.object(ManagementRoot, '_get_tmos_version'):
         big_ip = BigIPTest('1.2.3.4', 'admin', 'admin', 'test1')
+    #big_ip = BigIPTest('10.190.24.182', 'admin', 'admin', 'test')
 
     big_ip.tm = MockTm()
 
@@ -498,6 +549,9 @@ def big_ip():
         Mock(side_effect=big_ip.mock_monitors_get_collection)
     big_ip.tm.sys.application.services.get_collection = \
         Mock(side_effect=big_ip.mock_iapps_get_collection)
+    big_ip.tm.ltm.nodes.get_collection = \
+        Mock(side_effect=big_ip.mock_nodes_get_collection)
+
     return big_ip
 
 
@@ -515,6 +569,9 @@ def test_bigip_refresh(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
     test_iapps = []
     for i in big_ip.bigip_data['iapps']:
         test_iapps.append(ApplicationService(**i))
+    test_nodes = []
+    for n in big_ip.bigip_data['nodes']:
+        test_nodes.append(Node(**n))
 
     # refresh the BIG-IP state
     big_ip.refresh()
@@ -552,6 +609,13 @@ def test_bigip_refresh(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
         i._data['template'] = '/Common/NoTemplate'
         assert big_ip._iapps[i.name] != i
 
+    # verify nodes
+    assert big_ip.tm.ltm.nodes.get_collection.called
+    assert len(big_ip._nodes) == 3
+
+    assert len(big_ip._nodes) == len(test_nodes)
+    for n in test_nodes:
+        assert big_ip._nodes[n.name] == n
 
 def test_bigip_properties(big_ip, bigip_state='f5_cccl/test/bigip_data.json'):
     """Test BIG-IP properties function."""

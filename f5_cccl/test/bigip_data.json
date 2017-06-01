@@ -714,5 +714,79 @@
                 }
             ]
         }
+    ],
+    "nodes": [
+        {
+            "address": "5.6.7.8",
+            "connectionLimit": 0,
+            "dynamicRatio": 1,
+            "ephemeral": "false",
+            "fqdn": {
+                "addressFamily": "ipv4",
+                "autopopulate": "disabled",
+                "downInterval": 5,
+                "interval": "3600"
+            },
+            "fullPath": "/test/5.6.7.8",
+            "generation": 15842,
+            "kind": "tm:ltm:node:nodestate",
+            "logging": "disabled",
+            "monitor": "default",
+            "name": "5.6.7.8",
+            "partition": "test",
+            "rateLimit": "disabled",
+            "ratio": 1,
+            "selfLink": "https://localhost/mgmt/tm/ltm/node/~test~5.6.7.8?ver=12.1.0",
+            "session": "user-enabled",
+            "state": "unchecked"
+        },
+        {
+            "address": "10.2.3.4",
+            "connectionLimit": 0,
+            "dynamicRatio": 1,
+            "ephemeral": "false",
+            "fqdn": {
+                "addressFamily": "ipv4",
+                "autopopulate": "disabled",
+                "downInterval": 5,
+                "interval": "3600"
+            },
+            "fullPath": "/test/10.2.3.4",
+            "generation": 15866,
+            "kind": "tm:ltm:node:nodestate",
+            "logging": "disabled",
+            "monitor": "default",
+            "name": "10.2.3.4",
+            "partition": "test",
+            "rateLimit": "disabled",
+            "ratio": 1,
+            "selfLink": "https://localhost/mgmt/tm/ltm/node/~test~10.2.3.4?ver=12.1.0",
+            "session": "user-enabled",
+            "state": "unchecked"
+        },
+        {
+            "address": "10.2.3.5",
+            "connectionLimit": 0,
+            "dynamicRatio": 1,
+            "ephemeral": "false",
+            "fqdn": {
+                "addressFamily": "ipv4",
+                "autopopulate": "disabled",
+                "downInterval": 5,
+                "interval": "3600"
+            },
+            "fullPath": "/test/10.2.3.5%0",
+            "generation": 15872,
+            "kind": "tm:ltm:node:nodestate",
+            "logging": "disabled",
+            "monitor": "default",
+            "name": "10.2.3.5%0",
+            "partition": "test",
+            "rateLimit": "disabled",
+            "ratio": 1,
+            "selfLink": "https://localhost/mgmt/tm/ltm/node/~test~10.2.3.5%250?ver=12.1.0",
+            "session": "user-enabled",
+            "state": "unchecked"
+        }
     ]
 }
