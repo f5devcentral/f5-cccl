@@ -54,19 +54,11 @@ class ApplicationService(Resource):
     def _uri_path(self, bigip):
         return bigip.tm.sys.application.services.service
 
-    def create(self, bigip):
-        """Create an iApp Application Service.
-
-        Args:
-            bigip (f5.bigip.ManagementRoot): F5 SDK session object
-        """
-        super(ApplicationService, self).create(bigip)
-
-    def update(self, bigip):
+    def update(self, bigip, data=None, modify=False):
         """Update an iApp Application Service.
 
         Args:
             bigip (f5.bigip.ManagementRoot): F5 SDK session object
         """
         self._data['executeAction'] = 'definition'
-        super(ApplicationService, self).update(bigip)
+        super(ApplicationService, self).update(bigip, data=data, modify=modify)
