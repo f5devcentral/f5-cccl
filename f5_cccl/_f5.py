@@ -315,18 +315,6 @@ class CloudBigIP(BigIP):
             for iapp in iapp_delete:
                 self.iapp_delete(partition, iapp)
 
-            # iapp add
-            iapp_add = list_diff(cloud_iapp_list, f5_iapp_list)
-            log_sequence('iApps to add', iapp_add)
-            for iapp in iapp_add:
-                self.iapp_create(partition, iapp, svcs[iapp])
-
-            # iapp upate
-            iapp_intersect = list_intersect(cloud_iapp_list, f5_iapp_list)
-            log_sequence('iApps to update', iapp_intersect)
-            for iapp in iapp_intersect:
-                self.iapp_update(partition, iapp, svcs[iapp])
-
             f5_pool_list = []
             if self._manage_pool:
                 f5_pool_list = self.get_pool_list(partition, False)
@@ -445,6 +433,18 @@ class CloudBigIP(BigIP):
             for hc in health_delete:
                 self.healthcheck_delete(partition, hc,
                                         f5_healthcheck_dict[hc]['type'])
+
+            # iapp add
+            iapp_add = list_diff(cloud_iapp_list, f5_iapp_list)
+            log_sequence('iApps to add', iapp_add)
+            for iapp in iapp_add:
+                self.iapp_create(partition, iapp, svcs[iapp])
+
+            # iapp update
+            iapp_intersect = list_intersect(cloud_iapp_list, f5_iapp_list)
+            log_sequence('iApps to update', iapp_intersect)
+            for iapp in iapp_intersect:
+                self.iapp_update(partition, iapp, svcs[iapp])
 
             # add/update/remove pool members
             # need to iterate over pool_add and pool_intersect (note that
