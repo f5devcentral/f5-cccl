@@ -22,6 +22,7 @@ from f5_cccl.resource.ltm.monitor.icmp_monitor import ICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import TCPMonitor
 from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual import IcrVirtualServer
+from f5_cccl.resource.ltm.node import Node
 
 from f5.bigip import ManagementRoot
 import requests
@@ -85,6 +86,7 @@ class CommonBigIP(ManagementRoot):
         self._policies = dict()
         self._iapps = dict()
         self._monitors = dict()
+        self._nodes = dict()
 
     def refresh(self):
         """Refresh the internal cache with the BIG-IP state."""
@@ -105,6 +107,8 @@ class CommonBigIP(ManagementRoot):
                 requests_params={"params": query})
         )
         iapps = self.tm.sys.application.services.get_collection(
+            requests_params={"params": query})
+        nodes = self.tm.ltm.nodes.get_collection(
             requests_params={"params": query})
 
         #  Retrieve the list of pools in managed partition
@@ -134,6 +138,12 @@ class CommonBigIP(ManagementRoot):
         self._iapps = {
             i.name: ApplicationService(**i.raw) for i in iapps
             if i.name.startswith(self._prefix)
+        }
+
+        #  Refresh the node cache
+        self._nodes = {
+            n.name: Node(**n.raw) for n in nodes
+            if n.name.startswith(self._prefix)
         }
 
         #  Refresh the health monitor cache
