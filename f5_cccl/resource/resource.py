@@ -65,10 +65,6 @@ class Resource(object):
         self._data['name'] = name
         self._data['partition'] = partition
 
-    def __dict__(self):
-        u"""Create a dictionary of the resource data."""
-        return self._data
-
     def __eq__(self, resource):
         u"""Compare two resources for equality.
 
