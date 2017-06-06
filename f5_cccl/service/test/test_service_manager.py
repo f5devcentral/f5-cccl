@@ -17,6 +17,7 @@
 import json
 import pickle
 import pytest
+from f5_cccl.test.conftest import big_ip
 
 from f5_cccl.api import F5CloudServiceManager
 from f5_cccl.bigip import CommonBigIP
@@ -50,7 +51,7 @@ def xtest_apply_config(service_manager):
 class TestServiceConfigDeployer:
 
     def setup(self):
-        self.bigip = MagicMock()
+        self.bigip = big_ip()
         self.partition = "Test"
 
         svcfile = 'f5_cccl/schemas/tests/service.json'
@@ -71,4 +72,21 @@ class TestServiceConfigDeployer:
         deployer = ServiceConfigDeployer(
             self.bigip)
 
-        deployer.deploy(self.desired_config)
+        assert 0 == deployer.deploy(self.desired_config)
+
+    def test_delete_nodes(self):
+        deployer = ServiceConfigDeployer(self.bigip)
+
+        # mock the call to _delete_resources and then check that the args
+        # are correct
+        deployer._delete_resources = Mock()
+
+        deployer._cleanup_nodes()
+
+        assert deployer._delete_resources.called
+        assert 1 == deployer._delete_resources.call_count
+        assert 2 == len(deployer._delete_resources.call_args[0][0])
+        nodes = deployer._delete_resources.call_args[0][0]
+        expected_set = set(['10.2.3.4', '10.2.3.5%0'])
+        for node in nodes:
+            assert node.name in expected_set
