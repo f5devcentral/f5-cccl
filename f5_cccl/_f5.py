@@ -263,8 +263,10 @@ class CloudBigIP(BigIP):
         Args:
             config: BIG-IP config dict
         """
-        svcs = config.get('services', {})
-        policies = config.get('policies', [])
+        svcs = config.get('virtualServers', {})
+        policies = config.get('l7Policies', [])
+        pools = config.get('pools', [])
+        monitors = config.get('monitors', [])
 
         unique_partitions = self.get_managed_partition_names(self._partitions)
         for partition in unique_partitions:
@@ -272,11 +274,10 @@ class CloudBigIP(BigIP):
 
             cloud_virtual_list = []
             if self._manage_virtual:
-                for key in svcs.keys():
-                    cloud_virtual_list = \
-                        [x for x in svcs.keys()
-                         if svcs[x]['partition'] == partition and
-                         'iapp' not in svcs[x] and svcs[x]['virtual']]
+                cloud_virtual_list = \
+                    [x for x in svcs.keys()
+                     if svcs[x]['partition'] == partition and
+                     'iapp' not in svcs[x] and svcs[x]['virtual']]
             cloud_pool_list = []
             if self._manage_pool:
                 cloud_pool_list = \
@@ -292,10 +293,9 @@ class CloudBigIP(BigIP):
 
             cloud_healthcheck_list = []
             if self._manage_monitor:
-                for pool in cloud_pool_list:
-                    for hc in svcs[pool].get('health', {}):
-                        if 'protocol' in hc:
-                            cloud_healthcheck_list.append(hc['name'])
+                for mon in monitors:
+                    if mon['partition'] == partition and 'protocol' in mon:
+                        cloud_healthcheck_list.append(mon['name'])
 
             cloud_policy_list = []
             if self._manage_policy:
@@ -352,16 +352,17 @@ class CloudBigIP(BigIP):
             log_sequence('Healthchecks to add', healthcheck_add)
 
             # healthcheck add
-            for key in svcs:
-                for hc in svcs[key].get('health', {}):
-                    if 'name' in hc and hc['name'] in healthcheck_add:
-                        self.healthcheck_create(partition, hc)
+            for mon in monitors:
+                if (mon['partition'] == partition and
+                    mon['name'] in healthcheck_add):
+                    self.healthcheck_create(partition, mon)
 
             # pool add
             pool_add = list_diff(cloud_pool_list, f5_pool_list)
             log_sequence('Pools to add', pool_add)
-            for pool in pool_add:
-                self.pool_create(partition, pool, svcs[pool])
+            for pool in pools:
+                if 'name' in pool and pool['name'] in pool_add:
+                    self.pool_create(partition, pool)
 
             # policy add
             policy_add = list_diff(cloud_policy_list, f5_policy_list)
@@ -382,16 +383,17 @@ class CloudBigIP(BigIP):
             log_sequence('Healthchecks to update', healthcheck_intersect)
 
             # healthcheck intersect
-            for key in svcs:
-                for hc in svcs[key].get('health', {}):
-                    if 'name' in hc and hc['name'] in healthcheck_intersect:
-                        self.healthcheck_update(partition, key, hc)
+            for mon in monitors:
+                if (mon['partition'] == partition and
+                    mon['name'] in healthcheck_intersect):
+                    self.healthcheck_update(partition, mon['name'], mon)
 
             # pool intersection
             pool_intersect = list_intersect(cloud_pool_list, f5_pool_list)
             log_sequence('Pools to update', pool_intersect)
-            for pool in pool_intersect:
-                self.pool_update(partition, pool, svcs[pool])
+            for pool in pools:
+                if 'name' in pool and pool['name'] in pool_intersect:
+                    self.pool_update(partition, pool['name'], pool)
 
             # policy intersection
             policy_intersect = list_intersect(cloud_policy_list,
@@ -579,7 +581,7 @@ class CloudBigIP(BigIP):
                 pool_list.append(pool.name)
         return pool_list
 
-    def pool_create(self, partition, pool, data):
+    def pool_create(self, partition, pool):
         """Create a pool.
 
         Args:
@@ -587,10 +589,10 @@ class CloudBigIP(BigIP):
             pool: Name of pool to create
             data: BIG-IP config dict
         """
-        logger.debug("Creating pool %s", pool)
+        logger.debug("Creating pool %s", pool['name'])
         p = self.ltm.pools.pool
 
-        p.create(partition=partition, name=pool, **data['pool'])
+        p.create(partition=partition, **pool)
 
     def pool_delete(self, partition, pool):
         """Delete a pool.
@@ -611,7 +613,6 @@ class CloudBigIP(BigIP):
             pool: Name of pool to update
             data: BIG-IP config dict
         """
-        data = data['pool']
         pool = self.get_pool(partition, pool)
 
         def find_change(p, d):
