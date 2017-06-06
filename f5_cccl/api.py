@@ -40,10 +40,14 @@ class F5CloudServiceManager(object):
                  port=443, token=None):
         """Initialize an instance of the F5 CCCL service manager.
 
-        :param bigip:  Interface to BIG-IP device, f5-common-python
-        ManagementRoot (f5.bigip.ManagementRoot)
+        :param hostname: BIG-IP hostname or ip address.
+        :param username: Access BIG-IP as user
+        :param password: User password
         :param partition: Name of BIG-IP partition to manage.
-        :param prefix: Optional string to prepend to resource names.
+        :param prefix: Optional string to prepend to resource names
+        (default: None).
+        :param port: Port to use for connection (default: 443)
+        :param token: Use for token authentication (default None)
         """
         self._bigip = CommonBigIP(hostname,
                                   username,

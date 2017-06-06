@@ -20,7 +20,6 @@ from collections import namedtuple
 from glob import glob
 from mock import Mock
 from mock import MagicMock
-# from yaml import load
 
 import f5.bigip.resource
 
@@ -35,7 +34,6 @@ import f5_cccl.resource.ltm.monitor.tcp_monitor as tcp
 
 from icontrol.exceptions import iControlUnexpectedHTTPError
 
-# import monitor_schemas
 
 BigIPConnection = \
     namedtuple('Connection', 'hostname, port, username, password, image')

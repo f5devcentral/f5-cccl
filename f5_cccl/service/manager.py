@@ -127,7 +127,13 @@ class ServiceConfigDeployer(object):
         return (create_monitors, update_monitors, delete_monitors)
 
     def deploy(self, desired_config):  # pylint: disable=too-many-locals
-        """Deploy the managed partition with the desired config."""
+        """Deploy the managed partition with the desired config.
+
+        :param desired_config: A dictionary with the configuration
+        to be applied to the bigip managed partition.
+
+        :returns: The number of tasks that could not be completed.
+        """
         self._bigip.refresh()
 
         # Get the list of virtual server tasks
@@ -152,23 +158,34 @@ class ServiceConfigDeployer(object):
 
         taskq_len = len(create_tasks) + len(update_tasks) + len(delete_tasks)
 
+        # 'finished' indicates that the task queue is empty, or there is
+        # no way to continue to make progress.  If there are errors in
+        # deploying any resource, it is saved in the queue until another
+        # pass can be made to deploy the configuration.  When we have
+        # gone through the queue on a pass without shrinking the task
+        # queue, it is determined that progress has stopped and the
+        # loop is exited with work remaining.
         finished = False
         while not finished:
 
+            # Iterate over the list of resources to create
             create_tasks = self._create_resources(create_tasks)
 
+            # Iterate over the list of resources to update
             update_tasks = self._update_resources(update_tasks)
 
+            # Iterate over the list of resources to delete
             delete_tasks = self._delete_resources(delete_tasks)
 
             tasks_remaining = (
                 len(create_tasks) + len(update_tasks) + len(delete_tasks))
 
-            # Did the tqsk queue shrink?
+            # Did the task queue shrink?
             if tasks_remaining >= taskq_len:
                 # No, we have stopped making progress.
                 finished = True
 
+            # Reset the taskq length.
             taskq_len = tasks_remaining
 
         return taskq_len
