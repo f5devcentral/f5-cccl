@@ -14,14 +14,66 @@
 # limitations under the License.
 #
 
-import conftest
+from mock import MagicMock
+import pytest
+
 import f5_cccl.resource.ltm.monitor.icmp_monitor as target
 
 
-class Test_ICMPMonitor(conftest.TestLtmResource):
-    pass  # any further deviation should be tested here...
+@pytest.fixture
+def icmp_config():
+    return {"name": "test_monitor",
+            "partition": "Test",
+            "interval": 1,
+            "timeout": 10}
 
 
-def test_entry():
-    assert target.ICMPMonitor.monitor_schema_kvps._asdict() == \
-        target.default_schema, "Verified entry vector assignment"
+@pytest.fixture
+def bigip():
+    bigip = MagicMock()
+    return bigip
+
+
+def test_create_w_defaults(icmp_config):
+    monitor = target.ICMPMonitor(
+        name=icmp_config['name'],
+        partition=icmp_config['partition'])
+
+    assert monitor
+    assert monitor.name == "test_monitor"
+    assert monitor.partition == "Test"
+    data = monitor.data
+    assert data.get('interval') == 5
+    assert data.get('timeout') == 16
+
+
+def test_create_w_config(icmp_config):
+    monitor = target.ICMPMonitor(
+        **icmp_config
+    )
+
+    assert monitor
+    assert monitor.name == "test_monitor"
+    assert monitor.partition == "Test"
+    data = monitor.data
+    assert data.get('interval') == 1
+    assert data.get('timeout') == 10
+
+
+def test_get_uri_path(bigip, icmp_config):
+    monitor = target.ICMPMonitor(**icmp_config)
+
+    assert (monitor._uri_path(bigip) ==
+            bigip.tm.ltm.monitor.gateway_icmps.gateway_icmp)
+
+
+def test_create_icr_monitor(icmp_config):
+    monitor = target.IcrICMPMonitor(**icmp_config)
+
+    assert isinstance(monitor, target.ICMPMonitor)
+
+
+def test_create_api_monitor(icmp_config):
+    monitor = target.ApiICMPMonitor(**icmp_config)
+
+    assert isinstance(monitor, target.ICMPMonitor)

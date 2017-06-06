@@ -46,7 +46,7 @@ class Pool(Resource):
         if members:
             self.members = members
             self._data['membersReference']['items'] = [
-                m.__dict__() for m in members]
+                m.data for m in members]
         else:
             self.members = list()
 

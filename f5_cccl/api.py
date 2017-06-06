@@ -16,6 +16,12 @@
 #
 """F5 Common Controller Core Library to read, diff and apply BIG-IP config."""
 
+from f5_cccl.bigip import CommonBigIP
+from f5_cccl.service.manager import ServiceManager
+
+
+API_SCHEMA = "./f5_cccl/schemas/cccl-api-schema.yml"
+
 
 class F5CloudServiceManager(object):
     """F5 Common Controller Cloud Service Management.
@@ -30,19 +36,31 @@ class F5CloudServiceManager(object):
     under its control.
     """
 
-    def __init__(self, bigip, partition, prefix=None):
+    def __init__(self, hostname, username, password, partition, prefix=None,
+                 port=443, token=None):
         """Initialize an instance of the F5 CCCL service manager.
 
-        :param bigip:  Interface to BIG-IP device, f5-common-python
-        ManagementRoot (f5.bigip.ManagementRoot)
+        :param hostname: BIG-IP hostname or ip address.
+        :param username: Access BIG-IP as user
+        :param password: User password
         :param partition: Name of BIG-IP partition to manage.
-        :param prefix: Optional string to prepend to resource names.
+        :param prefix: Optional string to prepend to resource names
+        (default: None).
+        :param port: Port to use for connection (default: 443)
+        :param token: Use for token authentication (default None)
         """
-        self._bigip = bigip
-        self._partition = partition
-        self._prefix = prefix
+        self._bigip = CommonBigIP(hostname,
+                                  username,
+                                  password,
+                                  partition,
+                                  prefix=prefix,
+                                  port=port,
+                                  token=token)
 
-    def apply_config(self, services):  # pylint: disable=unused-argument
+        self._service_manager = ServiceManager(self._bigip, partition,
+                                               API_SCHEMA, prefix)
+
+    def apply_config(self, services):
         """Apply service configurations to the BIG-IP partition.
 
         :param services: A serializable object that defines one or more
@@ -50,7 +68,7 @@ class F5CloudServiceManager(object):
 
         :return: True if successful, otherwise an exception is thrown.
         """
-        return True
+        return self._service_manager.apply_config(services)
 
     def get_status(self):
         """Get status for each service in the managed partition.

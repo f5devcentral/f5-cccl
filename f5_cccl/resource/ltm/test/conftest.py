@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+import pdb
 import pytest
 
 from mock import Mock
@@ -34,7 +35,9 @@ class TestLtmResource(object):
         parent object.
         """
         Resource = Mock()
+        pdb.set_trace()
         # future proofing:
         with patch('f5_cccl.resource.Resource.__init__', Resource,
                    create=True):
+            _data = dict()
             self.create_child()

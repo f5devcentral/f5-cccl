@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Hosts an interface for the BIG-IP Monitor Resource.
 
 This module references and holds items relevant to the orchestration of the F5
@@ -21,14 +20,7 @@ BIG-IP for purposes of abstracting the F5-SDK library.
 # limitations under the License.
 #
 
-import logging
-
-from collections import namedtuple
-
 from f5_cccl.resource.ltm.monitor import Monitor
-
-logger = logging.getLogger(__name__)
-default_schema = dict(interval=5, recv="", send="", timeout=16)
 
 
 class TCPMonitor(Monitor):
@@ -39,7 +31,12 @@ class TCPMonitor(Monitor):
 
     The major difference is the afforded schema for TCP specifically.
     """
-    monitor_schema_kvps = None
+    properties = dict(interval=5, recv="", send="", timeout=16)
+
+    def __init__(self, name, partition, **kwargs):
+        super(TCPMonitor, self).__init__(name, partition, **kwargs)
+        for key in ['send', 'recv']:
+            self._data[key] = kwargs.get(key, self.properties.get(key))
 
     def _uri_path(self, bigip):
         """Get the URI resource path key for the F5-SDK for TCP monitor
@@ -49,12 +46,11 @@ class TCPMonitor(Monitor):
         return bigip.tm.ltm.monitor.tcps.tcp
 
 
-def _entry():
-    schema = default_schema
-    TCPMonitor.monitor_schema_kvps = \
-        namedtuple('TCPMonitor', schema.keys())(**schema)
+class ApiTCPMonitor(TCPMonitor):
+    """Create the canonical TCP monitor from API input."""
+    pass
 
 
-if __name__ != '__main__':
-    # Don't want bad users directly executing this...
-    _entry()
+class IcrTCPMonitor(TCPMonitor):
+    """Create the canonical TCP monitor from API input."""
+    pass

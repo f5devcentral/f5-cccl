@@ -76,3 +76,7 @@ class F5CcclResourceUpdateError(F5CcclError):
 
 class F5CcclResourceDeleteError(F5CcclError):
     u"""General resource delete failure."""
+
+
+class F5CcclApplyConfigError(F5CcclError):
+    u"""General resource delete failure."""

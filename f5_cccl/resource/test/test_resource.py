@@ -140,13 +140,13 @@ def test_resource_less_than():
     assert res2 < res1
 
 
-def test_resource_get_dict():
+def test_resource_get_data():
     u"""Test the __eq__ operation for Resouces."""
     data = resource_data()
 
     res1 = Resource(**data)
 
-    assert res1.data == res1.__dict__()
+    assert res1.data == data
 
 
 def test_resource_hash():

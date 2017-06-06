@@ -14,14 +14,72 @@
 # limitations under the License.
 #
 
-import conftest
+from mock import MagicMock
+import pytest
+
 import f5_cccl.resource.ltm.monitor.https_monitor as target
 
 
-class Test_HTTPSMonitor(conftest.TestLtmResource):
-    pass  # any further deviation should be tested here...
+@pytest.fixture
+def https_config():
+    return {"name": "test_monitor",
+            "partition": "Test",
+            "interval": 1,
+            "timeout": 10,
+            "send": "GET /\r\n",
+            "recv": "SERVER"}
 
 
-def test_entry():
-    assert target.HTTPSMonitor.monitor_schema_kvps._asdict() \
-        == target.default_schema, "Verified entry vector assignment"
+@pytest.fixture
+def bigip():
+    bigip = MagicMock()
+    return bigip
+
+
+def test_create_w_defaults(https_config):
+    monitor = target.HTTPSMonitor(
+        name=https_config['name'],
+        partition=https_config['partition'])
+
+    assert monitor
+    assert monitor.name == "test_monitor"
+    assert monitor.partition == "Test"
+    data = monitor.data
+    assert data.get('interval') == 5
+    assert data.get('timeout') == 16
+    assert data.get('send') == "GET /\\r\\n"
+    assert data.get('recv') == ""
+
+
+def test_create_w_config(https_config):
+    monitor = target.HTTPSMonitor(
+        **https_config
+    )
+
+    assert monitor
+    assert monitor.name == "test_monitor"
+    assert monitor.partition == "Test"
+    data = monitor.data
+    assert data.get('interval') == 1
+    assert data.get('timeout') == 10
+    assert data.get('send') == "GET /\r\n"
+    assert data.get('recv') == "SERVER"
+
+
+def test_get_uri_path(bigip, https_config):
+    monitor = target.HTTPSMonitor(**https_config)
+
+    assert (monitor._uri_path(bigip) ==
+            bigip.tm.ltm.monitor.https_s.https)
+
+
+def test_create_icr_monitor(https_config):
+    monitor = target.IcrHTTPSMonitor(**https_config)
+
+    assert isinstance(monitor, target.HTTPSMonitor)
+
+
+def test_create_api_monitor(https_config):
+    monitor = target.ApiHTTPSMonitor(**https_config)
+
+    assert isinstance(monitor, target.HTTPSMonitor)

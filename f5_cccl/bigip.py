@@ -16,10 +16,10 @@ u"""This module provides a class for managing a BIG-IP."""
 # limitations under the License.
 
 from f5_cccl.resource.ltm.app_service import ApplicationService
-from f5_cccl.resource.ltm.monitor.http_monitor import HTTPMonitor
-from f5_cccl.resource.ltm.monitor.https_monitor import HTTPSMonitor
-from f5_cccl.resource.ltm.monitor.icmp_monitor import ICMPMonitor
-from f5_cccl.resource.ltm.monitor.tcp_monitor import TCPMonitor
+from f5_cccl.resource.ltm.monitor.http_monitor import IcrHTTPMonitor
+from f5_cccl.resource.ltm.monitor.https_monitor import IcrHTTPSMonitor
+from f5_cccl.resource.ltm.monitor.icmp_monitor import IcrICMPMonitor
+from f5_cccl.resource.ltm.monitor.tcp_monitor import IcrTCPMonitor
 from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual import IcrVirtualServer
 from f5_cccl.resource.ltm.node import Node
@@ -148,19 +148,19 @@ class CommonBigIP(ManagementRoot):
 
         #  Refresh the health monitor cache
         self._monitors['http'] = {
-            m.name: HTTPMonitor(**m.raw) for m in http_monitors
+            m.name: IcrHTTPMonitor(**m.raw) for m in http_monitors
             if m.name.startswith(self._prefix)
         }
         self._monitors['https'] = {
-            m.name: HTTPSMonitor(**m.raw) for m in https_monitors
+            m.name: IcrHTTPSMonitor(**m.raw) for m in https_monitors
             if m.name.startswith(self._prefix)
         }
         self._monitors['tcp'] = {
-            m.name: TCPMonitor(**m.raw) for m in tcp_monitors
+            m.name: IcrTCPMonitor(**m.raw) for m in tcp_monitors
             if m.name.startswith(self._prefix)
         }
         self._monitors['icmp'] = {
-            m.name: ICMPMonitor(**m.raw) for m in icmp_monitors
+            m.name: IcrICMPMonitor(**m.raw) for m in icmp_monitors
             if m.name.startswith(self._prefix)
         }
 
@@ -176,21 +176,30 @@ class CommonBigIP(ManagementRoot):
         """Return the index of app services."""
         return self._iapps
 
+    def get_monitors(self, hm_type=None):
+        """Get all monitors or those of type, hm_type."""
+        if hm_type:
+            monitors = self._monitors.get(hm_type, dict())
+        else:
+            monitors = self._monitors
+
+        return monitors
+
     def get_http_monitors(self):
         """Return the index of HTTP monitors."""
-        return self._monitors.get('http', dict())
+        return self.get_monitors('http')
 
     def get_tcp_monitors(self):
         """Return the index of TCP monitors."""
-        return self._monitors.get('tcp', dict())
+        return self.get_monitors('tcp')
 
     def get_https_monitors(self):
         """Return the index of HTTPS monitors."""
-        return self._monitors.get('https', dict())
+        return self.get_monitors('https')
 
     def get_icmp_monitors(self):
         """Return the index of gateway ICMP monitors."""
-        return self._monitors.get('icmp', dict())
+        return self.get_monitors('icmp')
 
     def get_l7policies(self):
         """Return the index of L7 policies."""
@@ -199,3 +208,7 @@ class CommonBigIP(ManagementRoot):
     def get_iapps(self):
         """Return the index of iApps."""
         return self._iapps
+
+    def get_nodes(self):
+        """Return the index of nodes."""
+        return self._nodes

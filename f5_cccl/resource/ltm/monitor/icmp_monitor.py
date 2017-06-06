@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Hosts an interface for the BIG-IP Monitor Resource.
 
 This module references and holds items relevant to the orchestration of the F5
@@ -20,14 +19,7 @@ BIG-IP for purposes of abstracting the F5-SDK library.
 # limitations under the License.
 #
 
-import logging
-
-from collections import namedtuple
-
 from f5_cccl.resource.ltm.monitor import Monitor
-
-logger = logging.getLogger(__name__)
-default_schema = dict(interval=5, send='', timeout=16)
 
 
 class ICMPMonitor(Monitor):
@@ -38,22 +30,19 @@ class ICMPMonitor(Monitor):
 
     The major difference is the afforded schema for ICMP specifically.
     """
-    monitor_schema_kvps = None
-
     def _uri_path(self, bigip):
         """Get the URI resource path key for the F5-SDK for ICMP monitor
 
         This is the URI reference for an ICMP Monitor.
         """
-        return bigip.tm.ltm.monitor.icmps.icmp
+        return bigip.tm.ltm.monitor.gateway_icmps.gateway_icmp
 
 
-def _entry():
-    schema = default_schema
-    ICMPMonitor.monitor_schema_kvps = \
-        namedtuple('ICMPMonitor', schema.keys())(**schema)
+class ApiICMPMonitor(ICMPMonitor):
+    """Create the canonical ICMP monitor from the CCCL API input."""
+    pass
 
 
-if __name__ != '__main__':
-    # Don't want bad users directly executing this...
-    _entry()
+class IcrICMPMonitor(ICMPMonitor):
+    """Create the canonical ICMP monitor from the iControl REST response."""
+    pass

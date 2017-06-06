@@ -20,7 +20,6 @@ from collections import namedtuple
 from glob import glob
 from mock import Mock
 from mock import MagicMock
-# from yaml import load
 
 import f5.bigip.resource
 
@@ -35,7 +34,6 @@ import f5_cccl.resource.ltm.monitor.tcp_monitor as tcp
 
 from icontrol.exceptions import iControlUnexpectedHTTPError
 
-import monitor_schemas
 
 BigIPConnection = \
     namedtuple('Connection', 'hostname, port, username, password, image')
@@ -67,8 +65,12 @@ class MockBigIP(object):
         self.tm.ltm.monitor.https_s.https.create = self.store_create
         self.tm.ltm.monitor.https_s.https.load = self.read_from_create
         # ICMP monitor:
-        self.tm.ltm.monitor.icmps.icmp.create = self.store_create
-        self.tm.ltm.monitor.icmps.icmp.load = self.read_from_create
+        self.tm.ltm.monitor.gateway_icmps.gateway_icmp.create = (
+            self.store_create
+        )
+        self.tm.ltm.monitor.gateway_icmps.gateway_icmp.load = (
+            self.read_from_create
+        )
         # TCP monitor:
         self.tm.ltm.monitor.tcps.tcp.create = self.store_create
         self.tm.ltm.monitor.tcps.tcp.load = self.read_from_create
@@ -229,11 +231,11 @@ class TestMonitor(object):
         with Provisioned(monitor, self.bigip):
             monitor.create(self.bigip)
             read = monitor.read(self.bigip)
-            assert monitor == read, "Read result test"
+            assert monitor == read.raw, "Read result test"
             monitor._data['interval'] = 1
             monitor.update(self.bigip)
             updated = monitor.read(self.bigip)
-            assert monitor != read, "Self vs previous read updated result test"
+            assert monitor != read.raw, "Self vs previous read updated result test"
             assert updated.raw != read.raw, "Previously read vs updated test"
             monitor.delete(self.bigip)
             with pytest.raises(exceptions.F5CcclResourceNotFoundError):
@@ -245,7 +247,7 @@ class TestMonitor(object):
             'We should always have a bigip at this point...'
         partition = 'Common'
         name = 'test_http'
-        schema = monitor_schemas.http_default
+        schema = http.HTTPMonitor.properties
         schema['partition'] = partition
         schema['name'] = name
         monitor = http.HTTPMonitor(**schema)
@@ -257,7 +259,7 @@ class TestMonitor(object):
             'We should always have a bigip at this point...'
         partition = "Common"
         name = "test_https"
-        schema = monitor_schemas.https_default
+        schema = https.HTTPSMonitor.properties
         schema['partition'] = partition
         schema['name'] = name
         monitor = https.HTTPSMonitor(**schema)
@@ -269,7 +271,7 @@ class TestMonitor(object):
             'We should always have a bigip at this point...'
         partition = "Common"
         name = "test_icmp"
-        schema = monitor_schemas.icmp_default
+        schema = icmp.ICMPMonitor.properties
         schema['partition'] = partition
         schema['name'] = name
         monitor = icmp.ICMPMonitor(**schema)
@@ -281,7 +283,7 @@ class TestMonitor(object):
             'We should always have a bigip at this point...'
         partition = "Common"
         name = "test_tcp"
-        schema = monitor_schemas.tcp_default
+        schema = tcp.TCPMonitor.properties
         schema['partition'] = partition
         schema['name'] = name
         monitor = tcp.TCPMonitor(**schema)
