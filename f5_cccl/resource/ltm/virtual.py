@@ -16,8 +16,10 @@
 # limitations under the License.
 #
 
+from __future__ import print_function
 
 from f5_cccl.resource import Resource
+from f5_cccl.resource.ltm.profile import Profile
 
 
 class VirtualServer(Resource):
@@ -28,9 +30,15 @@ class VirtualServer(Resource):
                       description=None,
                       destination=None,
                       ipProtocol=None,
+                      enabled=None,
+                      disabled=None,
+                      vlansEnabled=None,
+                      vlansDisabled=None,
+                      vlans=[],
+                      sourceAddressTranslation=None,
+                      connectionLimit=-1,
                       pool=None,
-                      profilesReference={},
-                      policiesReference={})
+                      profilesReference={})
 
     def __init__(self, name, partition, **properties):
         """Create a Virtual server instance."""
@@ -39,7 +47,15 @@ class VirtualServer(Resource):
         for key, value in self.properties.items():
             if key == "name" or key == "partition":
                 continue
+            if key == "profilesReference":
+                profiles = properties.get('profilesReference', value)
+                items = profiles.get('items', list())
+                self._data['profilesReference'] = self._create_profiles(items)
+                continue
             self._data[key] = properties.get(key, value)
+
+        if self._data['vlans']:
+            self._data['vlans'].sort()
 
     def __eq__(self, other):
         if not isinstance(other, VirtualServer):
@@ -58,6 +74,19 @@ class VirtualServer(Resource):
 
     def _uri_path(self, bigip):
         return bigip.tm.ltm.virtuals.virtual
+
+    def _create_profiles(self, profiles):
+        profiles_reference = dict()
+
+        items = [
+            Profile(**profile) for profile in profiles
+        ]
+
+        profiles_reference['items'] = [
+            item.data for item in sorted(items)
+        ]
+
+        return profiles_reference
 
 
 class ApiVirtualServer(VirtualServer):

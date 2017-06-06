@@ -39,6 +39,40 @@
       required: 
         - "id"
 
+    snatConfigType:
+      type: "object"
+      description: "For describing a SNAT configuration"
+      properties:
+        type:
+          type: "string"
+          enum:
+            - "snat"
+            - "automap"
+        pool:
+          type: "string"
+          desctiption: |
+            "Full path to snat pool, (e.g. /Common/my_snatpool)"
+      required:
+        - "type"
+
+    profileType:
+      description: "Defines an LTM profile"
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        partition:
+          type: "string"
+        context:
+          type: "string"
+          enum:
+            - "serverside"
+            - "clientside"
+            - "all"
+      required:
+        - "name"
+        - "partition"
+
     l7RuleType:
       description: "Defines an L7 rule."
       type: "object"
@@ -390,65 +424,19 @@
           minLength: 0
           maxLength: 256
 
-        virtualType:
-          description: |
-            "Specifies the network service provided by this virtual server
-
-            Supported values:
-              standard:  Specifies a virtual server that directs client 
-              traffic to a load balancing pool and is the most basic type 
-              of virtual server.
-
-              performance_l4: Specifies a virtual server with which
-              you associate a Fast L4 profile"
-
-          type: "string"
-          enum:
-            - "standard"
-            - "performance_l4"
-          default: "standard"
-
         destination: 
           description: |
             "Specifies destination IP address information to which 
             the virtual server sends traffic.  This can be an IP address 
             or a previously created virtual-address.  This is of the
-            form <ip_address>%<route_domain>:<service_port>"
+            form /<partition><ip_address>%<route_domain>:<service_port>"
           type: "string"
-
-        sourceAddress:
-          description: |
-            "Specifies an IP address or network from which the virtual server accepts
-            traffic.  Default is any"
-          type: "string"
-          default: "0.0.0.0/0"
-
-        destinationMask:
-          description: "Specifies the netmask for a network virtual server only"
-          type: "string"
-          default: "255.255.255.255"
 
         pool: 
           description: |
             "Specifies the name of a default pool to which you want the virtual
             server to automatically direct traffic."
           type: "string"
-
-        state: 
-          description: "Specifies whether the virtual server is enabled or disabled"
-          type: "string"
-          enum: 
-            - "enabled"
-            - "disabled"
-          default: "enabled"
-
-        configuration:
-          description: "The virtual server configuration"
-          type: "object"
-          oneOf:
-            - { $ref: "#definitions/httpConfigType" }
-            - { $ref: "#definitions/httpsConfigType" }
-            - { $ref: "#definitions/tcpConfigType" }
 
         ipProtocol: 
           description: "Specifies the network protocol name you want the system to use."
@@ -459,56 +447,6 @@
             - "any"
           default: "tcp"
 
-        profileClientProtocol: 
-          type: "string"
-          description: |
-            "Specifies that the selected profile is a client-side profile
-            The enumeration specifies the allowed values.  At this time
-            we disallow any custom supplied profiles."
-          enum: 
-            - "/Common/tcp"
-            - "/Common/tcp-lan-optimized"
-            - "/Common/tcp-wan-optimized"
-            - "/Common/tcp-mobile-optimized"
-            - "/Common/tcp-legacy"
-          default: "/Common/tcp-wan-optimized"
-
-        profileServerProtocol: 
-          type: "string"
-          description: |
-            "Specifies that the selected profile is a server-side profile
-            The enumeration specifies the allowed values.  At this time
-            we disallow any custom supplied profiles.  The 'client' profile
-            is unique in that it indicates that the server side profile should
-            be the same as the client side."
-          enum: 
-            - "client"
-            - "/Common/tcp"
-            - "/Common/tcp-lan-optimized"
-            - "/Common/tcp-wan-optimized"
-            - "/Common/tcp-mobile-optimized"
-            - "/Common/tcp-legacy"
-          default: "/Common/tcp-lan-optimized"
-
-        profileHTTP: 
-          type: "string"
-          description: |
-            "Specifies the HTTP profile for managing HTTP traffic.  Note that
-            this should not be set with an L4 type virtual server.  Only the stock
-            profiles are supported.  The default is None."
-          enum: 
-            - "/Common/http"
-            - "/Common/http-explicit"
-            - "/Common/http-transparent"
-
-        profileOneConnect: 
-          type: "string"
-          description: |
-            "Specifies that the selected profile is a OneConnect profile. The
-            default is None."
-          enum: 
-            - "/Common/oneconnect"
-
         connectionLimit: 
           type: "integer"
           description: |
@@ -517,53 +455,27 @@
             The default is 0."
           default: 0
 
-        profileDefaultPersist: 
-          type: "string"
+        profilesReference:
           description: |
-            "Specifies the persistence profile you want the system to use as the
-            default for this virtual server. Options are: None, and entries for
-            each already defined persistence profile. The default is None."
-          enum: 
-            - "cookie"
-            - "hash"
-            - "dest_addr"
-            - "source_addr"
+            "References the set of profiles that are associated with virtual server"
+          items:
+            type: "array"
+            $ref: "#/definititions/profileType"
 
-        profileFallbackPersist: 
+        # These 2 options are mutually exclusive and should not be specified together.
+        enabled:
+          type: "boolean"
           description: |
-            "Specifies the persistence profile you want the system to use if it 
-            cannot use the specified default persistence profile. Options are: 
-            None, and entries for each already defined persistence profile.
-            The default is None."
-          enum: 
-            - "dest_addr"
-            - "source_addr"
-          type: "string"
-
-        profileClientSSL: 
+            "Enables the virtual server, enabled=True. Note that enabled=False is
+            invalid, you must specify disabled=True"
+        disabled:
+          type: "boolean"
           description: |
-            "Specifies the SSL profile for managing client-side SSL traffic.
-            Default is None.  Possible predeployed profiles are:
-              /Common/clientssl
-              /Common/clientssl-insecure-compatible
-              /Common/clientssl-secure
-              /Common/crypto-server-default-clientssl
-              /Common/wom-default-clientssl"
-          type: "string"
+            "Disable the virtual server, disabled=True. Note that disabled=False is
+            invalid, you must specify enabled=True.  This option is mutually
+            exclusive from enabled."
 
-        profileServerSSL: 
-          description: |
-            "Specifies the SSL profile for managing client-side SSL traffic.
-            Default is None. Possible predeployed profiles are:
-              /Common/serverssl
-              /Common/apm-default-serverssl
-              /Common/crypto-client-default-serverssl
-              /Common/pcoip-default-serverssl
-              /Common/serverssl-insecure-compatible
-              /Common/wom-default-serverssl"
-          type: "string"
-
-        snatConfig: 
+        sourceAddressTranslation: 
           type: "string"
           description: |
             "Specifies the type of address translation pool, used for implementing
@@ -573,41 +485,23 @@
               snatpool
               None
             If snatpool is set, then the snatpool configuration item must be defined."
-          maxLength: 256
-          minLength: 1
-          default: "automap"
+          $ref: "#/definitions/snatConfigType"
 
-        snatPool:
-          type: "string"
-          description: |
-            "Specifies the SNAT pool for the system to use for this virtual server.
-            Options are: None, and entries for each already defined SNAT pool. The
-            default is None."
-
-        iRules:
-          description: "A list of iRule names that are enabled on this virtual server."
-          type: "array"
-          items: 
-            properties: 
-              refname: 
-                description: "The name of the iRule."
-                maxLength: 256
-                minLength: 0
-                type: "string"
-            required: 
-              - "name"
-            type: "object"
-
+        # These 2 options are mutually exclusive and should not be specified together.
         vlansEnabled: 
           description: |
-            "Enables/disables the virtual server on the list of VLANS and
-            tunnels listed in the set of vlans.  The default is the virtual server is
-            enabled on all VLANS and tunnel.  This corresponds to the setting vlans-disabled
+            "Enables the virtual server on the list of VLANS and
+            tunnels listed in the list of vlans.  The default is the virtual server is
+            enabled on all VLANS and tunnel, which corresponds to the setting vlansDisabled=True
             with an emptly vlans list."
-          type: "string"
-          enum: 
-            - "vlans-enabled"
-            - "vlans-disabled"
+          type: "boolean"
+        vlansDisabled: 
+          description: |
+            "Disables the virtual server on the list of VLANS and
+            tunnels listed in the set of vlans.  The default is the virtual server is
+            enabled on all VLANS and tunnel, which corresponds to the setting vlansDisabled=True
+            with an emptly vlans list."
+          type: "boolean"
 
         vlans: 
           type: "array"

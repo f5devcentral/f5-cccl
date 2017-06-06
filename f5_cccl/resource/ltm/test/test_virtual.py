@@ -26,7 +26,20 @@ cfg_test = {
     'partition': 'my_partition',
     'destination': '1.2.3.4:80',
     'pool': '/my_partition/pool1',
-    'ipProtocol': 'tcp'
+    'ipProtocol': 'tcp',
+    'profilesReference': {
+        'items': [{'name': "tcp",
+                   'partition': "Common",
+                   'context': "all"}
+                  ]
+    },
+    "enabled": True,
+    "vlansEnabled": True,
+    "vlans": ["/Test/vlan-100", "/Common/http-tunnel"],
+    "sourceAddressTranslation": {
+	"type": "snat",
+	"pool": "/Test/snatpool1"
+    }
 }
 
 
