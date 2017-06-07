@@ -717,6 +717,30 @@
     ],
     "nodes": [
         {
+            "address": "1.2.3.4",
+            "connectionLimit": 0,
+            "dynamicRatio": 1,
+            "ephemeral": "false",
+            "fqdn": {
+                "addressFamily": "ipv4",
+                "autopopulate": "disabled",
+                "downInterval": 5,
+                "interval": "3600"
+            },
+            "fullPath": "/test/1.2.3.4",
+            "generation": 14842,
+            "kind": "tm:ltm:node:nodestate",
+            "logging": "disabled",
+            "monitor": "default",
+            "name": "1.2.3.4",
+            "partition": "test",
+            "rateLimit": "disabled",
+            "ratio": 1,
+            "selfLink": "https://localhost/mgmt/tm/ltm/node/~test~1.2.3.4?ver=12.1.0",
+            "session": "user-enabled",
+            "state": "unchecked"
+        },
+        {
             "address": "5.6.7.8",
             "connectionLimit": 0,
             "dynamicRatio": 1,

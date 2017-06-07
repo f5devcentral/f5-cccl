@@ -25,6 +25,7 @@ from f5_cccl.service.validation import ServiceConfigValidator
 
 class ServiceConfigDeployer(object):
     """CCCL config deployer class."""
+
     def __init__(self, bigip):
         """Initialize the config deployer."""
         self._bigip = bigip
@@ -86,7 +87,7 @@ class ServiceConfigDeployer(object):
 
         return retry_list
 
-    def _delete_resources(self, delete_list):
+    def _delete_resources(self, delete_list, retry=True):
         """Iterate over the resources and call delete method."""
         retry_list = list()
         for resource in delete_list:
@@ -100,9 +101,10 @@ class ServiceConfigDeployer(object):
                     exc.F5CcclResourceRequestError,
                     exc.F5CcclError) as e:
                 print(str(e))
-                print("Resource %s delete error, requeuing task" %
-                      resource.name)
-                retry_list.append(resource)
+                if retry:
+                    print("Resource %s delete error, requeuing task" %
+                          resource.name)
+                    retry_list.append(resource)
 
         return retry_list
 
@@ -125,6 +127,25 @@ class ServiceConfigDeployer(object):
             delete_monitors += delete_hm
 
         return (create_monitors, update_monitors, delete_monitors)
+
+    def _cleanup_nodes(self):
+        """Delete any unused nodes in a partition from the BIG-IP."""
+        self._bigip.refresh()
+        nodes = self._bigip.get_nodes()
+        pools = self._bigip.get_pools()
+
+        # Search pool members for nodes still in-use, if the node is still
+        # being used, remove it from nodes
+        for pool in pools:
+            for member in pools[pool].members:
+                addr = member.name.split('%3A')[0]
+                if addr in nodes:
+                    # Still in-use
+                    del nodes[addr]
+
+        # What's left in nodes is not referenced, delete them
+        node_list = [nodes[node] for node in nodes]
+        self._delete_resources(node_list, False)
 
     def deploy(self, desired_config):  # pylint: disable=too-many-locals
         """Deploy the managed partition with the desired config.
@@ -188,11 +209,15 @@ class ServiceConfigDeployer(object):
             # Reset the taskq length.
             taskq_len = tasks_remaining
 
+        # Delete unreferenced nodes
+        self._cleanup_nodes()
+
         return taskq_len
 
 
 class ServiceManager(object):
     """CCCL apply config implementation class."""
+
     def __init__(self, bigip, partition, schema, prefix=None):
         """Initialize the ServiceManager."""
         self._bigip = bigip
@@ -204,7 +229,6 @@ class ServiceManager(object):
 
     def apply_config(self, service_config):
         """Apply the desired service configuration."""
-
         # Validate the service configuration.
         self._config_validator.validate(service_config)
 

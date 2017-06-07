@@ -35,7 +35,7 @@ setup(
     url='https://github.com/f5devcentral/f5-cccl',
     keywords=['F5', 'big-ip'],
     install_requires=install_requires,
-    packages=find_packages(),
+    packages=find_packages(exclude=['*.test', '*.test.*', 'test*', 'test']),
     data_files=[],
     classifiers=[
     ],
