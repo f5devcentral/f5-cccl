@@ -1352,9 +1352,16 @@ class CloudBigIP(BigIP):
                                  iapp_def['variables'])
         no_table_change = all(t in a.__dict__['tables'] for t in
                               iapp_def['tables'])
-        no_option_change = all(config['iapp']['options'][k] == v for k, v in
-                               a.__dict__.iteritems() if k in
-                               config['iapp']['options'])
+        no_option_change = True
+        for k, v in a.__dict__.iteritems():
+            if k in config['iapp']['options']:
+                if config['iapp']['options'][k] != v:
+                    # FIXME (rtalley): description is overwritten in appsvcs
+                    # integration iApps this is a workaround until F5Networks/
+                    # f5-application-services-integration-iApp #43 is resolved
+                    if (k != 'description' and 'appsvcs_integration' in
+                            config['iapp']['template']):
+                        no_option_change = False
 
         if no_variable_change and no_table_change and no_option_change:
             return
