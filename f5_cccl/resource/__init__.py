@@ -16,4 +16,4 @@
 """This module implements the F5 CCCL Resource super class."""
 
 
-from .resource import Resource  # noqa: F401, F403
+from .resource import Resource  # noqa: F401

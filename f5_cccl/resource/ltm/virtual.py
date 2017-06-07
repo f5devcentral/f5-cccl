@@ -36,7 +36,7 @@ class VirtualServer(Resource):
                       vlansDisabled=None,
                       vlans=[],
                       sourceAddressTranslation=None,
-                      connectionLimit=-1,
+                      connectionLimit=0,
                       pool=None,
                       profilesReference={})
 
