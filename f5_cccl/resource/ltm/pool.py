@@ -16,6 +16,7 @@ u"""This module provides class for managing resource configuration."""
 # limitations under the License.
 #
 
+from __future__ import print_function
 
 from f5_cccl.resource.ltm.pool_member import ApiPoolMember
 from f5_cccl.resource.ltm.pool_member import IcrPoolMember
@@ -130,9 +131,12 @@ class ApiPool(Pool):
         if not monitors:
             return "default"
 
-        monitor_list = [monitor['refname'] for monitor in monitors]
-        if monitor_list:
-            return " and ".join(sorted(monitor_list))
+        try:
+            monitor_list = [monitor['refname'] for monitor in monitors]
+            if monitor_list:
+                return " and ".join(sorted(monitor_list))
+        except KeyError:
+            print("Malformed monitor in Pool definition")
 
         return "default"
 

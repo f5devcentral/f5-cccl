@@ -257,3 +257,19 @@ def test_compare_pools_unequal_members(bigip, cccl_pool1, cccl_pool2, cccl_pool5
     assert not pool1 == pool5
     assert pool1 != pool5
     assert pool5 != pool1
+
+
+def test_get_monitors(bigip):
+    pool = ApiPool(name="pool1", partition="Common")
+
+    assert pool._get_monitors(None) == "default"
+    assert pool._get_monitors([]) == "default"    
+
+    monitors = [{"refname": "/Common/http"}, {"refname": "/Common/my_tcp"}]
+    assert pool._get_monitors(monitors) == "/Common/http and /Common/my_tcp"
+
+    monitors = [{"refname": ""}, {"refname": ""}]
+    assert pool._get_monitors(monitors) == " and "
+
+    monitors = [{}, {}]
+    pool._get_monitors(monitors)

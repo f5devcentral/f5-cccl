@@ -95,6 +95,14 @@ def test_get_uri_path(bigip):
         res._uri_path(bigip)
 
 
+def test_str():
+    """Test the str magic function."""
+    data = resource_data()
+    res = Resource(**data)
+
+    str(res) == "{'name': \"test_resource\", 'partition': \"Common\"}"
+
+
 def test_create_resource(bigip):
     u"""Test Resource creation."""
     data = resource_data()
@@ -353,6 +361,20 @@ def test_create_subresource_icontrol_500_exception(bigip, response):
         assert not obj
 
 
+def test_read_subresource_sdk_exception(bigip):
+    u"""Test read can handle SDK exception."""
+    data = resource_data()
+
+    subres = SubResource(name=data['name'], partition=data['partition'])
+
+    bigip.tm.ltm.subresources.subresource.load.side_effect = (
+        [F5SDKError, None]
+    )
+
+    with pytest.raises(cccl_exc.F5CcclError):
+        subres.read(bigip)
+
+
 def test_update_subresource_sdk_exception(bigip):
     u"""Test update can handle SDK exception."""
     data = resource_data()
@@ -409,7 +431,7 @@ def test_update_subresource_icontrol_4XX_exception(bigip, response):
 
 
 def test_delete_subresource_sdk_exception(bigip):
-    u"""Test update can handle SDK exception."""
+    u"""Test delete can handle SDK exception."""
     data = resource_data()
 
     subres = SubResource(name=data['name'], partition=data['partition'])
@@ -419,6 +441,23 @@ def test_delete_subresource_sdk_exception(bigip):
     )
     bigip.tm.ltm.subresources.subresource.delete.side_effect = (
         [F5SDKError, None]
+    )
+
+    with pytest.raises(cccl_exc.F5CcclResourceDeleteError):
+        subres.delete(bigip)
+
+
+def test_delete_subresource_attribute_error(bigip):
+    u"""Test delete can handle SDK exception."""
+    data = resource_data()
+
+    subres = SubResource(name=data['name'], partition=data['partition'])
+
+    bigip.tm.ltm.subresources.subresource.load.return_value = (
+        bigip.tm.ltm.subresources.subresource
+    )
+    bigip.tm.ltm.subresources.subresource.delete.side_effect = (
+        [AttributeError, None]
     )
 
     with pytest.raises(cccl_exc.F5CcclResourceDeleteError):
