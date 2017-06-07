@@ -18,7 +18,7 @@ import json
 import pickle
 import pytest
 
-from f5_cccl import F5CloudServiceManager
+from f5_cccl.api import F5CloudServiceManager
 from f5_cccl.bigip import CommonBigIP
 from f5_cccl.resource import ltm
 
