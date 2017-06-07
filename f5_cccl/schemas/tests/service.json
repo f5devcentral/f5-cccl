@@ -42,11 +42,26 @@
         ]
       }],
       "virtualServers": [{
-		"name": "vs1",
-		"destination": "192.168.0.1:80",
-		"pool": "/Test/pool1",
-		"sourceAddress": "0.0.0.0/0"
-	  }],
+	"name": "vs1",
+	"destination": "/Test/192.168.0.1:80",
+	"pool": "/Test/pool1",
+	"sourceAddress": "0.0.0.0/0",
+	"enabled": true,
+	"vlansEnabled": true,
+	"vlans": ["/Test/vlan-100", "/Common/http-tunnel"],
+	"sourceAddressTranslation": {
+	  "type": "snat",
+	  "pool": "/Test/snatpool1"
+	},
+	"profilesReference": {
+	  "items": [
+	    {"name": "tcp-lan-optimized", "partition": "Common", "context": "serverside"},
+	    {"name": "tcp-wan-optimized", "partition": "Common", "context": "clientside"},
+	    {"name": "http", "partition": "Common", "context": "all"},
+	    {"name": "clientssl", "partition": "Common", "context": "clientside"}
+	  ]
+	}
+      }],
       "pools": [
         { "name": "pool1",
           "members": [

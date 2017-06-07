@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""This module implements the F5 CCCL Resource super class."""
+"""This module implements the F5 CCCL Profile class."""
 
 
-from .resource import Resource  # noqa: F401
+from .profile import Profile  # noqa: F401
