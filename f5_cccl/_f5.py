@@ -354,7 +354,7 @@ class CloudBigIP(BigIP):
             # healthcheck add
             for mon in monitors:
                 if (mon['partition'] == partition and
-                    mon['name'] in healthcheck_add):
+                        mon['name'] in healthcheck_add):
                     self.healthcheck_create(partition, mon)
 
             # pool add
@@ -385,7 +385,7 @@ class CloudBigIP(BigIP):
             # healthcheck intersect
             for mon in monitors:
                 if (mon['partition'] == partition and
-                    mon['name'] in healthcheck_intersect):
+                        mon['name'] in healthcheck_intersect):
                     self.healthcheck_update(partition, mon['name'], mon)
 
             # pool intersection
