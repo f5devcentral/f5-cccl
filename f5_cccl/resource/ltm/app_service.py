@@ -71,8 +71,8 @@ class ApplicationService(Resource):
                 # FIXME (rtalley): description is overwritten in appsvcs
                 # integration iApps this is a workaround until F5Networks/
                 # f5-application-services-integration-iApp #43 is resolved
-                if (key != 'description' or 'appsvcs_integration' not in
-                   self._data['template']):
+                if (key != 'description' or
+                        'appsvcs_integration' not in self._data['template']):
                     return False
         return True
 

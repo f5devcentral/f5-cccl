@@ -189,8 +189,7 @@ class CommonBigIP(ManagementRoot):
         """Return the index of pools."""
         if all_pools:
             return self._all_pools
-        else:
-            return self._pools
+        return self._pools
 
     def get_app_svcs(self):
         """Return the index of app services."""
