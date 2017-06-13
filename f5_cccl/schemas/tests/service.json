@@ -1,10 +1,9 @@
 {
       "name": "test1",
-      "partition": "Project",
+      "partition": "test",
       "iapps": [{
         "name": "My App Service",
         "template": "/Common/f5.http",
-        "partition": "test_partition",
         "options": {"description": "This is a test iApp"},
         "tables": [{
           "name": "pool__members",

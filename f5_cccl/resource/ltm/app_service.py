@@ -23,7 +23,12 @@ class ApplicationService(Resource):
     """Application Service class for managing configuration on BIG-IP."""
 
     properties = dict(template=None,
-                      options={},
+                      options=[
+                          'description',
+                          'inheritedTrafficGroup',
+                          'inheritedDevicegroup',
+                          'trafficGroup',
+                          'deviceGroup'],
                       variables=[],
                       tables=[])
 
@@ -33,9 +38,18 @@ class ApplicationService(Resource):
 
         for key, value in self.properties.items():
             if key == "options":
-                self._data.update(properties.get(key, value))
+                if key in properties:
+                    self._data.update(properties.get(key, value))
+                for opt in value:
+                    if opt in properties:
+                        self._data[opt] = properties.get(opt, value)
             else:
                 self._data[key] = properties.get(key, value)
+
+                if key == "variables":
+                    # Remove 'encrypted' key and its value from ICR data
+                    for v in self._data[key]:
+                        v.pop('encrypted', None)
 
     def __eq__(self, other):
         if not isinstance(other, ApplicationService):
@@ -43,9 +57,23 @@ class ApplicationService(Resource):
                 "Invalid comparison of Application Service object with object "
                 "of type {}".format(type(other)))
 
+        if not all(v in self._data['variables']
+                   for v in other.data['variables']):
+            return False
+        if not all(t in self._data['tables'] for t in other.data['tables']):
+            return False
+
         for key in self._data:
+            if key == "variables" or key == "tables":
+                # already compared
+                continue
             if self._data[key] != other.data.get(key, None):
-                return False
+                # FIXME (rtalley): description is overwritten in appsvcs
+                # integration iApps this is a workaround until F5Networks/
+                # f5-application-services-integration-iApp #43 is resolved
+                if (key != 'description' or 'appsvcs_integration' not in
+                   self._data['template']):
+                    return False
         return True
 
     def __hash__(self):  # pylint: disable=useless-super-delegation

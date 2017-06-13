@@ -132,7 +132,7 @@ class ServiceConfigDeployer(object):
         """Delete any unused nodes in a partition from the BIG-IP."""
         self._bigip.refresh()
         nodes = self._bigip.get_nodes()
-        pools = self._bigip.get_pools()
+        pools = self._bigip.get_pools(True)
 
         # Search pool members for nodes still in-use, if the node is still
         # being used, remove it from nodes
@@ -169,13 +169,22 @@ class ServiceConfigDeployer(object):
         (create_pools, update_pools, delete_pools) = (
             self._get_resource_tasks(existing, desired))
 
+        # Get the list of iapp tasks
+        existing = self._bigip.get_app_svcs()
+        desired = desired_config.get('iapps', dict())
+        (create_iapps, update_iapps, delete_iapps) = (
+            self._get_resource_tasks(existing, desired))
+
         # Get the list of monitor tasks
         (create_monitors, update_monitors, delete_monitors) = (
             self._get_monitor_tasks(desired_config))
 
-        create_tasks = create_monitors + create_pools + create_virtuals
-        update_tasks = update_monitors + update_pools + update_virtuals
-        delete_tasks = delete_virtuals + delete_pools + delete_monitors
+        create_tasks = create_monitors + create_pools + create_virtuals + \
+            create_iapps
+        update_tasks = update_monitors + update_pools + update_virtuals + \
+            update_iapps
+        delete_tasks = delete_iapps + delete_virtuals + delete_pools + \
+            delete_monitors
 
         taskq_len = len(create_tasks) + len(update_tasks) + len(delete_tasks)
 
@@ -188,7 +197,6 @@ class ServiceConfigDeployer(object):
         # loop is exited with work remaining.
         finished = False
         while not finished:
-
             # Iterate over the list of resources to create
             create_tasks = self._create_resources(create_tasks)
 

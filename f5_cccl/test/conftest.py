@@ -201,11 +201,15 @@ class MockService():
 
     def load(self, name, partition):
         """Load a mock iapp."""
-        pass
+        return MockService()
 
     def create(self, name=None, template=None, partition=None, variables=None,
                tables=None, trafficGroup=None, description=None):
         """Create a mock iapp."""
+        pass
+
+    def delete(self):
+        """Delete the iapp object."""
         pass
 
 

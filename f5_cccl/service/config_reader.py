@@ -24,6 +24,7 @@ from f5_cccl.resource.ltm.monitor.icmp_monitor import ApiICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import ApiTCPMonitor
 from f5_cccl.resource.ltm.pool import ApiPool
 from f5_cccl.resource.ltm.virtual import ApiVirtualServer
+from f5_cccl.resource.ltm.app_service import ApplicationService
 
 
 class ServiceConfigReader(object):
@@ -79,6 +80,10 @@ class ServiceConfigReader(object):
 
         config_dict['policies'] = {}
 
-        config_dict['iapps'] = {}
+        iapps = service_config.get('iapps', list())
+        config_dict['iapps'] = {
+            i['name']: ApplicationService(partition=self._partition, **i)
+            for i in iapps
+        }
 
         return config_dict

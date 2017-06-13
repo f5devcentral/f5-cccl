@@ -56,4 +56,4 @@ class TestServiceConfigReader:
         assert len(config.get('icmp_monitors')) == 1
         assert len(config.get('tcp_monitors')) == 1
         assert not len(config.get('policies'))
-        assert not len(config.get('iapps'))
+        assert len(config.get('iapps')) == 1
