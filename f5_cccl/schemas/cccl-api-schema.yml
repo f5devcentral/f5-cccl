@@ -357,14 +357,17 @@
       type: "object"
       properties:
         name:
+          description: "Specifies the table name"
           type: "string"
         columnNames:
+          description: "Specifies the table column names"
           type: "array"
           minItems: 1
           items:
             type: "string"
             minLength: 1
         rows:
+          description: "Specifies the table rows"
           type: "array"
           items:
             type: "array"
@@ -377,24 +380,42 @@
     iAppType:
       type: "object"
       properties:
-        partition:
-          type: "string"
+        name:
+          description: "Name of the Application Service object"
           minLength: 1
+          type: "string"
         template:
+          description: "The application service template path/name"
           type: "string"
           minLength: 1
         options:
           type: "object"
-          patternProperties:
-            "^[a-zA-Z0-9_-]+$":
+          properties:
+            description:
+              description: "Descriptive text that identifies the service"
+              type: "string"
+              minLength: 1
+            inheritedTrafficGroup:
+              description: "Inherit device group from current partition/pat"
+              type: "boolean"
+            inheritedDeviceGroup:
+              description: "Inherit traffic group from current partition/pat"
+              type: "boolean"
+            deviceGroup:
+              type: "string"
+              minLength: 1
+            trafficGroup:
               type: "string"
               minLength: 1
         tables:
+          description: "Specifies an array of tables, e.g. L7 policies, pool
+                       members"
           type: "array"
           patternProperties:
             "^[a-zA-Z0-9_-]+$":
               "$ref": "#/definitions/iappTableType"
         variables:
+          description: "Application-service specific name-value pairs"
           type  : "array"
           items:
             properties:
@@ -404,9 +425,8 @@
               value:
                 type: "string"
       required:
-      - partition
-      - template
-      - variables
+      - "template"
+      - "variables"
 
     virtualServerType: 
       id: "#/definitions/virtualServerType"

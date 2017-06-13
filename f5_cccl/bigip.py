@@ -83,10 +83,23 @@ class CommonBigIP(ManagementRoot):
         # BIG-IP resources
         self._virtuals = dict()
         self._pools = dict()
+        self._all_pools = dict()
         self._policies = dict()
         self._iapps = dict()
         self._monitors = dict()
         self._nodes = dict()
+
+    def _manageable_resource(self, rsc):
+        """Determine if the resource will be managed.
+
+        Resource will be managed if it matches prefix and does not belong
+        to an appService (iApp)
+
+        Args:
+            rsc: A BIG-IP resource
+        """
+        return rsc.name.startswith(self._prefix) and \
+            getattr(rsc, 'appService', None) is None
 
     def refresh(self):
         """Refresh the internal cache with the BIG-IP state."""
@@ -125,13 +138,18 @@ class CommonBigIP(ManagementRoot):
         #    requests_params={"params": query})
         self._virtuals = {
             v.name: IcrVirtualServer(**v.raw) for v in virtuals
-            if v.name.startswith(self._prefix)
+            if self._manageable_resource(v)
         }
 
         #  Refresh the pool cache
         self._pools = {
             p.name: IcrPool(**p.raw) for p in pools
-            if p.name.startswith(self._prefix)
+            if self._manageable_resource(p)
+        }
+
+        #  Refresh the all-pool cache
+        self._all_pools = {
+            p.name: IcrPool(**p.raw) for p in pools
         }
 
         #  Refresh the iapp cache
@@ -143,33 +161,34 @@ class CommonBigIP(ManagementRoot):
         #  Refresh the node cache
         self._nodes = {
             n.name: Node(**n.raw) for n in nodes
-            if n.name.startswith(self._prefix)
         }
 
         #  Refresh the health monitor cache
         self._monitors['http'] = {
             m.name: IcrHTTPMonitor(**m.raw) for m in http_monitors
-            if m.name.startswith(self._prefix)
+            if self._manageable_resource(m)
         }
         self._monitors['https'] = {
             m.name: IcrHTTPSMonitor(**m.raw) for m in https_monitors
-            if m.name.startswith(self._prefix)
+            if self._manageable_resource(m)
         }
         self._monitors['tcp'] = {
             m.name: IcrTCPMonitor(**m.raw) for m in tcp_monitors
-            if m.name.startswith(self._prefix)
+            if self._manageable_resource(m)
         }
         self._monitors['icmp'] = {
             m.name: IcrICMPMonitor(**m.raw) for m in icmp_monitors
-            if m.name.startswith(self._prefix)
+            if self._manageable_resource(m)
         }
 
     def get_virtuals(self):
         """Return the index of virtual servers."""
         return self._virtuals
 
-    def get_pools(self):
+    def get_pools(self, all_pools=False):
         """Return the index of pools."""
+        if all_pools:
+            return self._all_pools
         return self._pools
 
     def get_app_svcs(self):

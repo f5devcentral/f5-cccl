@@ -19,11 +19,11 @@ import pickle
 import pytest
 from f5_cccl.test.conftest import big_ip
 
-from f5_cccl.api import F5CloudServiceManager
 from f5_cccl.bigip import CommonBigIP
 from f5_cccl.resource import ltm
 
 from f5_cccl.service.manager import ServiceConfigDeployer
+from f5_cccl.service.manager import ServiceManager
 from f5_cccl.service.config_reader import ServiceConfigReader
 
 from mock import MagicMock
@@ -32,12 +32,13 @@ from mock import patch
 
 @pytest.fixture
 def service_manager():
-    bigip = MagicMock()
-    partition = "Test"
+    partition = "test"
+    schema = 'f5_cccl/schemas/cccl-api-schema.yml'
 
-    service_mgr = F5CloudServiceManager(
-        bigip,
-        partition)
+    service_mgr = ServiceManager(
+        big_ip(),
+        partition,
+        schema)
 
     return service_mgr
 
@@ -52,7 +53,7 @@ class TestServiceConfigDeployer:
 
     def setup(self):
         self.bigip = big_ip()
-        self.partition = "Test"
+        self.partition = "test"
 
         svcfile = 'f5_cccl/schemas/tests/service.json'
         with open(svcfile, 'r') as fp:
@@ -75,6 +76,7 @@ class TestServiceConfigDeployer:
         assert 0 == deployer.deploy(self.desired_config)
 
     def test_delete_nodes(self):
+        """Test deletion of unreferenced nodes."""
         deployer = ServiceConfigDeployer(self.bigip)
 
         # mock the call to _delete_resources and then check that the args
@@ -90,3 +92,41 @@ class TestServiceConfigDeployer:
         expected_set = set(['10.2.3.4', '10.2.3.5%0'])
         for node in nodes:
             assert node.name in expected_set
+
+    def test_app_services(self, service_manager):
+        """Test create/update/delete of app services."""
+        deployer = service_manager._service_deployer
+
+        # Should create one app service
+        deployer._create_resources = Mock(return_value=[])
+        service_manager.apply_config(self.service)
+        assert deployer._create_resources.called
+        args, kwargs = deployer._create_resources.call_args_list[0]
+        assert 6 == len(args[0])
+        assert args[0][5].name == 'My App Service'
+
+        # Should update one app service
+        self.service['iapps'][0]['name'] = 'MyAppService'
+        deployer._update_resources = Mock(return_value=[])
+        service_manager.apply_config(self.service)
+        assert deployer._update_resources.called
+        args, kwargs = deployer._update_resources.call_args_list[0]
+        assert 2 == len(args[0])
+        assert args[0][1].name == 'MyAppService'
+
+        # Should delete two app services
+        self.service = {}
+        deployer._delete_resources = Mock(return_value=[])
+        service_manager.apply_config(self.service)
+
+        assert deployer._delete_resources.called
+        args, kwargs = deployer._delete_resources.call_args_list[0]
+        assert 6 == len(args[0])
+        expected_set = set(['appsvc', 'MyAppService'])
+        result_set = set([args[0][0].name, args[0][1].name])
+        assert expected_set == result_set
+
+        # Should not delete resources owned by iApps
+        for rsc in args[0][2:]:
+            assert not rsc.name.startswith('appsvc')
+            assert not rsc.name.startswith('MyAppService')
