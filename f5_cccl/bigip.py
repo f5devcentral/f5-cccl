@@ -90,14 +90,16 @@ class CommonBigIP(ManagementRoot):
         self._nodes = dict()
 
     def _manageable_resource(self, rsc):
-        """Resource will be managed if it matches prefix and does not belong
+        """Determine if the resource will be managed.
+
+        Resource will be managed if it matches prefix and does not belong
         to an appService (iApp)
 
         Args:
             rsc: A BIG-IP resource
         """
         return rsc.name.startswith(self._prefix) and \
-               getattr(rsc, 'appService', None) is None
+            getattr(rsc, 'appService', None) is None
 
     def refresh(self):
         """Refresh the internal cache with the BIG-IP state."""
