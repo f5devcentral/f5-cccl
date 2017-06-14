@@ -278,12 +278,19 @@ class CloudBigIP(BigIP):
                     [x for x in svcs.keys()
                      if svcs[x]['partition'] == partition and
                      'iapp' not in svcs[x] and svcs[x]['virtual']]
+
             cloud_pool_list = []
             if self._manage_pool:
-                cloud_pool_list = \
-                    [x for x in svcs.keys()
-                     if svcs[x]['partition'] == partition and
-                     'iapp' not in svcs[x]]
+                for pool in pools:
+                    # multiple pools per virtual need index stripped
+                    vname = pool['name'].rsplit('_', 1)[0]
+                    if pool['partition'] == partition:
+                        if (pool['name'] in svcs
+                                and 'iapp' not in svcs[pool['name']]):
+                            cloud_pool_list.append(pool['name'])
+                        elif vname in svcs and 'iapp' not in svcs[vname]:
+                            cloud_pool_list.append(pool['name'])
+
             cloud_iapp_list = []
             if self._manage_iapp:
                 cloud_iapp_list = \
@@ -362,7 +369,7 @@ class CloudBigIP(BigIP):
             log_sequence('Pools to add', pool_add)
             for pool in pools:
                 if 'name' in pool and pool['name'] in pool_add:
-                    self.pool_create(partition, pool)
+                    self.pool_create(pool)
 
             # policy add
             policy_add = list_diff(cloud_policy_list, f5_policy_list)
@@ -393,7 +400,7 @@ class CloudBigIP(BigIP):
             log_sequence('Pools to update', pool_intersect)
             for pool in pools:
                 if 'name' in pool and pool['name'] in pool_intersect:
-                    self.pool_update(partition, pool['name'], pool)
+                    self.pool_update(pool['name'], pool)
 
             # policy intersection
             policy_intersect = list_intersect(cloud_policy_list,
@@ -440,13 +447,21 @@ class CloudBigIP(BigIP):
             iapp_add = list_diff(cloud_iapp_list, f5_iapp_list)
             log_sequence('iApps to add', iapp_add)
             for iapp in iapp_add:
-                self.iapp_create(partition, iapp, svcs[iapp])
+                pool = None
+                for p in pools:
+                    if p['name'] == iapp:
+                        pool = p
+                self.iapp_create(partition, iapp, svcs[iapp], pool)
 
             # iapp update
             iapp_intersect = list_intersect(cloud_iapp_list, f5_iapp_list)
             log_sequence('iApps to update', iapp_intersect)
             for iapp in iapp_intersect:
-                self.iapp_update(partition, iapp, svcs[iapp])
+                pool = None
+                for p in pools:
+                    if p['name'] == iapp:
+                        pool = p
+                self.iapp_update(partition, iapp, svcs[iapp], pool)
 
             # add/update/remove pool members
             # need to iterate over pool_add and pool_intersect (note that
@@ -456,7 +471,9 @@ class CloudBigIP(BigIP):
                 logger.debug("Pool: %s", pool)
 
                 f5_member_list = self.get_pool_member_list(partition, pool)
-                cloud_member_list = (svcs[pool]['nodes']).keys()
+                for pl in pools:
+                    if pl['name'] == pool:
+                        cloud_member_list = (pl['members']).keys()
 
                 member_delete_list = list_diff(f5_member_list,
                                                cloud_member_list)
@@ -467,8 +484,10 @@ class CloudBigIP(BigIP):
                 member_add = list_diff(cloud_member_list, f5_member_list)
                 log_sequence('Pool members to add', member_add)
                 for member in member_add:
-                    self.member_create(partition, pool, member,
-                                       svcs[pool]['nodes'][member])
+                    for pl in pools:
+                        if pl['name'] == pool:
+                            self.member_create(partition, pool, member,
+                                               pl['members'][member])
 
                 # Since we're only specifying hostname and port for members,
                 # 'member_update' will never actually get called. Changing
@@ -480,8 +499,10 @@ class CloudBigIP(BigIP):
                 log_sequence('Pool members to update', member_update_list)
 
                 for member in member_update_list:
-                    self.member_update(partition, pool, member,
-                                       svcs[pool]['nodes'][member])
+                    for pl in pools:
+                        if pl['name'] == pool:
+                            self.member_update(partition, pool, member,
+                                               pl['members'][member])
 
             # Delete any unreferenced nodes
             self.cleanup_nodes(partition)
@@ -581,18 +602,17 @@ class CloudBigIP(BigIP):
                 pool_list.append(pool.name)
         return pool_list
 
-    def pool_create(self, partition, pool):
+    def pool_create(self, pool):
         """Create a pool.
 
         Args:
-            partition: Partition name
             pool: Name of pool to create
             data: BIG-IP config dict
         """
         logger.debug("Creating pool %s", pool['name'])
         p = self.ltm.pools.pool
 
-        p.create(partition=partition, **pool)
+        p.create(**pool)
 
     def pool_delete(self, partition, pool):
         """Delete a pool.
@@ -605,24 +625,24 @@ class CloudBigIP(BigIP):
         p = self.get_pool(partition, pool)
         p.delete()
 
-    def pool_update(self, partition, pool, data):
+    def pool_update(self, pool, data):
         """Update a pool.
 
         Args:
-            partition: Partition name
             pool: Name of pool to update
             data: BIG-IP config dict
         """
-        pool = self.get_pool(partition, pool)
+        pool = self.get_pool(data['partition'], pool)
 
         def find_change(p, d):
             """Check if data for pool has been updated."""
             for key, val in p.__dict__.iteritems():
                 if key in d:
-                    if val is not None and (d[key] != val.strip()):
-                            return True
-                    elif (d[key] != val):
-                            return True
+                    if (val is not None and isinstance(val, str)
+                            and (d[key] != val.strip())):
+                        return True
+                    elif (d[key] != val and isinstance(val, str)):
+                        return True
             for key, _ in d.iteritems():
                 if key not in p.__dict__:
                     return True
@@ -1239,7 +1259,7 @@ class CloudBigIP(BigIP):
             # No wildcard, so we just care about those already configured
             return partitions
 
-    def iapp_build_definition(self, config):
+    def iapp_build_definition(self, svcConfig, poolConfig):
         """Create a dict that defines the 'variables' and 'tables' for an iApp.
 
         Args:
@@ -1247,16 +1267,16 @@ class CloudBigIP(BigIP):
         """
         # Build variable list
         variables = []
-        for key in config['iapp']['variables']:
-            var = {'name': key, 'value': config['iapp']['variables'][key]}
+        for key in svcConfig['iapp']['variables']:
+            var = {'name': key, 'value': svcConfig['iapp']['variables'][key]}
             variables.append(var)
 
         # The schema says only one of poolMemberTable or tableName is
         # valid, so if the user set both it should have already been rejected.
         # But if not, prefer the new poolMemberTable over tableName.
         tables = []
-        if 'poolMemberTable' in config['iapp']:
-            tableConfig = config['iapp']['poolMemberTable']
+        if 'poolMemberTable' in svcConfig['iapp']:
+            tableConfig = svcConfig['iapp']['poolMemberTable']
 
             # Construct columnNames array from the 'name' prop of each column
             columnNames = []
@@ -1266,9 +1286,9 @@ class CloudBigIP(BigIP):
             # Construct rows array - one row for each node, interpret the
             # 'kind' or 'value' from the column spec.
             rows = []
-            for node in config['nodes']:
+            for member in poolConfig['members']:
                 row = []
-                (addr, port) = node.split(':')
+                (addr, port) = member.split(':')
                 for i, col in enumerate(tableConfig['columns']):
                     if 'value' in col:
                         row.append(col['value'])
@@ -1291,23 +1311,23 @@ class CloudBigIP(BigIP):
                 'columnNames': columnNames,
                 'rows': rows
             })
-        elif 'tableName' in config['iapp']:
+        elif 'tableName' in svcConfig['iapp']:
             # Before adding the flexible poolMemberTable mode, we only
             # supported three fixed columns in order, and connection_limit was
             # hardcoded to 0 ("no limit")
             rows = []
-            for node in config['nodes']:
-                (addr, port) = node.split(':')
+            for member in poolConfig['members']:
+                (addr, port) = member.split(':')
                 rows.append({'row': [addr, port, '0']})
             tables.append({
-                'name': config['iapp']['tableName'],
+                'name': svcConfig['iapp']['tableName'],
                 'columnNames': ['addr', 'port', 'connection_limit'],
                 'rows': rows
             })
 
         # Add other tables
-        for key in config['iapp']['tables']:
-            data = config['iapp']['tables'][key]
+        for key in svcConfig['iapp']['tables']:
+            data = svcConfig['iapp']['tables'][key]
             table = {'columnNames': data['columns'],
                      'name': key,
                      'rows': []}
@@ -1317,7 +1337,7 @@ class CloudBigIP(BigIP):
 
         return {'variables': variables, 'tables': tables}
 
-    def iapp_create(self, partition, name, config):
+    def iapp_create(self, partition, name, svcConfig, poolConfig):
         """Create an iApp Application Service.
 
         Args:
@@ -1326,18 +1346,18 @@ class CloudBigIP(BigIP):
             config: BIG-IP config dict
         """
         logger.debug("Creating iApp %s from template %s",
-                     name, config['iapp']['template'])
+                     name, svcConfig['iapp']['template'])
         a = self.sys.application.services.service
 
-        iapp_def = self.iapp_build_definition(config)
+        iapp_def = self.iapp_build_definition(svcConfig, poolConfig)
 
         a.create(
             name=name,
-            template=config['iapp']['template'],
+            template=svcConfig['iapp']['template'],
             partition=partition,
             variables=iapp_def['variables'],
             tables=iapp_def['tables'],
-            **config['iapp']['options']
+            **svcConfig['iapp']['options']
         )
 
     def iapp_delete(self, partition, name):
@@ -1351,7 +1371,7 @@ class CloudBigIP(BigIP):
         a = self.get_iapp(partition, name)
         a.delete()
 
-    def iapp_update(self, partition, name, config):
+    def iapp_update(self, partition, name, svcConfig, poolConfig):
         """Update an iApp Application Service.
 
         Args:
@@ -1361,7 +1381,7 @@ class CloudBigIP(BigIP):
         """
         a = self.get_iapp(partition, name)
 
-        iapp_def = self.iapp_build_definition(config)
+        iapp_def = self.iapp_build_definition(svcConfig, poolConfig)
 
         # Remove encrypted key and its value from SDK variables
         for v in a.__dict__['variables']:
@@ -1373,13 +1393,13 @@ class CloudBigIP(BigIP):
                               iapp_def['tables'])
         no_option_change = True
         for k, v in a.__dict__.iteritems():
-            if k in config['iapp']['options']:
-                if config['iapp']['options'][k] != v:
+            if k in svcConfig['iapp']['options']:
+                if svcConfig['iapp']['options'][k] != v:
                     # FIXME (rtalley): description is overwritten in appsvcs
                     # integration iApps this is a workaround until F5Networks/
                     # f5-application-services-integration-iApp #43 is resolved
                     if (k != 'description' and 'appsvcs_integration' in
-                            config['iapp']['template']):
+                            svcConfig['iapp']['template']):
                         no_option_change = False
 
         if no_variable_change and no_table_change and no_option_change:
@@ -1391,7 +1411,7 @@ class CloudBigIP(BigIP):
             partition=partition,
             variables=iapp_def['variables'],
             tables=iapp_def['tables'],
-            **config['iapp']['options']
+            **svcConfig['iapp']['options']
         )
 
     def get_iapp(self, partition, name):
