@@ -830,7 +830,11 @@ class CloudBigIP(BigIP):
 
         no_profile_change = sorted(profiles) == sorted(data['profiles'])
 
-        if no_change and no_profile_change:
+        # Compare actual and desired policies
+        policies = self.get_virtual_policies(v)
+        no_policy_change = sorted(policies) == sorted(data['policies'])
+
+        if no_change and no_profile_change and no_policy_change:
             return False
 
         v.modify(**data)
@@ -854,6 +858,20 @@ class CloudBigIP(BigIP):
                              'partition': profile.partition})
 
         return profiles
+
+    def get_virtual_policies(self, virtual):
+        """Get list of Virtual Server policies from Virtual Server.
+
+        Args:
+            virtual: Virtual Server object
+        """
+        v_policies = virtual.policies_s.get_collection()
+        policies = []
+        for policy in v_policies:
+            policies.append({'name': policy.name,
+                             'partition': policy.partition})
+
+        return policies
 
     def get_virtual_address(self, partition, name):
         """Get Virtual Address object.
@@ -1507,6 +1525,8 @@ class Policy(Resource):
 
     def _flatten_condition(self, rule):
         conditions = []
+        if 'conditionsReference' not in rule:
+            return conditions
         for condition in rule['conditionsReference']['items']:
             flat_condition = {}
             for key in Condition.properties:
@@ -1534,8 +1554,9 @@ class Rule(Resource):
                     partition, data[key])
                 continue
             if key == 'conditions':
+                conditions = data.get(key, [])
                 self._data[key] = self._create_conditions(
-                    partition, data[key])
+                    partition, conditions)
                 continue
             if key == 'name':
                 continue

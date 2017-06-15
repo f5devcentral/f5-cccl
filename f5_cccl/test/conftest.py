@@ -127,12 +127,41 @@ class ProfileSet():
         self.profiles = Profiles(**kwargs)
 
 
+class Policies():
+    """A container of Virtual Server Policies."""
+
+    def __init__(self, **kwargs):
+        """Initialize the object."""
+        self.policies = kwargs.get('policies', [])
+
+    def exists(self, name, partition):
+        """Check for the existance of a policy."""
+        for p in self.policies:
+            if p['name'] == name and p['partition'] == partition:
+                return True
+
+        return False
+
+    def create(self, name, partition):
+        """Placeholder: This will be mocked."""
+        pass
+
+
+class PolicySet():
+    """A set of Virtual Server Policies."""
+
+    def __init__(self, **kwargs):
+        """Initialize the object."""
+        self.policies = Policies(**kwargs)
+
+
 class Virtual():
     """A mock BIG-IP Virtual Server."""
 
     def __init__(self, name, **kwargs):
         """Initialize the object."""
         self.profiles_s = ProfileSet(**kwargs)
+        self.policies_s = PolicySet(**kwargs)
         self.name = name
         for key in kwargs:
             setattr(self, key, kwargs[key])
