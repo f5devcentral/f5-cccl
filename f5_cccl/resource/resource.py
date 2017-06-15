@@ -20,6 +20,7 @@ u"""This module provides class for managing resource configuration."""
 import copy
 
 import f5_cccl.exceptions as cccl_exc
+import urllib
 
 from f5.sdk_exception import F5SDKError
 from icontrol.exceptions import iControlUnexpectedHTTPError
@@ -130,7 +131,7 @@ class Resource(object):
         """
         try:
             obj = self._uri_path(bigip).load(
-                name=self.name,
+                name=urllib.quote(self.name),
                 partition=self.partition)
             return obj
         except iControlUnexpectedHTTPError as err:
@@ -163,7 +164,7 @@ class Resource(object):
             data = self._data
         try:
             obj = self._uri_path(bigip).load(
-                name=self.name,
+                name=urllib.quote(self.name),
                 partition=self.partition)
             payload = copy.copy(data)
             if modify:
@@ -192,7 +193,7 @@ class Resource(object):
         """
         try:
             obj = self._uri_path(bigip).load(
-                name=self.name,
+                name=urllib.quote(self.name),
                 partition=self.partition)
             obj.delete()
         except AttributeError as err:

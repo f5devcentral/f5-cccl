@@ -342,13 +342,7 @@
             type: "array"
         monitors:
           items: 
-            properties: 
-              refname: 
-                type: "string"
-                definitition: "List of monitor path names for this pool"
-                default: 0
-            required: 
-              - "refname"
+            type: "string"
           type: "array"
       required: 
         - "name"
@@ -480,7 +474,7 @@
             "References the set of profiles that are associated with virtual server"
           items:
             type: "array"
-            $ref: "#/definititions/profileType"
+            $ref: "#/definitions/profileType"
 
         # These 2 options are mutually exclusive and should not be specified together.
         enabled:
