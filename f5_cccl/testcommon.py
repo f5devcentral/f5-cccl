@@ -95,12 +95,41 @@ class ProfileSet(object):
         self.profiles = Profiles(**kwargs)
 
 
+class Policies(object):
+    """A container of Virtual Server Policies."""
+
+    def __init__(self, **kwargs):
+        """Initialize the object."""
+        self.policies = kwargs.get('policies', [])
+
+    def exists(self, name, partition):
+        """Check for the existance of a policy."""
+        for p in self.policies:
+            if p['name'] == name and p['partition'] == partition:
+                return True
+
+        return False
+
+    def create(self, name, partition):
+        """Placeholder: This will be mocked."""
+        pass
+
+
+class PolicySet(object):
+    """A set of Virtual Server Policies."""
+
+    def __init__(self, **kwargs):
+        """Initialize the object."""
+        self.policies = Policies(**kwargs)
+
+
 class Virtual(object):
     """A mock BIG-IP Virtual Server."""
 
     def __init__(self, name, **kwargs):
         """Initialize the object."""
         self.profiles_s = ProfileSet(**kwargs)
+        self.policies_s = PolicySet(**kwargs)
         self.name = name
         self.enabled = kwargs.get('enabled', None)
         self.disabled = kwargs.get('disabled', None)
@@ -110,6 +139,7 @@ class Virtual(object):
         self.sourceAddressTranslation = kwargs.get('sourceAddressTranslation',
                                                    None)
         self.profiles = kwargs.get('profiles', [])
+        self.policies = kwargs.get('policies', [])
         self.partition = kwargs.get('partition', None)
 
     def modify(self, **kwargs):
@@ -346,6 +376,7 @@ class BigIPTest(unittest.TestCase):
 
     virtuals = {}
     profiles = {}
+    policies = {}
     pools = {}
     virtuals = {}
     members = {}
@@ -429,7 +460,9 @@ class BigIPTest(unittest.TestCase):
         self.virtuals[name] = virtual
         virtual.modify = Mock()
         virtual.profiles_s.profiles.create = Mock()
+        virtual.policies_s.policies.create = Mock()
         self.profiles = kwargs.get('profiles', [])
+        self.policies = kwargs.get('policies', [])
         return virtual
 
     def create_mock_pool_member(self, name, **kwargs):
@@ -469,6 +502,10 @@ class BigIPTest(unittest.TestCase):
     def mock_get_virtual_profiles(self, virtual):
         """Return a list of Virtual Server profiles."""
         return self.profiles
+
+    def mock_get_virtual_policies(self, virtual):
+        """Return a list of Virtual Server policies."""
+        return self.policies
 
     def mock_virtual_create(self, name=None, partition=None, **kwargs):
         """Mock: Creates a mocked virtual server."""
