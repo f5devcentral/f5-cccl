@@ -37,7 +37,7 @@ class F5CloudServiceManager(object):
     """
 
     def __init__(self, hostname, username, password, partition, prefix=None,
-                 port=443, token=None):
+                 port=443, token=None, schema_path=API_SCHEMA):
         """Initialize an instance of the F5 CCCL service manager.
 
         :param hostname: BIG-IP hostname or ip address.
@@ -58,7 +58,7 @@ class F5CloudServiceManager(object):
                                   token=token)
 
         self._service_manager = ServiceManager(self._bigip, partition,
-                                               API_SCHEMA, prefix)
+                                               schema_path, prefix)
 
     def apply_config(self, services):
         """Apply service configurations to the BIG-IP partition.

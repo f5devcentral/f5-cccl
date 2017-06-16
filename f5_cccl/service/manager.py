@@ -139,9 +139,13 @@ class ServiceConfigDeployer(object):
         for pool in pools:
             for member in pools[pool].members:
                 addr = member.name.split('%3A')[0]
-                if addr in nodes:
-                    # Still in-use
-                    del nodes[addr]
+
+                # make a copy to iterate over, then delete from 'nodes'
+                node_list = list(nodes.keys())
+                for k in node_list:
+                    if nodes[k].data['address'] == addr:
+                        # Still in-use
+                        del nodes[k]
 
         # What's left in nodes is not referenced, delete them
         node_list = [nodes[node] for node in nodes]

@@ -65,7 +65,7 @@ cccl_pools_cfg = [
           {"address": "172.16.0.100", "port": 8080, "routeDomain": {"id": 0}},
           {"address": "172.16.0.101", "port": 8080, "routeDomain": {"id": 0}}
       ],
-      "monitors": [{ "refname":  "/Common/http"}]
+      "monitors": ["/Common/http"]
     },
     { "name": "pool2",
       "members": [
@@ -82,14 +82,14 @@ cccl_pools_cfg = [
     { "name": "pool4",
       "members": [],
       "description": "This is test pool 4",
-      "monitors": [{ "refname":  "/Common/http"}]
+      "monitors": ["/Common/http"]
     },
     { "name": "pool1",
       "members": [
           {"address": "172.16.0.100", "port": 8080, "routeDomain": {"id": 0}},
           {"address": "172.16.0.102", "port": 8080, "routeDomain": {"id": 0}}
       ],
-      "monitors": [{ "refname":  "/Common/http"}]
+      "monitors": ["/Common/http"]
     }
 ]
 
@@ -232,7 +232,7 @@ def test_compare_pools_unequal_members(bigip, cccl_pool1, cccl_pool2, cccl_pool5
       "members": [
           {"address": "172.16.0.100", "port": 8080, "routeDomain": {"id": 0}},
       ],
-      "monitors": [{ "refname":  "/Common/http"}]
+      "monitors": ["/Common/http"]
     }
     pool1_one_member = ApiPool(partition="Common",
                                   **pool1_one_member_cfg)
@@ -243,7 +243,7 @@ def test_compare_pools_unequal_members(bigip, cccl_pool1, cccl_pool2, cccl_pool5
           {"address": "192.168.0.100", "port": 80, "routeDomain": {"id": 2}},
           {"address": "192.168.0.101", "port": 80, "routeDomain": {"id": 2}}
       ],
-      "monitors": [{ "refname":  "/Common/http"}]
+      "monitors": ["/Common/http"]
     }
     pool2_with_monitor = ApiPool(partition="Common",
                                  **pool2_with_monitor)
@@ -265,11 +265,11 @@ def test_get_monitors(bigip):
     assert pool._get_monitors(None) == "default"
     assert pool._get_monitors([]) == "default"    
 
-    monitors = [{"refname": "/Common/http"}, {"refname": "/Common/my_tcp"}]
+    monitors = ["/Common/http", "/Common/my_tcp"]
     assert pool._get_monitors(monitors) == "/Common/http and /Common/my_tcp"
 
-    monitors = [{"refname": ""}, {"refname": ""}]
+    monitors = ["", ""]
     assert pool._get_monitors(monitors) == " and "
 
-    monitors = [{}, {}]
-    pool._get_monitors(monitors)
+    monitors = ["/Common/my_tcp", "/Common/http"]
+    assert pool._get_monitors(monitors) == "/Common/http and /Common/my_tcp"

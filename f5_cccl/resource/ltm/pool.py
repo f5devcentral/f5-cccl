@@ -131,14 +131,7 @@ class ApiPool(Pool):
         if not monitors:
             return "default"
 
-        try:
-            monitor_list = [monitor['refname'] for monitor in monitors]
-            if monitor_list:
-                return " and ".join(sorted(monitor_list))
-        except KeyError:
-            print("Malformed monitor in Pool definition")
-
-        return "default"
+        return " and ".join(sorted(monitors))
 
 
 class IcrPool(Pool):
