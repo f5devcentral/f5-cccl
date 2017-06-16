@@ -32,6 +32,8 @@ class Pool(object):
         self.name = name
         self.monitor = kwargs.get('monitor', None)
         self.loadBalancingMode = kwargs.get('balance', None)
+        self.partition = kwargs.get('partition', None)
+        self.members = kwargs.get('members', None)
 
     def modify(self, **kwargs):
         """Placeholder: This will be mocked."""
