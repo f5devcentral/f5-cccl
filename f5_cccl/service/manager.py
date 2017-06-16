@@ -139,7 +139,7 @@ class ServiceConfigDeployer(object):
         for pool in pools:
             for member in pools[pool].members:
                 addr = member.name.split('%3A')[0]
-                for k,v in nodes.items():
+                for k, v in nodes.items():
                     if v.data['address'] == addr:
                         # Still in-use
                         del nodes[k]
