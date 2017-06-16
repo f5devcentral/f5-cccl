@@ -25,7 +25,9 @@ class Node(Resource):
 
     properties = dict(name=None,
                       partition=None,
-                      address=None)
+                      address=None,
+                      state=None,
+                      session=None)
 
     def __init__(self, name, partition, **properties):
         """Create a Node instance."""
@@ -43,7 +45,19 @@ class Node(Resource):
                 "Invalid comparison of Node object with object "
                 "of type {}".format(type(other)))
 
-        return super(Node, self).__eq__(other)
+        if self.name != other.name:
+            return False
+        if self.partition != other.partition:
+            return False
+        if self._data['address'] != other.data['address']:
+            return False
+
+        # Check equivalence of states
+        if other.data['state'] == 'up' or other.data['state'] == 'unchecked':
+            if 'enabled' in other.data['session']:
+                return True
+
+        return False
 
     def __hash__(self):  # pylint: disable=useless-super-delegation
         return super(Node, self).__hash__()

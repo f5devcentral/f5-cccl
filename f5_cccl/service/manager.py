@@ -21,6 +21,7 @@ from __future__ import print_function
 import f5_cccl.exceptions as exc
 from f5_cccl.service.config_reader import ServiceConfigReader
 from f5_cccl.service.validation import ServiceConfigValidator
+from f5_cccl.resource.ltm.node import Node
 
 
 class ServiceConfigDeployer(object):
@@ -128,28 +129,21 @@ class ServiceConfigDeployer(object):
 
         return (create_monitors, update_monitors, delete_monitors)
 
-    def _cleanup_nodes(self):
-        """Delete any unused nodes in a partition from the BIG-IP."""
-        self._bigip.refresh()
-        nodes = self._bigip.get_nodes()
+    def _desired_nodes(self):
+        """Desired nodes is inferred from the active pool members."""
+        desired_nodes = dict()
         pools = self._bigip.get_pools(True)
-
-        # Search pool members for nodes still in-use, if the node is still
-        # being used, remove it from nodes
         for pool in pools:
             for member in pools[pool].members:
                 addr = member.name.split('%3A')[0]
+                node = {'name': addr,
+                        'partition': member.partition,
+                        'address': addr,
+                        'state': 'user-up',
+                        'session': 'user-enabled'}
+                desired_nodes[addr] = Node(**node)
 
-                # make a copy to iterate over, then delete from 'nodes'
-                node_list = list(nodes.keys())
-                for k in node_list:
-                    if nodes[k].data['address'] == addr:
-                        # Still in-use
-                        del nodes[k]
-
-        # What's left in nodes is not referenced, delete them
-        node_list = [nodes[node] for node in nodes]
-        self._delete_resources(node_list, False)
+        return desired_nodes
 
     def deploy(self, desired_config):  # pylint: disable=too-many-locals
         """Deploy the managed partition with the desired config.
@@ -179,16 +173,22 @@ class ServiceConfigDeployer(object):
         (create_iapps, update_iapps, delete_iapps) = (
             self._get_resource_tasks(existing, desired))
 
+        # Get the list of node tasks
+        existing = self._bigip.get_nodes()
+        desired = self._desired_nodes()
+        (create_nodes, update_nodes, delete_nodes) = (
+            self._get_resource_tasks(existing, desired))
+
         # Get the list of monitor tasks
         (create_monitors, update_monitors, delete_monitors) = (
             self._get_monitor_tasks(desired_config))
 
-        create_tasks = create_monitors + create_pools + create_virtuals + \
-            create_iapps
-        update_tasks = update_monitors + update_pools + update_virtuals + \
-            update_iapps
+        create_tasks = create_nodes + create_monitors + create_pools + \
+            create_virtuals + create_iapps
+        update_tasks = update_nodes + update_monitors + update_pools + \
+            update_virtuals + update_iapps
         delete_tasks = delete_iapps + delete_virtuals + delete_pools + \
-            delete_monitors
+            delete_monitors + delete_nodes
 
         taskq_len = len(create_tasks) + len(update_tasks) + len(delete_tasks)
 
@@ -220,9 +220,6 @@ class ServiceConfigDeployer(object):
 
             # Reset the taskq length.
             taskq_len = tasks_remaining
-
-        # Delete unreferenced nodes
-        self._cleanup_nodes()
 
         return taskq_len
 
