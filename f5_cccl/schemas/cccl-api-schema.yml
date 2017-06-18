@@ -88,7 +88,7 @@
             type: "array"
         conditions: 
           items: 
-            $ref: "#definitions/l7RuleMatchType"
+            $ref: "#definitions/l7ConditionType"
             type: "array"
       required:
         - "name"
@@ -96,85 +96,146 @@
     l7RuleActionType: 
       type: "object"
       properties: 
-        action: 
-          default: "forward-pool"
-          description: |
-            "Either a forwarding, redirect, or reject action to take. 
-            Supported actions are:
-              forward-pool: Forward to the named pool.  The
-              pool must exist in the managed partition or the
-              Common partition.
-
-              forward-vs: Forward to the named virtual server.
-              The virtual server must exist in the managed partition 
-              or the Common partition.
-
-              redirect-uri: Redirect to the URI string
-
-              reject: Block the traffic"
-          enum: 
-            - "forward-vs"
-            - "forward-pool"
-            - "redirect-uri"
-            - "reject"
+        forward:
+          type: "boolean"
+          description: "This action will affect forwarding."
+          default: True
+        request:
+          type: "boolean"
+          description: "This policy action is performed on connection requests."
+          default: True
+        reset:
+          type: "boolean"
+          description: "This action will reset a connection."
+          default: False
+        pool:
+          description: "This action will direct the stream to this pool."
           type: "string"
-
-        target: 
-          description: |
-            "Where to forward the request.  This must be defined for 
-            all forwarding rules."
+        redirect:
+          type: "boolean"
+          description: "This action will redirect the request."
+          default: False
+        location:
           type: "string"
-          minLength: 1
-          maxLength: 256
+          description: "This action will come from the given location."
+        httpReply:
+          type: "boolean"
+          description: "This action will affect a reply to a given HTTP request."
+          default: False
 
-      required: 
-        - "action"
+      oneOf:
+        - required:
+          - "forward"
+          - "request"
+          - "pool"
+        - required:
+          - "forward"
+          - "request"
+          - "reset"
+        - required:
+          - "request"
+          - "redirect"
+          - "location"
+          - "httpReply"
 
-    l7RuleMatchType: 
+    l7ConditionType:
       type: "object"
-      properties: 
+      properties:
+
+        # Match modifiers
         caseSensitive: 
           default: false
           description: "The match string is case-sensive"
           type: "boolean"
-        condition: 
-          description: "."
-          enum: 
-            - "equals"
-            - "begins-with"
-            - "ends-with"
-            - "contains"
-          type: "string"
         missing: 
           default: false
           description: "Skip this condition if it is missing from the request."
           type: "boolean"
-        negate: 
+        not:
           default: false
           description: "Negate the sense of the match."
           type: "boolean"
-        operand: 
-          description: "Request object to evaluate."
-          enum: 
-            - "http-uri-host"
-            - "http-uri-path"
-            - "http-uri-ext"
-            - "http-header"
-            - "http-cookie"
-          type: "string"
-        cookieName: 
+
+        # Match types
+        equals:
+          type: "boolean"
+        startsWith:
+          type: "boolean"
+        endsWith:
+          type: "boolean"
+        contains:
+          type: "boolean"
+
+        # Operand types
+        httpUri:
+          description: "Match agains the httpUri."
+          type: "boolean"
+        httpHost:
+          description: "Match the HTTP hostname."
+          type: "boolean"
+        httpCookie:
           description: "Name of the HTTP cookie that contains the value to compare."
-          type: "string"
-        httpHeaderName: 
+          type: "boolean"
+        httpHeader:
           description: "Name of the HTTP header that contains the value to compare."
+          type: "boolean"
+
+        # Operand values
+        tmName:
+          description: "The matched operand name."
           type: "string"
-        value: 
-          description: "Value against which the operand is compared."
-          type: "string"
-      required: 
-        - "operand"
-        - "condition"
-        - "value"
+        values:
+          description: "List of values against which the operand is compared."
+          items:
+            type: "string"
+          type: "array"
+
+        host:
+          description: "Matches a host"
+          type: "boolean"
+          default: true
+        extension:
+          description: "Matches an extension(URI file type)."
+          type: "boolean"
+          default: true
+        path:
+          description: "Matches an extension(URI path)."
+          type: "boolean"
+          default: true
+        pathSegment:
+          description: "Matches an extension(URI path segment)."
+          type: "boolean"
+          default: true
+        index:
+          description: "The specified index is used to match a specific segment."
+          type: "integer"
+
+      oneOf:
+        - required:
+            - "httpUri"
+            - "values"
+            - "extension"
+        - required:
+            - "httpUri"
+            - "values"
+            - "path"
+        - required:
+            - "httpUri"
+            - "values"
+            - "index"
+            - "pathSegment"
+        - required:
+            - "httpHost"
+            - "host"
+            - "values"
+        - required:
+            - "httpHeader"
+            - "values"
+            - "tmName"
+        - required:
+            - "httpCookie"
+            - "values"
+            - "tmName"
 
     l7PolicyType: 
       id: "#/definitions/l7PolicyType"
@@ -183,27 +244,26 @@
         name: 
           type: "string"
           description: "Name of the policy object"
-        description: 
-          type: "string"
         strategy: 
           type: "string"
           description: |
             "Specifies the method to determine which actions get executed in the
             case where there are multiple rules that match. The default is first."
           enum:
-            - "first"
-            - "best"
-            - "all"
-          default: "first"
+            - "/Common/first-match"
+            - "/Common/best-match"
+            - "/Common/all-match"
+          default: "/Common/first-match"
         rules: 
-          type: "array"
-          description: |
-            "List of rules associated with this policy.  This can be an empty list"
           items:
+            type: "array"
+            description: |
+              "List of rules associated with this policy.  This can be an empty list"
             $ref: "#definitions/l7RuleType"
       required: 
         - "name"
         - "rules"
+      additionalProperties: "false"
 
     healthMonitorType: 
       type: "object"
