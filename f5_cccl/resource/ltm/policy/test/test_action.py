@@ -42,6 +42,11 @@ actions = {
 	"forward": True,
 	"reset": True
     },
+    'virtual_forward': {
+        "request": True,
+        "forward": True,
+        "virtual": "/Test/my_virtual"
+    },
     'invalid_action': {
         "request": False,
         "forward": False,
@@ -100,17 +105,16 @@ def test_create_reset_action():
 
 def test_create_invalid_action():
     name="0"
-    action = Action(name, actions['invalid_action'])
-    data = action.data
 
-    assert action.name == "0"
-    assert not action.partition
-    assert data.get('request')
-    assert not data.get('forward', True)
-    assert not data.get('pool', "test_pool")
-    assert not data.get('redirect', True)
-    assert not data.get('location', "test_uri")
-    assert not data.get('reset', True)
+    with pytest.raises(ValueError):
+        action = Action(name, actions['invalid_action'])
+
+
+def test_create_vs_forward_action():
+    name="0"
+
+    with pytest.raises(ValueError):
+        action = Action(name, actions['virtual_forward'])
 
 
 def test_equal_actions():

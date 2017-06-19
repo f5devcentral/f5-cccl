@@ -47,7 +47,7 @@ class Rule(Resource):
         """Check the equality of the two objects.
 
         Only compare the properties as defined in the
-        properties class dictionany.
+        properties class dictionary.
         """
         if not isinstance(other, Rule):
             return False
@@ -80,9 +80,13 @@ class Rule(Resource):
         """
         new_actions = list()
 
+        unsupported_actions = 0
         for index, action in enumerate(actions):
-            name = "{}".format(index)
-            new_actions.append(Action(name, action))
+            name = "{}".format(index - unsupported_actions)
+            try:
+                new_actions.append(Action(name, action))
+            except ValueError:
+                unsupported_actions += 1
 
         return [action.data for action in sorted(new_actions)]
 
@@ -94,9 +98,13 @@ class Rule(Resource):
         """
         new_conditions = list()
 
+        unsupported_conditions = 0
         for index, condition in enumerate(conditions):
-            name = "{}".format(index)
-            new_conditions.append(Condition(name, condition))
+            name = "{}".format(index - unsupported_conditions)
+            try:
+                new_conditions.append(Condition(name, condition))
+            except ValueError:
+                unsupported_conditions += 1
 
         return [condition.data for condition in sorted(new_conditions)]
 

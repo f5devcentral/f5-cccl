@@ -168,7 +168,7 @@
 
         # Operand types
         httpUri:
-          description: "Match agains the httpUri."
+          description: "Match against the httpUri."
           type: "boolean"
         httpHost:
           description: "Match the HTTP hostname."

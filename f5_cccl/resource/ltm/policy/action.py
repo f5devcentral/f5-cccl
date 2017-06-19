@@ -59,7 +59,10 @@ class Action(Resource):
                 self._data['pool'] = pool
             elif reset:
                 self._data['reset'] = reset
-
+            else:
+                raise ValueError(
+                    "Unsupported forward action, must be one of reset or "
+                    "forward to pool.")
         # Is this a redirect action?
         elif data.get('redirect', False):
             self._data['redirect'] = True
@@ -69,9 +72,8 @@ class Action(Resource):
             self._data['httpReply'] = data.get('httpReply', True)
         else:
             # Only forward and redirect are supported.
-            print("Unsupported action, must be one of forward, redirect, or "
-                  "reset.")
-            self._data.update(self.properties)
+            raise ValueError("Unsupported action, must be one of forward, "
+                             "redirect, or reset.")
 
     def __eq__(self, other):
         """Check the equality of the two objects.

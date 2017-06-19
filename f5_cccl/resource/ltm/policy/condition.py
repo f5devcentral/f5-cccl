@@ -22,7 +22,7 @@ from f5_cccl.resource import Resource
 
 
 class Condition(Resource):
-    """L7 Rule Action class."""
+    """L7 Rule Condition class."""
     # The property names class attribute defines the names of the
     # properties that we wish to compare.
     properties = {
@@ -92,6 +92,8 @@ class Condition(Resource):
                 'httpCookie': True, 'tmName': tm_name, 'values': values}
 
         else:
+            # This class does not support the condition type; however,
+            # we want to create in order to manage the policy.
             raise ValueError("Invalid match type must be one of: httpHost, "
                              "httpUri, httpHeader, or httpCookie")
 

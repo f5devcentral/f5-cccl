@@ -39,6 +39,12 @@ action_1 = {
     "httpReply": True
 }
 
+action_2 = {
+    "request": True,
+    "forward": True,
+    "virtual": "/Test/my_virtual"
+}
+
 condition_0 = {
     'httpUri': True,
     'pathSegment': True,
@@ -53,6 +59,12 @@ condition_1 = {
     'values': ["washington"],
 }
 
+condition_2 = {
+    'httpUri': True,
+    'queryString': True,
+    'contains': True,
+    'values': ["washington"],
+}
 
 @pytest.fixture
 def rule_0():
@@ -89,8 +101,8 @@ def rule_no_actions():
     data = {'ordinal': "0",
             'actions': [],
             'conditions': []}
-    data['conditions'].append(condition_1)
-    return Rule(name="rule_1", partition="Test", **data)
+    data['conditions'].append(condition_0)
+    return Rule(name="rule_0", partition="Test", **data)
 
 
 @pytest.fixture
@@ -121,6 +133,25 @@ def test_create_rule():
     assert len(rule.data['conditions']) == 1
     assert len(rule.data['actions']) == 1
 
+    data['conditions'] = [condition_2]
+    data['actions'] = [action_0]
+
+    rule = Rule(name="rule_1", partition="Test", **data)
+    assert len(rule.data['conditions']) == 0
+    assert len(rule.data['actions']) == 1
+
+    data['conditions'].append(condition_0)
+    rule = Rule(name="rule_1", partition="Test", **data)
+    assert len(rule.data['conditions']) == 1
+    assert len(rule.data['actions']) == 1
+
+    data['conditions'] = [condition_0]
+    data['actions'] = [action_2]
+
+    rule = Rule(name="rule_1", partition="Test", **data)
+    assert len(rule.data['conditions']) == 1
+    assert len(rule.data['actions']) == 0
+
 
 def test_uri_path(bigip, rule_0):
     with pytest.raises(NotImplementedError):
@@ -140,6 +171,7 @@ def test_compare_rules(rule_0, rule_0_clone, rule_1,
 
     assert rule_0 == rule_0_clone
     assert rule_0 != rule_1
+
     assert rule_0 != rule_no_actions
     assert rule_0 != rule_no_conditions
 
