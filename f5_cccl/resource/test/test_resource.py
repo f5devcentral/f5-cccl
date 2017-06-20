@@ -75,15 +75,21 @@ def test_create_resource_with_data():
 def test_create_resource_without_name():
     u"""Test Resource instantiation without name."""
     with pytest.raises(ValueError):
-        res = Resource(name=None,
-                       partition=resource_data()['partition'])
+        res = Resource(name=None, partition=None)
 
 
 def test_create_resource_without_partition():
     u"""Test Resource instantiation without name."""
-    with pytest.raises(ValueError):
-        res = Resource(name=resource_data()['name'],
-                       partition=None)
+    data = resource_data()
+    name = data.get('name', "")
+    partition = data.get('partition', "")
+
+    res = Resource(name=name, partition=None)
+
+    assert res
+    assert res.name == name
+    assert not res.partition
+    assert res.data
 
 
 def test_get_uri_path(bigip):

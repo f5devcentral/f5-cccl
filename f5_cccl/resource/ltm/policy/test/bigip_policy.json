@@ -1,0 +1,162 @@
+{
+  "status": "legacy",
+  "generation": 2600,
+  "rulesReference": {
+    "isSubcollection": true,
+    "link": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules?ver=12.1.1",
+    "items": [
+      {
+        "actionsReference": {
+          "isSubcollection": true,
+          "link": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules/~Test~my_rule1/actions?ver=12.1.1",
+          "items": [
+            {
+              "status": 0,
+              "selfLink": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules/~Test~my_rule1/actions/0?ver=12.1.1",
+              "kind": "tm:ltm:policy:rules:actions:actionsstate",
+              "code": 0,
+              "expirySecs": 0,
+              "generation": 2600,
+              "request": true,
+              "vlanId": 0,
+              "length": 0,
+              "poolReference": {
+                "link": "https://localhost/mgmt/tm/ltm/pool/~Test~pool1?ver=12.1.1"
+              },
+              "select": true,
+              "timeout": 0,
+              "offset": 0,
+              "forward": true,
+              "fullPath": "0",
+              "port": 0,
+              "pool": "/Test/pool1",
+              "name": "0"
+            }
+          ]
+        },
+        "ordinal": 0,
+        "kind": "tm:ltm:policy:rules:rulesstate",
+        "name": "my_rule1",
+        "selfLink": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules/~Test~my_rule1?ver=12.1.1",
+        "generation": 2600,
+        "fullPath": "/Test/my_rule1",
+        "partition": "Test",
+        "conditionsReference": {
+          "isSubcollection": true,
+          "link": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules/~Test~my_rule1/conditions?ver=12.1.1",
+          "items": [
+            {
+              "index": 0,
+              "all": true,
+              "caseInsensitive": true,
+              "name": "0",
+              "generation": 2600,
+              "contains": true,
+              "request": true,
+              "kind": "tm:ltm:policy:rules:conditions:conditionsstate",
+              "tmName": "X-Header",
+              "values": [
+                "openstack",
+                "velcro"
+              ],
+              "external": true,
+              "selfLink": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules/~Test~my_rule1/conditions/0?ver=12.1.1",
+              "remote": true,
+              "fullPath": "0",
+              "httpHeader": true,
+              "present": true
+            }
+          ]
+        }
+      },
+      {
+        "actionsReference": {
+          "isSubcollection": true,
+          "link": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules/~Test~my_rule2/actions?ver=12.1.1",
+          "items": [
+            {
+              "reset": true,
+              "status": 0,
+              "kind": "tm:ltm:policy:rules:actions:actionsstate",
+              "code": 0,
+              "expirySecs": 0,
+              "generation": 2600,
+              "request": true,
+              "vlanId": 0,
+              "length": 0,
+              "timeout": 0,
+              "offset": 0,
+              "forward": true,
+              "fullPath": "0",
+              "port": 0,
+              "selfLink": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules/~Test~my_rule2/actions/0?ver=12.1.1",
+              "name": "0"
+            }
+          ]
+        },
+        "ordinal": 1,
+        "kind": "tm:ltm:policy:rules:rulesstate",
+        "name": "my_rule2",
+        "generation": 2600,
+        "fullPath": "/Test/my_rule2",
+        "partition": "Test",
+        "selfLink": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules/~Test~my_rule2?ver=12.1.1"
+      }
+    ]
+  },
+  "references": {},
+  "fullPath": "/Test/wrapper_policy",
+  "kind": "tm:ltm:policy:policystate",
+  "name": "wrapper_policy",
+  "lastModified": "2017-06-14T13:53:28Z",
+  "partition": "Test",
+  "controls": [
+    "forwarding"
+  ],
+  "strategy": "/Common/first-match",
+  "_meta_data": {
+    "attribute_registry": {},
+    "reduction_forcing_pairs": [
+      [
+        "enabled",
+        "disabled"
+      ],
+      [
+        "online",
+        "offline"
+      ],
+      [
+        "vlansEnabled",
+        "vlansDisabled"
+      ]
+    ],
+    "container": null,
+    "exclusive_attributes": [],
+    "allowed_commands": [],
+    "read_only_attributes": [],
+    "allowed_lazy_attributes": [],
+    "uri": "https://10.1.0.170:443/mgmt/tm/ltm/policy/~Test~wrapper_policy/",
+    "required_json_kind": "tm:ltm:policy:policystate",
+    "bigip": null,
+    "icontrol_version": "",
+    "required_command_parameters": null,
+    "icr_session": null,
+    "required_load_parameters": null,
+    "required_creation_parameters": null,
+    "creation_uri_frag": "",
+    "object_has_stats": true,
+    "creation_uri_qargs": {
+      "ver": [
+        "12.1.1"
+      ]
+    },
+    "minimum_version": "11.5.0"
+  },
+  "requires": [
+    "http"
+  ],
+  "selfLink": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy?ver=12.1.1",
+  "strategyReference": {
+    "link": "https://localhost/mgmt/tm/ltm/policy-strategy/~Common~first-match?ver=12.1.1"
+  }
+}

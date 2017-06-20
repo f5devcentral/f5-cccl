@@ -57,10 +57,9 @@ class Resource(object):
             name (string): the name of the resource
             partition (string): the resource partition
         """
-        if not name or not partition:
+        if not name:
             raise ValueError(
-                "must have at least name({}) and partition({})".format(
-                    name, partition))
+                "must have at least name({})".format(name))
 
         self._data = dict()
         self._data['name'] = name
