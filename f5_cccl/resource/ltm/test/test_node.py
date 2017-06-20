@@ -67,7 +67,7 @@ def test_hash():
     assert node
     assert node1
     assert node2
-    assert node2
+    assert node3
 
     assert hash(node) == hash(node1)
     assert hash(node) != hash(node2)
@@ -91,9 +91,27 @@ def test_eq():
     )
     assert node
     assert node2
+    assert node != node2
+
+    node2.data['state'] = 'up'
+    node2.data['session'] = 'user-enabled'
+    assert node == node2
+
+    node2.data['state'] = 'unchecked'
+    node2.data['session'] = 'monitor-enabled'
     assert node == node2
 
     # not equal
+    node2.data['state'] = 'user-down'
+    node2.data['session'] = 'user-enabled'
+    assert node != node2
+
+    node2.data['state'] = 'up'
+    node2.data['session'] = 'user-disabled'
+    assert node != node2
+
+    node2.data['state'] = 'up'
+    node2.data['session'] = 'user-enabled'
     node2.data['address'] = '10.10.0.10'
     assert node != node2
 

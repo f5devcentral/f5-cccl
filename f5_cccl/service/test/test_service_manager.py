@@ -75,23 +75,6 @@ class TestServiceConfigDeployer:
 
         assert 0 == deployer.deploy(self.desired_config)
 
-    def test_delete_nodes(self):
-        """Test deletion of unreferenced nodes."""
-        deployer = ServiceConfigDeployer(self.bigip)
-
-        # mock the call to _delete_resources and then check that the args
-        # are correct
-        deployer._delete_resources = Mock()
-
-        deployer._cleanup_nodes()
-
-        assert deployer._delete_resources.called
-        assert 1 == deployer._delete_resources.call_count
-        assert 2 == len(deployer._delete_resources.call_args[0][0])
-        nodes = deployer._delete_resources.call_args[0][0]
-        expected_set = set(['10.2.3.4', '10.2.3.5%0'])
-        for node in nodes:
-            assert node.name in expected_set
 
     def test_app_services(self, service_manager):
         """Test create/update/delete of app services."""
@@ -111,8 +94,8 @@ class TestServiceConfigDeployer:
         service_manager.apply_config(self.service)
         assert deployer._update_resources.called
         args, kwargs = deployer._update_resources.call_args_list[0]
-        assert 2 == len(args[0])
-        assert args[0][1].name == 'MyAppService'
+        assert 3 == len(args[0])
+        assert args[0][2].name == 'MyAppService'
 
         # Should delete two app services
         self.service = {}
@@ -121,7 +104,7 @@ class TestServiceConfigDeployer:
 
         assert deployer._delete_resources.called
         args, kwargs = deployer._delete_resources.call_args_list[0]
-        assert 6 == len(args[0])
+        assert 8 == len(args[0])
         expected_set = set(['appsvc', 'MyAppService'])
         result_set = set([args[0][0].name, args[0][1].name])
         assert expected_set == result_set
