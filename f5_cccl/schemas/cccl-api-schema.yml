@@ -99,29 +99,24 @@
         forward:
           type: "boolean"
           description: "This action will affect forwarding."
-          default: True
         request:
           type: "boolean"
           description: "This policy action is performed on connection requests."
-          default: True
         reset:
           type: "boolean"
           description: "This action will reset a connection."
-          default: False
         pool:
           description: "This action will direct the stream to this pool."
           type: "string"
         redirect:
           type: "boolean"
           description: "This action will redirect the request."
-          default: False
         location:
           type: "string"
           description: "This action will come from the given location."
         httpReply:
           type: "boolean"
           description: "This action will affect a reply to a given HTTP request."
-          default: False
 
       oneOf:
         - required:
@@ -193,19 +188,15 @@
         host:
           description: "Matches a host"
           type: "boolean"
-          default: true
         extension:
           description: "Matches an extension(URI file type)."
           type: "boolean"
-          default: true
         path:
           description: "Matches an extension(URI path)."
           type: "boolean"
-          default: true
         pathSegment:
           description: "Matches an extension(URI path segment)."
           type: "boolean"
-          default: true
         index:
           description: "The specified index is used to match a specific segment."
           type: "integer"
@@ -263,7 +254,6 @@
       required: 
         - "name"
         - "rules"
-      additionalProperties: "false"
 
     healthMonitorType: 
       type: "object"
