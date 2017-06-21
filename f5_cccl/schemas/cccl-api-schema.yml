@@ -55,7 +55,7 @@
       required:
         - "type"
 
-    profileType:
+    profileReferenceType:
       description: "Defines an LTM profile"
       type: "object"
       properties:
@@ -69,6 +69,18 @@
             - "serverside"
             - "clientside"
             - "all"
+      required:
+        - "name"
+        - "partition"
+
+    policyReferenceType:
+      description: "Defines an LTM profile"
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        partition:
+          type: "string"
       required:
         - "name"
         - "partition"
@@ -534,12 +546,19 @@
             The default is 0."
           default: 0
 
-        profilesReference:
+        profiles:
           description: |
             "References the set of profiles that are associated with virtual server"
           items:
             type: "array"
-            $ref: "#/definitions/profileType"
+            $ref: "#/definitions/profileReferenceType"
+
+        policies:
+          description: |
+            "References the set of policies that are associated with virtual server"
+          items:
+            type: "array"
+            $ref: "#/definitions/policyReferenceType"
 
         # These 2 options are mutually exclusive and should not be specified together.
         enabled:
