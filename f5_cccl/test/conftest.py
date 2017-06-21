@@ -82,6 +82,37 @@ class Pool():
         return Pool(name)
 
 
+class Policy():
+    """A mock BIG-IP Policy."""
+
+    def __init__(self, name, **kwargs):
+        """Initialize the object."""
+        self.name = name
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        self.raw = self.__dict__
+
+    def modify(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def update(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def create(self, partition=None, name=None, **kwargs):
+        """Create the policy object."""
+        pass
+
+    def delete(self):
+        """Delete the policy object."""
+        pass
+
+    def load(self, name=None, partition=None):
+        """Load the policy object."""
+        return Policy(name)
+
+
 class Member():
     """A mock BIG-IP Pool Member."""
 
@@ -235,6 +266,10 @@ class MockService():
     def create(self, name=None, template=None, partition=None, variables=None,
                tables=None, trafficGroup=None, description=None):
         """Create a mock iapp."""
+        pass
+
+    def update(self, **properties):
+        """Update a mock iapp."""
         pass
 
     def delete(self):
@@ -455,6 +490,18 @@ class MockPools():
         pass
 
 
+class MockPolicys():
+    """A mock Ltm policy object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.policy = Policy('test')
+
+    def get_collection(self):
+        """Get collection of policies."""
+        pass
+
+
 class MockNodes():
     """A mock Ltm nodes object."""
 
@@ -476,6 +523,7 @@ class MockLtm():
         self.virtuals = MockVirtuals()
         self.pools = MockPools()
         self.nodes = MockNodes()
+        self.policys = MockPolicys()
 
 
 class MockTm():
@@ -532,6 +580,15 @@ class BigIPTest(bigip.CommonBigIP):
 
         return pools
 
+    def mock_policys_get_collection(self, requests_params=None):
+        """Mock: Return a mocked collection of policies."""
+        policies = []
+        for p in self.bigip_data['policies']:
+            policy = Policy(**p)
+            policies.append(policy)
+
+        return policies
+
     def mock_iapps_get_collection(self, requests_params=None):
         """Mock: Return a mocked collection of app svcs."""
         iapps = []
@@ -576,6 +633,8 @@ def big_ip():
 
     big_ip.tm.ltm.pools.get_collection = \
         Mock(side_effect=big_ip.mock_pools_get_collection)
+    big_ip.tm.ltm.policys.get_collection = \
+        Mock(side_effect=big_ip.mock_policys_get_collection)
     big_ip.tm.ltm.virtuals.get_collection = \
         Mock(side_effect=big_ip.mock_virtuals_get_collection)
     big_ip.tm.ltm.monitor.https.get_collection = \

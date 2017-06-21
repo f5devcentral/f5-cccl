@@ -812,5 +812,6 @@
             "session": "user-enabled",
             "state": "unchecked"
         }
-    ]
+    ],
+    "policies": []
 }
