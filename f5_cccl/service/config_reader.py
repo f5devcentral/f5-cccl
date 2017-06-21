@@ -22,6 +22,7 @@ from f5_cccl.resource.ltm.monitor.http_monitor import ApiHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import ApiHTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import ApiICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import ApiTCPMonitor
+from f5_cccl.resource.ltm.node import Node
 from f5_cccl.resource.ltm.pool import ApiPool
 from f5_cccl.resource.ltm.virtual import ApiVirtualServer
 from f5_cccl.resource.ltm.app_service import ApplicationService
@@ -78,12 +79,39 @@ class ServiceConfigReader(object):
                         partition=self._partition,
                         **monitor)})
 
-        config_dict['policies'] = {}
-
         iapps = service_config.get('iapps', list())
         config_dict['iapps'] = {
             i['name']: ApplicationService(partition=self._partition, **i)
             for i in iapps
         }
 
+        config_dict['nodes'] = self._desired_nodes(config_dict['pools'])
+
         return config_dict
+
+    def _desired_nodes(self, pools={}, iapps={}):
+        """Desired nodes is inferred from the active pool members."""
+        desired_nodes = dict()
+
+        for pool in pools:
+            for member in pools[pool].members:
+                addr = member.name.split('%3A')[0]
+                node = {'name': addr,
+                        'partition': member.partition,
+                        'address': addr,
+                        'state': 'user-up',
+                        'session': 'user-enabled'}
+                desired_nodes[addr] = Node(**node)
+
+        # for iapp in iapps:
+            #  Need to find the Member from the pool member table.
+            # iapp_nodes = self._get_iapp_member_nodes(iapp)
+            # desired_nodes.update(iapp_nodes)
+
+        return desired_nodes
+
+    def _get_iapp_member_nodes(self, iapp):
+        """Return a map of node address to Node objects from iApps."""
+        nodes_dict = dict()
+
+        return nodes_dict

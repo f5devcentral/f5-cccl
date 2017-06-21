@@ -21,7 +21,6 @@ from __future__ import print_function
 import f5_cccl.exceptions as exc
 from f5_cccl.service.config_reader import ServiceConfigReader
 from f5_cccl.service.validation import ServiceConfigValidator
-from f5_cccl.resource.ltm.node import Node
 
 
 class ServiceConfigDeployer(object):
@@ -129,22 +128,6 @@ class ServiceConfigDeployer(object):
 
         return (create_monitors, update_monitors, delete_monitors)
 
-    def _desired_nodes(self):
-        """Desired nodes is inferred from the active pool members."""
-        desired_nodes = dict()
-        pools = self._bigip.get_pools(True)
-        for pool in pools:
-            for member in pools[pool].members:
-                addr = member.name.split('%3A')[0]
-                node = {'name': addr,
-                        'partition': member.partition,
-                        'address': addr,
-                        'state': 'user-up',
-                        'session': 'user-enabled'}
-                desired_nodes[addr] = Node(**node)
-
-        return desired_nodes
-
     def deploy(self, desired_config):  # pylint: disable=too-many-locals
         """Deploy the managed partition with the desired config.
 
@@ -175,7 +158,7 @@ class ServiceConfigDeployer(object):
 
         # Get the list of node tasks
         existing = self._bigip.get_nodes()
-        desired = self._desired_nodes()
+        desired = desired_config.get('nodes', dict())
         (create_nodes, update_nodes, delete_nodes) = (
             self._get_resource_tasks(existing, desired))
 
