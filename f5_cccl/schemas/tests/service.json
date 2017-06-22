@@ -52,14 +52,15 @@
 	  "type": "snat",
 	  "pool": "/Test/snatpool1"
 	},
-	"profilesReference": {
-	  "items": [
-	    {"name": "tcp-lan-optimized", "partition": "Common", "context": "serverside"},
-	    {"name": "tcp-wan-optimized", "partition": "Common", "context": "clientside"},
-	    {"name": "http", "partition": "Common", "context": "all"},
-	    {"name": "clientssl", "partition": "Common", "context": "clientside"}
-	  ]
-	}
+	"profiles": [
+	  {"name": "tcp-lan-optimized", "partition": "Common", "context": "serverside"},
+	  {"name": "tcp-wan-optimized", "partition": "Common", "context": "clientside"},
+	  {"name": "http", "partition": "Common", "context": "all"},
+	  {"name": "clientssl", "partition": "Common", "context": "clientside"}
+	],
+	"policies": [
+	  {"name": "wrapper_policy", "partition": "Test"}
+	]
   }],
   "pools": [
     { "name": "pool1",

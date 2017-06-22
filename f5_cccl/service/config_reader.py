@@ -85,8 +85,6 @@ class ServiceConfigReader(object):
                         partition=self._partition,
                         **monitor)})
 
-        config_dict['policies'] = {}
-
         iapps = service_config.get('iapps', list())
         config_dict['iapps'] = {
             i['name']: ApplicationService(partition=self._partition, **i)

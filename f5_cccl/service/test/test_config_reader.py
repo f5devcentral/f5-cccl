@@ -55,5 +55,5 @@ class TestServiceConfigReader:
         assert len(config.get('https_monitors')) == 1
         assert len(config.get('icmp_monitors')) == 1
         assert len(config.get('tcp_monitors')) == 1
-        assert not len(config.get('policies'))
+        assert len(config.get('l7policies')) == 1
         assert len(config.get('iapps')) == 1

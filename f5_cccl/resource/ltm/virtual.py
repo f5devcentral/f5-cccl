@@ -18,6 +18,9 @@
 
 from __future__ import print_function
 
+from copy import copy
+from operator import itemgetter
+
 from f5_cccl.resource import Resource
 from f5_cccl.resource.ltm.profile import Profile
 
@@ -25,49 +28,43 @@ from f5_cccl.resource.ltm.profile import Profile
 class VirtualServer(Resource):
     """Virtual Server class for managing configuration on BIG-IP."""
 
-    properties = dict(name=None,
-                      partition=None,
-                      description=None,
+    properties = dict(description=None,
                       destination=None,
                       ipProtocol=None,
                       enabled=None,
                       disabled=None,
                       vlansEnabled=None,
                       vlansDisabled=None,
-                      vlans=[],
-                      sourceAddressTranslation=None,
+                      vlans=list(),
+                      sourceAddressTranslation=dict(),
                       connectionLimit=0,
                       pool=None,
-                      profilesReference={})
+                      policies=list(),
+                      profiles=list())
 
     def __init__(self, name, partition, **properties):
         """Create a Virtual server instance."""
         super(VirtualServer, self).__init__(name, partition)
 
-        for key, value in self.properties.items():
-            if key == "name" or key == "partition":
-                continue
-            if key == "profilesReference":
-                profiles = properties.get('profilesReference', value)
-                items = profiles.get('items', list())
-                self._data['profilesReference'] = self._create_profiles(items)
-                continue
-            self._data[key] = properties.get(key, value)
-
-        if self._data['vlans']:
-            self._data['vlans'].sort()
+        for key, default in self.properties.items():
+            if key in ["profiles", "policies"]:
+                prop = properties.get(key, default)
+                self._data[key] = sorted(prop, key=itemgetter('name'))
+            elif key == "vlans":
+                self._data['vlans'] = sorted(properties.get('vlans', default))
+            elif key == "sourceAddressTranslation":
+                self._data['sourceAddressTranslation'] = copy(
+                    properties.get('sourceAddressTranslation', default))
+            else:
+                value = properties.get(key, default)
+                if value is not None:
+                    self._data[key] = value
 
     def __eq__(self, other):
         if not isinstance(other, VirtualServer):
-            raise ValueError(
-                "Invalid comparison of Virtual object with object "
-                "of type {}".format(type(other)))
+            return False
 
-        for key in self.properties:
-            if self._data[key] != other.data.get(key, None):
-                return False
-
-        return True
+        return super(VirtualServer, self).__eq__(other)
 
     def __hash__(self):  # pylint: disable=useless-super-delegation
         return super(VirtualServer, self).__hash__()
@@ -75,25 +72,76 @@ class VirtualServer(Resource):
     def _uri_path(self, bigip):
         return bigip.tm.ltm.virtuals.virtual
 
-    def _create_profiles(self, profiles):
-        profiles_reference = dict()
-
-        items = [
-            Profile(**profile) for profile in profiles
-        ]
-
-        profiles_reference['items'] = [
-            item.data for item in sorted(items)
-        ]
-
-        return profiles_reference
-
 
 class ApiVirtualServer(VirtualServer):
     """Parse the CCCL input to create the canonical Virtual Server."""
-    pass
+    def __init__(self, name, partition, **properties):
+        """Handle the mutually exclusive properties."""
+
+        enabled = properties.pop('enabled', True)
+        if not enabled:
+            disabled = True
+            enabled = None
+        else:
+            disabled = None
+
+        vlansEnabled = properties.pop('vlansEnabled', False)
+        if not vlansEnabled:
+            vlansDisabled = True
+            vlansEnabled = None
+        else:
+            vlansDisabled = None
+
+        super(ApiVirtualServer, self).__init__(name,
+                                               partition,
+                                               enabled=enabled,
+                                               disabled=disabled,
+                                               vlansEnabled=vlansEnabled,
+                                               vlansDisabled=vlansDisabled,
+                                               **properties)
 
 
 class IcrVirtualServer(VirtualServer):
     """Parse the iControl REST input to create the canonical Virtual Server."""
-    pass
+    def __init__(self, name, partition, **properties):
+        """Remove some of the properties that are not required."""
+        self._filter_virtual_properties(**properties)
+
+        profiles = self._flatten_profiles(**properties)
+        policies = self._flatten_policies(**properties)
+
+        super(IcrVirtualServer, self).__init__(name,
+                                               partition,
+                                               profiles=profiles,
+                                               policies=policies,
+                                               **properties)
+
+    def _filter_virtual_properties(self, **properties):
+        """Remove any unneeded properties from the ICR response."""
+
+        # Remove the pool reference property in sourceAddressTranslation
+        snat_translation = properties.get('sourceAddressTranslation', dict())
+        snat_translation.pop('poolReference', None)
+
+        # Flatten the profiles reference.
+
+    def _flatten_profiles(self, **properties):
+        profiles = list()
+        profiles_reference = properties.pop('profilesReference', dict())
+
+        items = profiles_reference.get('items', list())
+        for item in items:
+            profiles.append(Profile(**item).data)
+
+        return profiles
+
+    def _flatten_policies(self, **properties):
+        policies = list()
+        policies_reference = properties.pop('policiesReference', dict())
+
+        items = policies_reference.get('items', list())
+        for item in items:
+            policies.append(dict(name=item['name'],
+                                 partition=item['partition']))
+
+        return policies

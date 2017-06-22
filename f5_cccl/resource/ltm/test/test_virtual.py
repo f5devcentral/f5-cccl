@@ -27,12 +27,11 @@ cfg_test = {
     'destination': '1.2.3.4:80',
     'pool': '/my_partition/pool1',
     'ipProtocol': 'tcp',
-    'profilesReference': {
-        'items': [{'name': "tcp",
-                   'partition': "Common",
-                   'context': "all"}
-                  ]
-    },
+    'profiles': [
+        {'name': "tcp",
+         'partition': "Common",
+         'context': "all"}
+    ],
     "enabled": True,
     "vlansEnabled": True,
     "vlans": ["/Test/vlan-100", "/Common/http-tunnel"],
@@ -58,7 +57,10 @@ def test_create_virtual():
 
     # verify all cfg items
     for k,v in cfg_test.items():
-        assert virtual.data[k] == v
+        if k == "vlans":
+            assert virtual.data[k] == sorted(v)
+        else:
+            assert virtual.data[k] == v
 
 
 def test_hash():
@@ -113,8 +115,7 @@ def test_eq():
     assert virtual != virtual2
 
     # different objects
-    with pytest.raises(ValueError):
-        assert virtual != pool 
+    assert virtual != pool
 
 
 def test_uri_path(bigip):
