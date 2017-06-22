@@ -285,11 +285,17 @@ class CloudBigIP(BigIP):
                     # multiple pools per virtual need index stripped
                     vname = pool['name'].rsplit('_', 1)[0]
                     if pool['partition'] == partition:
-                        if (pool['name'] in svcs
-                                and 'iapp' not in svcs[pool['name']]):
+                        svc = None
+                        if pool['name'] in svcs:
+                            svc = svcs[pool['name']]
+                        elif vname in svcs:
+                            svc = svcs[vname]
+
+                        if None is svc:
                             cloud_pool_list.append(pool['name'])
-                        elif vname in svcs and 'iapp' not in svcs[vname]:
-                            cloud_pool_list.append(pool['name'])
+                        else:
+                            if 'iapp' not in svc:
+                                cloud_pool_list.append(pool['name'])
 
             cloud_iapp_list = []
             if self._manage_iapp:
