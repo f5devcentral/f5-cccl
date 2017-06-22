@@ -560,18 +560,10 @@
             type: "array"
             $ref: "#/definitions/policyReferenceType"
 
-        # These 2 options are mutually exclusive and should not be specified together.
         enabled:
           type: "boolean"
           description: |
-            "Enables the virtual server, enabled=True. Note that enabled=False is
-            invalid, you must specify disabled=True"
-        disabled:
-          type: "boolean"
-          description: |
-            "Disable the virtual server, disabled=True. Note that disabled=False is
-            invalid, you must specify enabled=True.  This option is mutually
-            exclusive from enabled."
+            "Enables/disables the virtual server."
 
         sourceAddressTranslation: 
           type: "string"
@@ -588,15 +580,8 @@
         # These 2 options are mutually exclusive and should not be specified together.
         vlansEnabled: 
           description: |
-            "Enables the virtual server on the list of VLANS and
+            "Enables/disables the virtual server on the list of VLANS and
             tunnels listed in the list of vlans.  The default is the virtual server is
-            enabled on all VLANS and tunnel, which corresponds to the setting vlansDisabled=True
-            with an emptly vlans list."
-          type: "boolean"
-        vlansDisabled: 
-          description: |
-            "Disables the virtual server on the list of VLANS and
-            tunnels listed in the set of vlans.  The default is the virtual server is
             enabled on all VLANS and tunnel, which corresponds to the setting vlansDisabled=True
             with an emptly vlans list."
           type: "boolean"

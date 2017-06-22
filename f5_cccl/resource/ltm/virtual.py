@@ -46,24 +46,19 @@ class VirtualServer(Resource):
         """Create a Virtual server instance."""
         super(VirtualServer, self).__init__(name, partition)
 
-        for key, value in self.properties.items():
+        for key, default in self.properties.items():
             if key in ["profiles", "policies"]:
-                prop = properties.get(key, value)
+                prop = properties.get(key, default)
                 self._data[key] = sorted(prop, key=itemgetter('name'))
             elif key == "vlans":
-                self._data['vlans'] = sorted(properties.get('vlans', list()))
+                self._data['vlans'] = sorted(properties.get('vlans', default))
             elif key == "sourceAddressTranslation":
                 self._data['sourceAddressTranslation'] = copy(
-                    properties.get('sourceAddressTranslation', dict()))
+                    properties.get('sourceAddressTranslation', default))
             else:
-                self._data[key] = properties.get(key, value)
-
-        # Ensure the vlansEnabled options, enabled and disabled are mutually
-        # exclusive.
-        if self._data.get('vlansEnabled'):
-            self._data.pop('vlansDisabled', None)
-        elif self._data.get('vlansDisabled'):
-            self._data.pop('vlansEnabled', None)
+                value = properties.get(key, default)
+                if value is not None:
+                    self._data[key] = value
 
     def __eq__(self, other):
         if not isinstance(other, VirtualServer):
@@ -80,7 +75,30 @@ class VirtualServer(Resource):
 
 class ApiVirtualServer(VirtualServer):
     """Parse the CCCL input to create the canonical Virtual Server."""
-    pass
+    def __init__(self, name, partition, **properties):
+        """Handle the mutually exclusive properties."""
+
+        enabled = properties.pop('enabled', True)
+        if not enabled:
+            disabled = True
+            enabled = None
+        else:
+            disabled = None
+
+        vlansEnabled = properties.pop('vlansEnabled', False)
+        if not vlansEnabled:
+            vlansDisabled = True
+            vlansEnabled = None
+        else:
+            vlansDisabled = None
+
+        super(ApiVirtualServer, self).__init__(name,
+                                               partition,
+                                               enabled=enabled,
+                                               disabled=disabled,
+                                               vlansEnabled=vlansEnabled,
+                                               vlansDisabled=vlansDisabled,
+                                               **properties)
 
 
 class IcrVirtualServer(VirtualServer):
