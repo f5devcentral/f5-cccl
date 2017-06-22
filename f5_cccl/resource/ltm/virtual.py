@@ -20,6 +20,7 @@ from __future__ import print_function
 
 from copy import copy
 from operator import itemgetter
+import re
 
 from f5_cccl.resource import Resource
 from f5_cccl.resource.ltm.profile import Profile
@@ -27,6 +28,11 @@ from f5_cccl.resource.ltm.profile import Profile
 
 class VirtualServer(Resource):
     """Virtual Server class for managing configuration on BIG-IP."""
+
+    ipv4_dest_pattern = re.compile(
+        "\\/(\\w+)\\/([a-zA-Z0-9_\\-\\.%]+):(\\d+)$"
+    )
+    ipv6_dest_pattern = re.compile("\\/(\\w+)\\/([a-fA-F0-9:%]+)\\.(\\d+)$")
 
     properties = dict(description=None,
                       destination=None,
@@ -59,6 +65,25 @@ class VirtualServer(Resource):
                 value = properties.get(key, default)
                 if value is not None:
                     self._data[key] = value
+
+    @property
+    def destination(self):
+        """Return the destination of the virtual server.
+
+        Return:
+        (destination, partition, name, port)
+        """
+        match = None
+        for pattern in [self.ipv4_dest_pattern, self.ipv6_dest_pattern]:
+            match = pattern.match(self._data['destination'])
+            if match:
+                destination = match.group(0, 1, 2, 3)
+                break
+        else:
+            print("unexpected destination address format")
+            destination = (self._data['destination'], None, None, None)
+
+        return destination
 
     def __eq__(self, other):
         if not isinstance(other, VirtualServer):

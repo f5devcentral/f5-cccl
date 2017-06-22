@@ -15,6 +15,13 @@ u"""This module provides a class for managing a BIG-IP."""
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from copy import copy
+
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+from f5.bigip import ManagementRoot
+
 from f5_cccl.resource.ltm.app_service import ApplicationService
 from f5_cccl.resource.ltm.monitor.http_monitor import IcrHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import IcrHTTPSMonitor
@@ -22,13 +29,9 @@ from f5_cccl.resource.ltm.monitor.icmp_monitor import IcrICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import IcrTCPMonitor
 from f5_cccl.resource.ltm.policy import IcrPolicy
 from f5_cccl.resource.ltm.pool import IcrPool
+from f5_cccl.resource.ltm.virtual_address import IcrVirtualAddress
 from f5_cccl.resource.ltm.virtual import IcrVirtualServer
 from f5_cccl.resource.ltm.node import Node
-
-from f5.bigip import ManagementRoot
-import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -102,6 +105,17 @@ class CommonBigIP(ManagementRoot):
         return rsc.name.startswith(self._prefix) and \
             getattr(rsc, 'appService', None) is None
 
+    def find_unreferenced_virtual_addrs(self):
+        """The list of virtual addresses to remove from existing config."""
+        virtual_addrs = copy(self._virtual_addresses)
+        all_virtuals = self._all_virtuals
+
+        for virtual in all_virtuals:
+            (virtual_addr) = all_virtuals[virtual].destination[2]
+            virtual_addrs.pop(virtual_addr, None)
+
+        return virtual_addrs
+
     def refresh(self):
         """Refresh the internal cache with the BIG-IP state."""
         partition_filter = "$filter=partition+eq+{}".format(self._partition)
@@ -124,6 +138,8 @@ class CommonBigIP(ManagementRoot):
             requests_params={"params": query})
         nodes = self.tm.ltm.nodes.get_collection(
             requests_params={"params": query})
+        virtual_addresses = self.tm.ltm.virtual_address_s.get_collection(
+            requests_params={"params": query})
 
         #  Retrieve the list of virtuals, pools, and policies in the
         #  managed partition getting all subCollections.
@@ -140,6 +156,17 @@ class CommonBigIP(ManagementRoot):
         #  Refresh the virtuals cache.
         self._virtuals = {
             v.name: IcrVirtualServer(**v.raw) for v in virtuals
+            if self._manageable_resource(v)
+        }
+
+        #  Refresh the virtuals cache.
+        self._all_virtuals = {
+            v.name: IcrVirtualServer(**v.raw) for v in virtuals
+        }
+
+        #  Refresh the virtual address cache.
+        self._virtual_addresses = {
+            v.name: IcrVirtualAddress(**v.raw) for v in virtual_addresses
             if self._manageable_resource(v)
         }
 
@@ -189,8 +216,11 @@ class CommonBigIP(ManagementRoot):
             if self._manageable_resource(m)
         }
 
-    def get_virtuals(self):
+    def get_virtuals(self, all_virtuals=False):
         """Return the index of virtual servers."""
+        if all_virtuals:
+            return self._all_virtuals
+
         return self._virtuals
 
     def get_pools(self, all_pools=False):
@@ -239,3 +269,7 @@ class CommonBigIP(ManagementRoot):
     def get_nodes(self):
         """Return the index of nodes."""
         return self._nodes
+
+    def get_virtual_addresses(self):
+        """Return the index of virtual_addresses."""
+        return self._virtual_addresses

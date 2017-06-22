@@ -14,9 +14,13 @@
 # limitations under the License.
 #
 
-from copy import copy
-from f5_cccl.resource.ltm.virtual import VirtualServer
+from copy import copy, deepcopy
 from f5_cccl.resource.ltm.pool import Pool
+
+from f5_cccl.resource.ltm.virtual import ApiVirtualServer
+from f5_cccl.resource.ltm.virtual import IcrVirtualServer
+from f5_cccl.resource.ltm.virtual import VirtualServer
+
 from mock import Mock
 import pytest
 
@@ -24,13 +28,17 @@ import pytest
 cfg_test = {
     'name': 'Virtual-1',
     'partition': 'my_partition',
-    'destination': '1.2.3.4:80',
+    'destination': '/Test/1.2.3.4:80',
     'pool': '/my_partition/pool1',
     'ipProtocol': 'tcp',
     'profiles': [
         {'name': "tcp",
          'partition': "Common",
          'context': "all"}
+    ],
+    'policies': [
+        {'name': "test_policy",
+         'partition': "my_partition"}
     ],
     "enabled": True,
     "vlansEnabled": True,
@@ -111,7 +119,7 @@ def test_eq():
     assert virtual == virtual2
 
     # not equal
-    virtual2.data['destination'] = '1.2.3.4:8080'
+    virtual2.data['destination'] = '/Test/1.2.3.4:8080'
     assert virtual != virtual2
 
     # different objects
@@ -126,3 +134,263 @@ def test_uri_path(bigip):
     assert virtual
 
     assert virtual._uri_path(bigip) == bigip.tm.ltm.virtuals.virtual
+
+
+def test_ipv4_destination():
+    """Test Virtual Server destination."""
+    virtual = VirtualServer(
+        **cfg_test
+    )
+    assert virtual
+
+    destination = virtual.destination
+    assert destination
+
+    assert destination[0] == "/Test/1.2.3.4:80"
+    assert destination[1] == "Test"
+    assert destination[2] == "1.2.3.4"
+    assert destination[3] == "80"
+
+    cfg = copy(cfg_test)
+    cfg['destination'] = "/Test/1.2.3.4%2:80"
+    virtual = VirtualServer(
+        **cfg
+    )
+
+    destination = virtual.destination
+    assert destination[0] == "/Test/1.2.3.4%2:80"
+    assert destination[1] == "Test"
+    assert destination[2] == "1.2.3.4%2"
+    assert destination[3] == "80"
+
+    cfg = copy(cfg_test)
+    cfg['destination'] = "/Test/my_virtual_addr%2:80"
+    virtual = VirtualServer(
+        **cfg
+    )
+
+    destination = virtual.destination
+    assert destination[0] == "/Test/my_virtual_addr%2:80"
+    assert destination[1] == "Test"
+    assert destination[2] == "my_virtual_addr%2"
+    assert destination[3] == "80"
+
+    cfg = copy(cfg_test)
+    cfg['destination'] = "/Test_1/my_virtual_addr%2:80"
+    virtual = VirtualServer(
+        **cfg
+    )
+
+    destination = virtual.destination
+    assert destination[0] == "/Test_1/my_virtual_addr%2:80"
+    assert destination[1] == "Test_1"
+    assert destination[2] == "my_virtual_addr%2"
+    assert destination[3] == "80"
+
+
+def test_ipv6_destination():
+    cfg = copy(cfg_test)
+    cfg['destination'] = "/Test_1/2001::1%2.80"
+    virtual = VirtualServer(
+        **cfg
+    )
+
+    destination = virtual.destination
+    assert destination[0] == "/Test_1/2001::1%2.80"
+    assert destination[1] == "Test_1"
+    assert destination[2] == "2001::1%2"
+    assert destination[3] == "80"
+
+    cfg = copy(cfg_test)
+    cfg['destination'] = "/Test/2001:0db8:85a3:0000:0000:8a2e:0370:7334.80"
+    virtual = VirtualServer(
+        **cfg
+    )
+
+    destination = virtual.destination
+    assert destination[0] == "/Test/2001:0db8:85a3:0000:0000:8a2e:0370:7334.80"
+    assert destination[1] == "Test"
+    assert destination[2] == "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+    assert destination[3] == "80"
+
+    cfg = copy(cfg_test)
+    cfg['destination'] = "/Test/2001:0db8:85a3::8a2e:0370:7334.80"
+    virtual = VirtualServer(
+        **cfg
+    )
+
+    destination = virtual.destination
+    assert destination[0] == "/Test/2001:0db8:85a3::8a2e:0370:7334.80"
+    assert destination[1] == "Test"
+    assert destination[2] == "2001:0db8:85a3::8a2e:0370:7334"
+    assert destination[3] == "80"
+
+    # Negative matches
+    cfg = copy(cfg_test)
+    cfg['destination'] = "Test/2001:0db8:85a3::8a2e:0370:7334.80"
+    virtual = VirtualServer(
+        **cfg
+    )
+
+    destination = virtual.destination
+    assert destination[0] == "Test/2001:0db8:85a3::8a2e:0370:7334.80"
+    assert not destination[1]
+    assert not destination[2]
+    assert not destination[3]
+
+
+    # Negative matches
+    cfg = copy(cfg_test)
+    cfg['destination'] = "/Test/2001:0db8:85a3::8a2e:0370:7334%3:80"
+    virtual = VirtualServer(
+        **cfg
+    )
+
+    destination = virtual.destination
+    assert destination[0] == "/Test/2001:0db8:85a3::8a2e:0370:7334%3:80"
+    assert not destination[1]
+    assert not destination[2]
+    assert not destination[3]
+
+
+cfg_test_api_virtual = {
+    'name': 'Virtual-1',
+    'partition': 'my_partition',
+    'destination': '/Test/1.2.3.4:80',
+    'pool': '/my_partition/pool1',
+    'ipProtocol': 'tcp',
+    'profiles': [
+        {'name': "tcp",
+         'partition': "Common",
+         'context': "all"}
+    ],
+    'policies': [
+        {'name': "test_policy",
+         'partition': "my_partition"}
+    ],
+    "vlansEnabled": True,
+    "vlans": ["/Test/vlan-100", "/Common/http-tunnel"],
+    "sourceAddressTranslation": {
+	"type": "snat",
+	"pool": "/Test/snatpool1"
+    }
+}
+
+
+def test_create_api_virtual():
+    """Test Virtual Server creation."""
+    virtual = ApiVirtualServer(
+        **cfg_test_api_virtual
+    )
+    assert virtual
+
+    # verify all cfg items
+    for k,v in cfg_test.items():
+        if k == "vlans":
+            assert virtual.data[k] == sorted(v)
+        else:
+            assert virtual.data[k] == v
+
+    assert virtual.data['enabled']
+    assert 'disabled' not in virtual.data
+
+    cfg_test_api_virtual['enabled'] = False
+    virtual = ApiVirtualServer(
+        **cfg_test_api_virtual
+    )
+    assert virtual
+    assert 'enabled' not in virtual.data
+    assert virtual.data['disabled']
+
+    cfg_test_api_virtual['enabled'] = True
+    cfg_test_api_virtual.pop('vlansEnabled', None)
+    virtual = ApiVirtualServer(
+        **cfg_test_api_virtual
+    )
+    assert virtual
+    assert 'vlansEnabled' not in virtual.data
+    assert virtual.data['vlansDisabled']
+
+
+cfg_test_icr_virtual = {
+    "addressStatus": "yes",
+    "autoLasthop": "default",
+    "cmpEnabled": "yes",
+    "connectionLimit": 0,
+    "destination": "/Common/10.190.1.2:443",
+    "enabled": True,
+    "fullPath": "/Common/virtual1",
+    "generation": 15839,
+    "gtmScore": 0,
+    "ipProtocol": "tcp",
+    "kind": "tm:ltm:virtual:virtualstate",
+    "mask": "255.255.255.255",
+    "mirror": "disabled",
+    "mobileAppTunnel": "disabled",
+    "name": "virtual1",
+    "nat64": "disabled",
+    "partition": "Common",
+    "policiesReference": {
+        "isSubcollection": True,
+        "link": "https://localhost/mgmt/tm/ltm/virtual/~Common~virtual1/policies?ver=12.1.0",
+        "items": [
+            {
+                "kind": "tm:ltm:virtual:policies:policiesstate",
+                "name": "wrapper_policy",
+                "partition": "Test",
+                "fullPath": "/Test/wrapper_policy",
+                "generation": 7538,
+                "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Test~vs1/policies/~Test~wrapper_policy?ver=12.1.1",
+                "nameReference": {
+                    "link": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy?ver=12.1.1"
+                }
+            }
+        ]
+    },
+    "pool": "/Common/test_pool",
+    "poolReference": {
+        "link": "https://localhost/mgmt/tm/ltm/pool/~Common~test_pool?ver=12.1.0"
+    },
+    "profilesReference": {
+        "isSubcollection": True,
+        "link": "https://localhost/mgmt/tm/ltm/virtual/~Common~virtual1/profiles?ver=12.1.0",
+        "items": [
+            {
+                "kind": "tm:ltm:virtual:profiles:profilesstate",
+                "name": "clientssl",
+                "partition": "Common",
+                "fullPath": "/Common/clientssl",
+                "generation": 7538,
+                "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Test~vs1/profiles/~Common~clientssl?ver=12.1.1",
+                "context": "clientside",
+                "nameReference": {
+                    "link": "https://localhost/mgmt/tm/ltm/profile/client-ssl/~Common~clientssl?ver=12.1.1"
+                }
+            }
+        ]
+    },
+    "rateLimit": "disabled",
+    "rateLimitDstMask": 0,
+    "rateLimitMode": "object",
+    "rateLimitSrcMask": 0,
+    "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~virtual1?ver=12.1.0",
+    "serviceDownImmediateAction": "none",
+    "source": "0.0.0.0/0",
+    "sourceAddressTranslation": {
+        "type": "none"
+    },
+    "sourcePort": "preserve",
+    "synCookieStatus": "not-activated",
+    "translateAddress": "enabled",
+    "translatePort": "enabled",
+    "vlansDisabled": True,
+    "vsIndex": 111
+}
+
+
+def test_create_icr_virtual():
+    """Test Virtual Server creation."""
+    virtual = IcrVirtualServer(
+        **cfg_test_icr_virtual
+    )
+    assert virtual

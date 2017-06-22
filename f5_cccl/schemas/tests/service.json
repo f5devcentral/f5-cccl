@@ -1,6 +1,6 @@
 {
   "name": "test1",
-  "partition": "test",
+
   "iapps": [{
     "name": "MyAppService0",
     "template": "/Common/f5.http",
@@ -40,9 +40,23 @@
       {"name": "server__ntlm", "value": "/#do_not_use#"}
     ]
   }],
+  "virtualAddresses": [
+	{
+	  "name": "192.168.0.1%2",
+	  "autoDelete": "false",
+	  "enabled": "yes",
+	  "address": "192.168.0.1"
+	},
+	{
+	  "name": "MyVaddr",
+	  "autoDelete": "false",
+	  "enabled": "no",
+	  "address": "192.168.0.2"
+	}
+  ],
   "virtualServers": [{
 	"name": "vs1",
-	"destination": "/Test/192.168.0.1:80",
+	"destination": "/Test/MyVaddr:80",
 	"pool": "/Test/pool1",
 	"sourceAddress": "0.0.0.0/0",
 	"enabled": true,

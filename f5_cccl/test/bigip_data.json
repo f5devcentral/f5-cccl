@@ -813,5 +813,6 @@
             "state": "unchecked"
         }
     ],
-    "policies": []
+    "policies": [],
+    "virtual_addresses": []
 }
