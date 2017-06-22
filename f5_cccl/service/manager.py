@@ -242,6 +242,10 @@ class ServiceManager(object):
         self._service_deployer = ServiceConfigDeployer(self._bigip)
         self._config_reader = ServiceConfigReader(self._partition)
 
+    def get_partition(self):
+        """Get the name of the managed partition."""
+        return self._partition
+
     def apply_config(self, service_config):
         """Apply the desired service configuration."""
         # Validate the service configuration.
