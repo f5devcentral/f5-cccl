@@ -20,6 +20,7 @@ from f5_cccl.resource.ltm.monitor.http_monitor import IcrHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import IcrHTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import IcrICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import IcrTCPMonitor
+from f5_cccl.resource.ltm.policy import IcrPolicy
 from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual import IcrVirtualServer
 from f5_cccl.resource.ltm.node import Node
@@ -124,7 +125,8 @@ class CommonBigIP(ManagementRoot):
         nodes = self.tm.ltm.nodes.get_collection(
             requests_params={"params": query})
 
-        #  Retrieve the list of pools in managed partition
+        #  Retrieve the list of virtuals, pools, and policies in the
+        #  managed partition getting all subCollections.
         query = "{}&expandSubcollections=true".format(partition_filter)
         virtuals = self.tm.ltm.virtuals.get_collection(
             requests_params={"params": query})
@@ -132,10 +134,10 @@ class CommonBigIP(ManagementRoot):
         pools = self.tm.ltm.pools.get_collection(
             requests_params={"params": query})
 
-        #  Retrieve the list of policies in the managed partition
-        # FIXME: Refresh policies
-        # policies = self.tm.ltm.policys.get_collection(
-        #    requests_params={"params": query})
+        policies = self.tm.ltm.policys.get_collection(
+            requests_params={"params": query})
+
+        #  Refresh the virtuals cache.
         self._virtuals = {
             v.name: IcrVirtualServer(**v.raw) for v in virtuals
             if self._manageable_resource(v)
@@ -150,6 +152,12 @@ class CommonBigIP(ManagementRoot):
         #  Refresh the all-pool cache
         self._all_pools = {
             p.name: IcrPool(**p.raw) for p in pools
+        }
+
+        #  Refresh the policy cache
+        self._policies = {
+            p.name: IcrPolicy(**p.raw) for p in policies
+            if self._manageable_resource(p)
         }
 
         #  Refresh the iapp cache

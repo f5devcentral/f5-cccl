@@ -150,6 +150,12 @@ class ServiceConfigDeployer(object):
         (create_pools, update_pools, delete_pools) = (
             self._get_resource_tasks(existing, desired))
 
+        # Get the list of policy tasks
+        existing = self._bigip.get_l7policies()
+        desired = desired_config.get('l7policies', dict())
+        (create_policies, update_policies, delete_policies) = (
+            self._get_resource_tasks(existing, desired))
+
         # Get the list of iapp tasks
         existing = self._bigip.get_app_svcs()
         desired = desired_config.get('iapps', dict())
@@ -167,11 +173,11 @@ class ServiceConfigDeployer(object):
             self._get_monitor_tasks(desired_config))
 
         create_tasks = create_nodes + create_monitors + create_pools + \
-            create_virtuals + create_iapps
+            create_policies + create_virtuals + create_iapps
         update_tasks = update_nodes + update_monitors + update_pools + \
-            update_virtuals + update_iapps
-        delete_tasks = delete_iapps + delete_virtuals + delete_pools + \
-            delete_monitors + delete_nodes
+            update_policies + update_virtuals + update_iapps
+        delete_tasks = delete_iapps + delete_virtuals + delete_policies + \
+            delete_pools + delete_monitors + delete_nodes
 
         taskq_len = len(create_tasks) + len(update_tasks) + len(delete_tasks)
 

@@ -148,8 +148,10 @@ class IcrPolicy(Policy):
         policy = dict()
         for key in Policy.properties:
             if key == 'rules':
-                policy['rules'] = self._flatten_rules(
-                    data['rulesReference']['items'])
+                rulesReference = data['rulesReference']
+                if 'items' in rulesReference:
+                    policy['rules'] = self._flatten_rules(
+                        rulesReference['items'])
             elif key == 'name' or key == 'partition':
                 pass
             else:
@@ -158,6 +160,7 @@ class IcrPolicy(Policy):
 
     def _flatten_rules(self, rules_list):
         rules = list()
+
         for rule in sorted(rules_list, key=itemgetter('ordinal')):
             flat_rule = dict()
             for key in Rule.properties:

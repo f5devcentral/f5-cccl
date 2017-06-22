@@ -18,7 +18,7 @@ import json
 import pickle
 import pytest
 from f5_cccl.test.conftest import big_ip
-
+import pdb
 from f5_cccl.bigip import CommonBigIP
 from f5_cccl.resource import ltm
 
@@ -43,10 +43,10 @@ def service_manager():
     return service_mgr
 
 
-def xtest_apply_config(service_manager):
+def test_apply_config(service_manager):
     services = {}
 
-    assert service_manager.apply_config(services)
+    assert service_manager.apply_config(services) == 0
 
 
 class TestServiceConfigDeployer:
@@ -72,8 +72,8 @@ class TestServiceConfigDeployer:
 
         deployer = ServiceConfigDeployer(
             self.bigip)
-
-        assert 0 == deployer.deploy(self.desired_config)
+        tasks_remaining = deployer.deploy(self.desired_config)
+        assert 0 == tasks_remaining
 
 
     def test_app_services(self, service_manager):
@@ -85,8 +85,9 @@ class TestServiceConfigDeployer:
         service_manager.apply_config(self.service)
         assert deployer._create_resources.called
         args, kwargs = deployer._create_resources.call_args_list[0]
-        assert 6 == len(args[0])
-        assert args[0][5].name == 'My App Service'
+        print(args)
+        assert 7 == len(args[0])
+        assert args[0][6].name == 'MyAppService0'
 
         # Should update one app service
         self.service['iapps'][0]['name'] = 'MyAppService'

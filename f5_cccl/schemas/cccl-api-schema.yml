@@ -55,7 +55,7 @@
       required:
         - "type"
 
-    profileType:
+    profileReferenceType:
       description: "Defines an LTM profile"
       type: "object"
       properties:
@@ -69,6 +69,18 @@
             - "serverside"
             - "clientside"
             - "all"
+      required:
+        - "name"
+        - "partition"
+
+    policyReferenceType:
+      description: "Defines an LTM profile"
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        partition:
+          type: "string"
       required:
         - "name"
         - "partition"
@@ -99,29 +111,24 @@
         forward:
           type: "boolean"
           description: "This action will affect forwarding."
-          default: True
         request:
           type: "boolean"
           description: "This policy action is performed on connection requests."
-          default: True
         reset:
           type: "boolean"
           description: "This action will reset a connection."
-          default: False
         pool:
           description: "This action will direct the stream to this pool."
           type: "string"
         redirect:
           type: "boolean"
           description: "This action will redirect the request."
-          default: False
         location:
           type: "string"
           description: "This action will come from the given location."
         httpReply:
           type: "boolean"
           description: "This action will affect a reply to a given HTTP request."
-          default: False
 
       oneOf:
         - required:
@@ -193,19 +200,15 @@
         host:
           description: "Matches a host"
           type: "boolean"
-          default: true
         extension:
           description: "Matches an extension(URI file type)."
           type: "boolean"
-          default: true
         path:
           description: "Matches an extension(URI path)."
           type: "boolean"
-          default: true
         pathSegment:
           description: "Matches an extension(URI path segment)."
           type: "boolean"
-          default: true
         index:
           description: "The specified index is used to match a specific segment."
           type: "integer"
@@ -263,7 +266,6 @@
       required: 
         - "name"
         - "rules"
-      additionalProperties: "false"
 
     healthMonitorType: 
       type: "object"
@@ -544,25 +546,24 @@
             The default is 0."
           default: 0
 
-        profilesReference:
+        profiles:
           description: |
             "References the set of profiles that are associated with virtual server"
           items:
             type: "array"
-            $ref: "#/definitions/profileType"
+            $ref: "#/definitions/profileReferenceType"
 
-        # These 2 options are mutually exclusive and should not be specified together.
+        policies:
+          description: |
+            "References the set of policies that are associated with virtual server"
+          items:
+            type: "array"
+            $ref: "#/definitions/policyReferenceType"
+
         enabled:
           type: "boolean"
           description: |
-            "Enables the virtual server, enabled=True. Note that enabled=False is
-            invalid, you must specify disabled=True"
-        disabled:
-          type: "boolean"
-          description: |
-            "Disable the virtual server, disabled=True. Note that disabled=False is
-            invalid, you must specify enabled=True.  This option is mutually
-            exclusive from enabled."
+            "Enables/disables the virtual server."
 
         sourceAddressTranslation: 
           type: "string"
@@ -579,15 +580,8 @@
         # These 2 options are mutually exclusive and should not be specified together.
         vlansEnabled: 
           description: |
-            "Enables the virtual server on the list of VLANS and
+            "Enables/disables the virtual server on the list of VLANS and
             tunnels listed in the list of vlans.  The default is the virtual server is
-            enabled on all VLANS and tunnel, which corresponds to the setting vlansDisabled=True
-            with an emptly vlans list."
-          type: "boolean"
-        vlansDisabled: 
-          description: |
-            "Disables the virtual server on the list of VLANS and
-            tunnels listed in the set of vlans.  The default is the virtual server is
             enabled on all VLANS and tunnel, which corresponds to the setting vlansDisabled=True
             with an emptly vlans list."
           type: "boolean"

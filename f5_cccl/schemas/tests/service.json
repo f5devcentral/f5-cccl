@@ -2,7 +2,7 @@
   "name": "test1",
   "partition": "test",
   "iapps": [{
-    "name": "My App Service",
+    "name": "MyAppService0",
     "template": "/Common/f5.http",
     "options": {"description": "This is a test iApp"},
     "tables": [{
@@ -52,14 +52,15 @@
 	  "type": "snat",
 	  "pool": "/Test/snatpool1"
 	},
-	"profilesReference": {
-	  "items": [
-	    {"name": "tcp-lan-optimized", "partition": "Common", "context": "serverside"},
-	    {"name": "tcp-wan-optimized", "partition": "Common", "context": "clientside"},
-	    {"name": "http", "partition": "Common", "context": "all"},
-	    {"name": "clientssl", "partition": "Common", "context": "clientside"}
-	  ]
-	}
+	"profiles": [
+	  {"name": "tcp-lan-optimized", "partition": "Common", "context": "serverside"},
+	  {"name": "tcp-wan-optimized", "partition": "Common", "context": "clientside"},
+	  {"name": "http", "partition": "Common", "context": "all"},
+	  {"name": "clientssl", "partition": "Common", "context": "clientside"}
+	],
+	"policies": [
+	  {"name": "wrapper_policy", "partition": "Test"}
+	]
   }],
   "pools": [
     { "name": "pool1",
@@ -87,72 +88,72 @@
   "l7Policies": [{
     "name": "wrapper_policy",
 	"strategy": "/Common/first-match",
-	"rules": {
-	  "items": [
-		{
-		  "conditions": [
-			{
-			  "httpHost": true,
-			  "host": true,
-			  "equals": true,
-			  "values": ["http://www.mysite.com"]
-			},
-			{
-			  "httpUri": true,
-			  "pathSegment": true,
-			  "equals": true,
-			  "values": ["articles"]
-			}
-		  ],
-		  "name": "rule1",
-		  "actions": [
-			{
-			  "request": true,
-			  "forward": true,
-			  "reset": true
-			}
-		  ]
-		},
-		{
-		  "conditions": [
-			{
-			  "httpUri": true,
-			  "path": true,
-			  "not": true,
-			  "equals": true,
-			  "values": ["www.mysite.com"]
-			}
-		  ],
-		  "name": "rule2",
-		  "actions": [
-			{
-			  "forward": true,
-			  "request": true,
-			  "pool": "/Test/pool1"
-			}
-		  ]
-		},
-		{
-		  "conditions": [
-			{
-			  "httpHeader": true,
-			  "caseSensitive": true,
-			  "httpHeaderName": "X-Foo",
-			  "not": true,
-			  "beginsWith": true,
-			  "values": ["ignore"]
-			}
-		  ],
-		  "name": "rule3",
-		  "actions": [
-			{
-			  "request": true,
-			  "redirect": true,
-			  "httpReply": true,
-			  "location": "www.othersite.com"
-			}
-		  ]
-		}
-	  ]}
+	"rules": [
+	  {
+		"conditions": [
+		  {
+			"httpHost": true,
+			"host": true,
+			"equals": true,
+			"values": ["http://www.mysite.com"]
+		  },
+		  {
+			"httpUri": true,
+			"pathSegment": true,
+			"equals": true,
+			"index": 2,
+			"values": ["articles"]
+		  }
+		],
+		"name": "rule1",
+		"actions": [
+		  {
+			"request": true,
+			"forward": true,
+			"reset": true
+		  }
+		]
+	  },
+	  {
+		"conditions": [
+		  {
+			"httpUri": true,
+			"path": true,
+			"not": true,
+			"equals": true,
+			"values": ["www.mysite.com"]
+		  }
+		],
+		"name": "rule2",
+		"actions": [
+		  {
+			"forward": true,
+			"request": true,
+			"pool": "/Test/pool1"
+		  }
+		]
+	  },
+	  {
+		"conditions": [
+		  {
+			"httpHeader": true,
+			"caseSensitive": true,
+			"tmName": "X-Foo",
+			"not": true,
+			"startsWith": true,
+			"values": ["ignore"]
+		  }
+		],
+		"name": "rule3",
+		"actions": [
+		  {
+			"request": true,
+			"redirect": true,
+			"httpReply": true,
+			"location": "http://www.othersite.com"
+		  }
+		]
+	  }
+	]
   }]
 }
