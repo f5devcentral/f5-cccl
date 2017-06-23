@@ -75,7 +75,6 @@ class TestServiceConfigDeployer:
         tasks_remaining = deployer.deploy(self.desired_config)
         assert 0 == tasks_remaining
 
-
     def test_app_services(self, service_manager):
         """Test create/update/delete of app services."""
         deployer = service_manager._service_deployer
@@ -85,7 +84,6 @@ class TestServiceConfigDeployer:
         service_manager.apply_config(self.service)
         assert deployer._create_resources.called
         args, kwargs = deployer._create_resources.call_args_list[0]
-        print(args)
         assert 7 == len(args[0])
         assert args[0][6].name == 'MyAppService0'
 
@@ -95,8 +93,8 @@ class TestServiceConfigDeployer:
         service_manager.apply_config(self.service)
         assert deployer._update_resources.called
         args, kwargs = deployer._update_resources.call_args_list[0]
-        assert 3 == len(args[0])
-        assert args[0][2].name == 'MyAppService'
+        assert 2 == len(args[0])
+        assert args[0][1].name == 'MyAppService'
 
         # Should delete two app services
         self.service = {}
@@ -105,7 +103,7 @@ class TestServiceConfigDeployer:
 
         assert deployer._delete_resources.called
         args, kwargs = deployer._delete_resources.call_args_list[0]
-        assert 8 == len(args[0])
+        assert 6 == len(args[0])
         expected_set = set(['appsvc', 'MyAppService'])
         result_set = set([args[0][0].name, args[0][1].name])
         assert expected_set == result_set
