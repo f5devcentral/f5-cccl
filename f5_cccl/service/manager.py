@@ -132,16 +132,21 @@ class ServiceConfigDeployer(object):
     def _desired_nodes(self):
         """Desired nodes is inferred from the active pool members."""
         desired_nodes = dict()
+        nodes = self._bigip.get_nodes()
         pools = self._bigip.get_pools(True)
         for pool in pools:
             for member in pools[pool].members:
                 addr = member.name.split('%3A')[0]
-                node = {'name': addr,
-                        'partition': member.partition,
-                        'address': addr,
-                        'state': 'user-up',
-                        'session': 'user-enabled'}
-                desired_nodes[addr] = Node(**node)
+                # make a copy to iterate over, then delete from 'nodes'
+                node_list = list(nodes.keys())
+                for key in node_list:
+                    if nodes[key].data['address'] == addr:
+                        node = {'name': key,
+                                'partition': nodes[key].partition,
+                                'address': addr,
+                                'state': 'user-up',
+                                'session': 'user-enabled'}
+                        desired_nodes[key] = Node(**node)
 
         return desired_nodes
 
@@ -179,22 +184,16 @@ class ServiceConfigDeployer(object):
         (create_iapps, update_iapps, delete_iapps) = (
             self._get_resource_tasks(existing, desired))
 
-        # Get the list of node tasks
-        existing = self._bigip.get_nodes()
-        desired = self._desired_nodes()
-        (create_nodes, update_nodes, delete_nodes) = (
-            self._get_resource_tasks(existing, desired))
-
         # Get the list of monitor tasks
         (create_monitors, update_monitors, delete_monitors) = (
             self._get_monitor_tasks(desired_config))
 
-        create_tasks = create_nodes + create_monitors + create_pools + \
-            create_policies + create_virtuals + create_iapps
-        update_tasks = update_nodes + update_monitors + update_pools + \
-            update_policies + update_virtuals + update_iapps
+        create_tasks = create_monitors + create_pools + create_policies + \
+            create_virtuals + create_iapps
+        update_tasks = update_monitors + update_pools + update_policies + \
+            update_virtuals + update_iapps
         delete_tasks = delete_iapps + delete_virtuals + delete_policies + \
-            delete_pools + delete_monitors + delete_nodes
+            delete_pools + delete_monitors
 
         taskq_len = len(create_tasks) + len(update_tasks) + len(delete_tasks)
 
@@ -226,6 +225,15 @@ class ServiceConfigDeployer(object):
 
             # Reset the taskq length.
             taskq_len = tasks_remaining
+
+        # Delete/update nodes (no creation)
+        self._bigip.refresh()
+        existing = self._bigip.get_nodes()
+        desired = self._desired_nodes()
+        (update_nodes, delete_nodes) = \
+            self._get_resource_tasks(existing, desired)[1:3]
+        self._update_resources(update_nodes)
+        self._delete_resources(delete_nodes)
 
         return taskq_len
 
