@@ -150,6 +150,28 @@ class ServiceConfigDeployer(object):
 
         return desired_nodes
 
+    def _post_deploy(self, desired_config):
+        """Remove superfluous resources.
+
+        Remove superfluous resources that could not be inferred from the
+        desired config.
+        """
+        self._bigip.refresh()
+
+        # Delete/update nodes (no creation)
+        existing = self._bigip.get_nodes()
+        desired = self._desired_nodes()
+        (update_nodes, delete_nodes) = \
+            self._get_resource_tasks(existing, desired)[1:3]
+        self._update_resources(update_nodes)
+        self._delete_resources(delete_nodes)
+
+        # Delete extraneous virtual addresses
+        desired = desired_config.get('virtual_addresses', dict())
+        extra_vaddrs = self._bigip.find_unreferenced_virtual_addrs()
+        delete_vaddrs = self._get_resource_tasks(extra_vaddrs, desired)[2]
+        self._delete_resources(delete_vaddrs)
+
     def deploy(self, desired_config):  # pylint: disable=too-many-locals
         """Deploy the managed partition with the desired config.
 
@@ -159,6 +181,12 @@ class ServiceConfigDeployer(object):
         :returns: The number of tasks that could not be completed.
         """
         self._bigip.refresh()
+
+        # Get the list of virtual address tasks
+        existing = self._bigip.get_virtual_addresses()
+        desired = desired_config.get('virtual_addresses', dict())
+        (create_vaddrs, update_vaddrs) = (
+            self._get_resource_tasks(existing, desired))[0:2]
 
         # Get the list of virtual server tasks
         existing = self._bigip.get_virtuals()
@@ -188,10 +216,10 @@ class ServiceConfigDeployer(object):
         (create_monitors, update_monitors, delete_monitors) = (
             self._get_monitor_tasks(desired_config))
 
-        create_tasks = create_monitors + create_pools + create_policies + \
-            create_virtuals + create_iapps
-        update_tasks = update_monitors + update_pools + update_policies + \
-            update_virtuals + update_iapps
+        create_tasks = create_vaddrs + create_monitors + \
+            create_pools + create_policies + create_virtuals + create_iapps
+        update_tasks = update_vaddrs + update_monitors + \
+            update_pools + update_policies + update_virtuals + update_iapps
         delete_tasks = delete_iapps + delete_virtuals + delete_policies + \
             delete_pools + delete_monitors
 
@@ -226,14 +254,7 @@ class ServiceConfigDeployer(object):
             # Reset the taskq length.
             taskq_len = tasks_remaining
 
-        # Delete/update nodes (no creation)
-        self._bigip.refresh()
-        existing = self._bigip.get_nodes()
-        desired = self._desired_nodes()
-        (update_nodes, delete_nodes) = \
-            self._get_resource_tasks(existing, desired)[1:3]
-        self._update_resources(update_nodes)
-        self._delete_resources(delete_nodes)
+        self._post_deploy(desired_config)
 
         return taskq_len
 

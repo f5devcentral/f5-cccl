@@ -84,8 +84,11 @@ class TestServiceConfigDeployer:
         service_manager.apply_config(self.service)
         assert deployer._create_resources.called
         args, kwargs = deployer._create_resources.call_args_list[0]
-        assert 7 == len(args[0])
-        assert args[0][6].name == 'MyAppService0'
+
+        # The quantity of resources defined in service.json
+        resources_to_create = 9
+        assert resources_to_create == len(args[0])
+        assert args[0][8].name == 'MyAppService0'
 
         # Should update one app service
         self.service['iapps'][0]['name'] = 'MyAppService'

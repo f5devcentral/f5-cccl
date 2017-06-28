@@ -18,6 +18,7 @@
 
 from __future__ import print_function
 
+
 from f5_cccl.resource.ltm.monitor.http_monitor import ApiHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import ApiHTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import ApiICMPMonitor
@@ -25,11 +26,13 @@ from f5_cccl.resource.ltm.monitor.tcp_monitor import ApiTCPMonitor
 from f5_cccl.resource.ltm.policy import ApiPolicy
 from f5_cccl.resource.ltm.pool import ApiPool
 from f5_cccl.resource.ltm.virtual import ApiVirtualServer
+from f5_cccl.resource.ltm.virtual_address import ApiVirtualAddress
 from f5_cccl.resource.ltm.app_service import ApplicationService
 
 
 class ServiceConfigReader(object):
     """Class that loads a service defined by cccl-api-schema."""
+
     def __init__(self, partition):
         """Initializer."""
         self._partition = partition
@@ -46,6 +49,13 @@ class ServiceConfigReader(object):
         config_dict['virtuals'] = {
             v['name']: ApiVirtualServer(partition=self._partition, **v)
             for v in virtuals
+        }
+
+        # Get the list of explicitly defined virtual addresses.
+        virtual_addresses = service_config.get('virtualAddresses', list())
+        config_dict['virtual_addresses'] = {
+            va['name']: ApiVirtualAddress(partition=self._partition, **va)
+            for va in virtual_addresses
         }
 
         pools = service_config.get('pools', list())

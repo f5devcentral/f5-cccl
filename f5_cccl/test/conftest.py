@@ -113,6 +113,37 @@ class Policy():
         return Policy(name)
 
 
+class VirtualAddress():
+    """A mock BIG-IP VirtualAddress."""
+
+    def __init__(self, name, **kwargs):
+        """Initialize the object."""
+        self.name = name
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        self.raw = self.__dict__
+
+    def modify(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def update(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def create(self, partition=None, name=None, **kwargs):
+        """Create the virtual address object."""
+        pass
+
+    def delete(self):
+        """Delete the virtual address object."""
+        pass
+
+    def load(self, name=None, partition=None):
+        """Load the virtual address object."""
+        return VirtualAddress(name)
+
+
 class Member():
     """A mock BIG-IP Pool Member."""
 
@@ -478,6 +509,18 @@ class MockVirtuals():
         pass
 
 
+class MockVirtualAddresses():
+    """A mock Ltm virtual address object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.virtual_address = VirtualAddress('test')
+
+    def get_collection(self):
+        """Get collection of virtual addresses."""
+        return []
+
+
 class MockPools():
     """A mock Ltm pools object."""
 
@@ -524,7 +567,7 @@ class MockLtm():
         self.pools = MockPools()
         self.nodes = MockNodes()
         self.policys = MockPolicys()
-
+        self.virtual_address_s = MockVirtualAddresses()
 
 class MockTm():
     def __init__(self):
@@ -611,6 +654,15 @@ class BigIPTest(bigip.CommonBigIP):
 
         return nodes
 
+    def mock_vas_get_collection(self, requests_params=None):
+        """Mock: Return a mocked collection of virtual addresses."""
+        vas = []
+        for va in self.bigip_data['virtual_addresses']:
+            virtual_address = MockVirtualAddress(**va)
+            vas.append(virtual_address)
+
+        return vas
+
     def read_test_data(self, bigip_state):
         """Read test data for the Big-IP state."""
         # Read the BIG-IP state
@@ -649,5 +701,7 @@ def big_ip():
         Mock(side_effect=big_ip.mock_iapps_get_collection)
     big_ip.tm.ltm.nodes.get_collection = \
         Mock(side_effect=big_ip.mock_nodes_get_collection)
+    big_ip.tm.ltm.virtual_address_s.get_collection = \
+        Mock(side_effect=big_ip.mock_vas_get_collection)
 
     return big_ip
