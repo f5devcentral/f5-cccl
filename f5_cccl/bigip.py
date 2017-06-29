@@ -136,6 +136,35 @@ class CommonBigIP(ManagementRoot):
             LOGGER.error("F5 SDK Error: %s", error)
             raise cccl_exc.F5CcclCacheRefreshError(
                 "CommonBigIP: failed to refresh internal BIG-IP state.")
+
+    def _create_resource(self, resource_type, resource_obj):
+        """Create an iControl REST resource and handle exceptions on init.
+
+        If some error occurs during the creation of a resource object,
+        this wrapper will handle the known exceptions that might occur.
+
+        We should never get a resource that does not have a name and
+        partition, so creating a bare resource will allow us to try
+        updates and to perform deletions.
+        """
+        icr_resource = None
+        try:
+            icr_resource = resource_type(**resource_obj.raw)
+        except (ValueError, TypeError) as error:
+            LOGGER.error(
+                "Failed to create iControl REST resource %s, %s: error(%s)",
+                resource_obj.name, resource_type.__name__, str(error))
+
+            # An error occurred because the constructor did not like the
+            # input.  Use resource name and partition to allow for its
+            # management.  If we get a response from the big-ip, where
+            # the object name and partition is not defined, then
+            # add None.
+            icr_resource = resource_type(resource_obj.name,
+                                         resource_obj.partition)
+
+        return icr_resource
+
     def _refresh(self):
         """Refresh the internal cache with the BIG-IP state."""
         start_time = time()
@@ -198,65 +227,68 @@ class CommonBigIP(ManagementRoot):
 
         #  Refresh the virtuals cache.
         self._virtuals = {
-            v.name: IcrVirtualServer(**v.raw) for v in virtuals
-            if self._manageable_resource(v)
+            v.name: self._create_resource(IcrVirtualServer, v)
+            for v in virtuals if self._manageable_resource(v)
         }
 
         #  Refresh the virtuals cache.
         self._all_virtuals = {
-            v.name: IcrVirtualServer(**v.raw) for v in virtuals
+            v.name: self._create_resource(IcrVirtualServer, v)
+            for v in virtuals
         }
 
         #  Refresh the virtual address cache.
         self._virtual_addresses = {
-            v.name: IcrVirtualAddress(**v.raw) for v in virtual_addresses
-            if self._manageable_resource(v)
+            v.name: self._create_resource(IcrVirtualAddress, v)
+            for v in virtual_addresses if self._manageable_resource(v)
         }
 
         #  Refresh the pool cache
         self._pools = {
-            p.name: IcrPool(**p.raw) for p in pools
-            if self._manageable_resource(p)
+            p.name: self._create_resource(IcrPool, p)
+            for p in pools if self._manageable_resource(p)
         }
 
         #  Refresh the all-pool cache
         self._all_pools = {
-            p.name: IcrPool(**p.raw) for p in pools
+            p.name: self._create_resource(IcrPool, p)
+            for p in pools
         }
 
         #  Refresh the policy cache
         self._policies = {
-            p.name: IcrPolicy(**p.raw) for p in policies
-            if self._manageable_resource(p)
+            p.name: self._create_resource(IcrPolicy, p)
+            for p in policies if self._manageable_resource(p)
         }
 
         #  Refresh the iapp cache
         self._iapps = {
-            i.name: ApplicationService(**i.raw) for i in iapps
-            if i.name.startswith(self._prefix)
+            i.name: self._create_resource(ApplicationService, i)
+            for i in iapps if i.name.startswith(self._prefix)
         }
 
         #  Refresh the node cache
         self._nodes = {
-            n.name: Node(**n.raw) for n in nodes
+            n.name: self._create_resource(Node, n)
+            for n in nodes
         }
 
         #  Refresh the health monitor cache
         self._monitors['http'] = {
-            m.name: IcrHTTPMonitor(**m.raw) for m in http_monitors
-            if self._manageable_resource(m)
+            m.name: self._create_resource(IcrHTTPMonitor, m)
+            for m in http_monitors if self._manageable_resource(m)
         }
         self._monitors['https'] = {
-            m.name: IcrHTTPSMonitor(**m.raw) for m in https_monitors
-            if self._manageable_resource(m)
+            m.name: self._create_resource(IcrHTTPSMonitor, m)
+            for m in https_monitors if self._manageable_resource(m)
         }
         self._monitors['tcp'] = {
-            m.name: IcrTCPMonitor(**m.raw) for m in tcp_monitors
-            if self._manageable_resource(m)
+            m.name: self._create_resource(IcrTCPMonitor, m)
+            for m in tcp_monitors if self._manageable_resource(m)
         }
         self._monitors['icmp'] = {
-            m.name: IcrICMPMonitor(**m.raw) for m in icmp_monitors
-            if self._manageable_resource(m)
+            m.name: self._create_resource(IcrICMPMonitor, m)
+            for m in icmp_monitors if self._manageable_resource(m)
         }
 
         LOGGER.debug(
@@ -273,6 +305,7 @@ class CommonBigIP(ManagementRoot):
         """Return the index of pools."""
         if all_pools:
             return self._all_pools
+
         return self._pools
 
     def get_app_svcs(self):
