@@ -16,11 +16,15 @@ u"""This module provides class for managing member configuration."""
 # limitations under the License.
 #
 
+import logging
 import re
 
 from f5_cccl.resource import Resource
 from netaddr import IPAddress
 from requests.utils import quote as urlquote
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class PoolMember(Resource):
@@ -96,6 +100,8 @@ class PoolMember(Resource):
 
     def _uri_path(self, bigip):
         if not self._pool:
+            LOGGER.error(
+                "Performing REST operation on pool member not supported.")
             raise NotImplementedError
 
         with self._pool.read(bigip) as pool:
@@ -160,6 +166,8 @@ class ApiPoolMember(PoolMember):
         <ip_address>%<route_domain_id>
         """
         if not address or not port:
+            LOGGER.error(
+                "pool member definition must contain address and port")
             raise TypeError(
                 "F5CCCL poolMember definition must contain address and port")
 

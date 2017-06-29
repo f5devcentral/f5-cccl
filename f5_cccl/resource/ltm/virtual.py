@@ -19,11 +19,15 @@
 from __future__ import print_function
 
 from copy import copy
+import logging
 from operator import itemgetter
 import re
 
 from f5_cccl.resource import Resource
 from f5_cccl.resource.ltm.profile import Profile
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class VirtualServer(Resource):
@@ -148,15 +152,18 @@ class IcrVirtualServer(VirtualServer):
         snat_translation = properties.get('sourceAddressTranslation', dict())
         snat_translation.pop('poolReference', None)
 
-        # Flatten the profiles reference.
-
     def _flatten_profiles(self, **properties):
         profiles = list()
         profiles_reference = properties.pop('profilesReference', dict())
 
         items = profiles_reference.get('items', list())
         for item in items:
-            profiles.append(Profile(**item).data)
+            try:
+                profiles.append(Profile(**item).data)
+            except ValueError as error:
+                LOGGER.error(
+                    "Virtual Create Error: failed to create profile: %s",
+                    error)
 
         return profiles
 

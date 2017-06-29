@@ -18,10 +18,16 @@
 
 from __future__ import print_function
 
+import logging
+from time import time
+
 import f5_cccl.exceptions as exc
 from f5_cccl.service.config_reader import ServiceConfigReader
 from f5_cccl.service.validation import ServiceConfigValidator
 from f5_cccl.resource.ltm.node import Node
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ServiceConfigDeployer(object):
@@ -51,60 +57,75 @@ class ServiceConfigDeployer(object):
 
     def _create_resources(self, create_list):
         """Iterate over the resources and call create method."""
+        LOGGER.debug("Creating %d resources...", len(create_list))
         retry_list = list()
         for resource in create_list:
             try:
-                print("Creating %s..." % resource.name)
+                start_time = time()
                 resource.create(self._bigip)
+                LOGGER.debug("Created %s in %.5f seconds.",
+                             resource.name, (time() - start_time))
             except exc.F5CcclResourceConflictError:
-                print("Resource %s already exists, skipping task..." %
-                      resource.name)
+                LOGGER.warning(
+                    "Resource /%s/%s already exists, skipping task...",
+                    resource.partition, resource.name)
             except (exc.F5CcclResourceCreateError,
                     exc.F5CcclError) as e:
-                print(str(e))
-                print("Resource %s creation error, requeuing task..." %
-                      resource.name)
+                LOGGER.error(str(e))
+                LOGGER.error(
+                    "Resource /%s/%s creation error, requeuing task...",
+                    resource.partition, resource.name)
                 retry_list.append(resource)
 
         return retry_list
 
     def _update_resources(self, update_list):
         """Iterate over the resources and call update method."""
+        LOGGER.debug("Updating %d resources...", len(update_list))
         retry_list = list()
         for resource in update_list:
             try:
-                print("Updating %s..." % resource.name)
+                start_time = time()
                 resource.update(self._bigip)
+                LOGGER.debug("Updated %s in %.5f seconds.",
+                             resource.name, (time() - start_time))
             except exc.F5CcclResourceNotFoundError as e:
-                print("Resource %s does not exist, skipping task..." %
-                      resource.name)
+                LOGGER.warning(
+                    "Resource /%s/%s does not exist, skipping task...",
+                    resource.partition, resource.name)
             except (exc.F5CcclResourceUpdateError,
                     exc.F5CcclResourceRequestError,
                     exc.F5CcclError) as e:
-                print(str(e))
-                print("Resource %s update error, requeuing task" %
-                      resource.name)
+                LOGGER.error(str(e))
+                LOGGER.error(
+                    "Resource /%s/%s update error, requeuing task...",
+                    resource.partition, resource.name)
                 retry_list.append(resource)
 
         return retry_list
 
     def _delete_resources(self, delete_list, retry=True):
         """Iterate over the resources and call delete method."""
+        LOGGER.debug("Deleting %d resources...", len(delete_list))
         retry_list = list()
         for resource in delete_list:
             try:
-                print("Deleting %s..." % resource.name)
+                start_time = time()
                 resource.delete(self._bigip)
+                LOGGER.debug("Deleted %s in %.5f seconds.",
+                             resource.name, (time() - start_time))
             except exc.F5CcclResourceNotFoundError:
-                print("Resource %s does not exist, skipping task..." %
-                      resource.name)
+                LOGGER.warning(
+                    "Resource /%s/%s does not exist, skipping task...",
+                    resource.partition, resource.name)
             except (exc.F5CcclResourceDeleteError,
                     exc.F5CcclResourceRequestError,
                     exc.F5CcclError) as e:
-                print(str(e))
+                LOGGER.error(str(e))
                 if retry:
-                    print("Resource %s delete error, requeuing task" %
-                          resource.name)
+                    LOGGER.error(
+                        "Resource /%s/%s delete error, requeuing task...",
+                        resource.partition, resource.name)
                     retry_list.append(resource)
 
         return retry_list
@@ -132,6 +153,7 @@ class ServiceConfigDeployer(object):
     def _desired_nodes(self):
         """Desired nodes is inferred from the active pool members."""
         desired_nodes = dict()
+
         nodes = self._bigip.get_nodes()
         pools = self._bigip.get_pools(True)
         for pool in pools:
@@ -151,14 +173,16 @@ class ServiceConfigDeployer(object):
         return desired_nodes
 
     def _post_deploy(self, desired_config):
-        """Remove superfluous resources.
+        """Perform post-deployment service tasks/cleanup.
 
         Remove superfluous resources that could not be inferred from the
         desired config.
         """
+        LOGGER.debug("Perform post-deploy service tasks...")
         self._bigip.refresh()
 
         # Delete/update nodes (no creation)
+        LOGGER.debug("Post-process nodes.")
         existing = self._bigip.get_nodes()
         desired = self._desired_nodes()
         (update_nodes, delete_nodes) = \
@@ -167,6 +191,7 @@ class ServiceConfigDeployer(object):
         self._delete_resources(delete_nodes)
 
         # Delete extraneous virtual addresses
+        LOGGER.debug("Remove superfluous virtual addresses.")
         desired = desired_config.get('virtual_addresses', dict())
         extra_vaddrs = self._bigip.find_unreferenced_virtual_addrs()
         delete_vaddrs = self._get_resource_tasks(extra_vaddrs, desired)[2]
@@ -183,39 +208,46 @@ class ServiceConfigDeployer(object):
         self._bigip.refresh()
 
         # Get the list of virtual address tasks
+        LOGGER.debug("Getting virtual address tasks...")
         existing = self._bigip.get_virtual_addresses()
         desired = desired_config.get('virtual_addresses', dict())
         (create_vaddrs, update_vaddrs) = (
             self._get_resource_tasks(existing, desired))[0:2]
 
         # Get the list of virtual server tasks
+        LOGGER.debug("Getting virtual server tasks...")
         existing = self._bigip.get_virtuals()
         desired = desired_config.get('virtuals', dict())
         (create_virtuals, update_virtuals, delete_virtuals) = (
             self._get_resource_tasks(existing, desired))
 
         # Get the list of pool tasks
+        LOGGER.debug("Getting pool tasks...")
         existing = self._bigip.get_pools()
         desired = desired_config.get('pools', dict())
         (create_pools, update_pools, delete_pools) = (
             self._get_resource_tasks(existing, desired))
 
         # Get the list of policy tasks
+        LOGGER.debug("Getting policy tasks...")
         existing = self._bigip.get_l7policies()
         desired = desired_config.get('l7policies', dict())
         (create_policies, update_policies, delete_policies) = (
             self._get_resource_tasks(existing, desired))
 
         # Get the list of iapp tasks
+        LOGGER.debug("Getting iApp tasks...")
         existing = self._bigip.get_app_svcs()
         desired = desired_config.get('iapps', dict())
         (create_iapps, update_iapps, delete_iapps) = (
             self._get_resource_tasks(existing, desired))
 
         # Get the list of monitor tasks
+        LOGGER.debug("Getting monitor tasks...")
         (create_monitors, update_monitors, delete_monitors) = (
             self._get_monitor_tasks(desired_config))
 
+        LOGGER.debug("Building task lists...")
         create_tasks = create_vaddrs + create_monitors + \
             create_pools + create_policies + create_virtuals + create_iapps
         update_tasks = update_vaddrs + update_monitors + \
@@ -234,6 +266,8 @@ class ServiceConfigDeployer(object):
         # loop is exited with work remaining.
         finished = False
         while not finished:
+            LOGGER.debug("Service task queue length: %d", taskq_len)
+
             # Iterate over the list of resources to create
             create_tasks = self._create_resources(create_tasks)
 
@@ -247,7 +281,7 @@ class ServiceConfigDeployer(object):
                 len(create_tasks) + len(update_tasks) + len(delete_tasks))
 
             # Did the task queue shrink?
-            if tasks_remaining >= taskq_len:
+            if tasks_remaining >= taskq_len or tasks_remaining == 0:
                 # No, we have stopped making progress.
                 finished = True
 
@@ -263,7 +297,12 @@ class ServiceManager(object):
     """CCCL apply config implementation class."""
 
     def __init__(self, bigip, partition, schema, prefix=None):
-        """Initialize the ServiceManager."""
+        """Initialize the ServiceManager.
+
+        Raises:
+        F5CcclError: Error initializing the validator or reading the
+        API schema.
+        """
         self._bigip = bigip
         self._partition = partition
         self._prefix = prefix
@@ -277,14 +316,20 @@ class ServiceManager(object):
 
     def apply_config(self, service_config):
         """Apply the desired service configuration."""
+
+        LOGGER.debug("apply_config start")
+        start_time = time()
+
         # Validate the service configuration.
         self._config_validator.validate(service_config)
 
         # Read in the configuration
         desired_config = self._config_reader.read_config(service_config)
 
-        # Refresh the BigIP state.
-        self._bigip.refresh()
-
         # Deploy the service desired configuratio.
-        return self._service_deployer.deploy(desired_config)
+        retval = self._service_deployer.deploy(desired_config)
+
+        LOGGER.debug(
+            "apply_config took %.5f seconds.", (time() - start_time))
+
+        return retval

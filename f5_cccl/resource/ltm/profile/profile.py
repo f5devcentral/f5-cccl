@@ -16,11 +16,16 @@
 # limitations under the License.
 #
 
+import logging
+
 from f5_cccl.resource import Resource
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 class Profile(Resource):
-    """Virtual Server class for managing configuration on BIG-IP."""
+    """Profile class for managing configuration on BIG-IP."""
 
     properties = dict(name=None,
                       partition=None,

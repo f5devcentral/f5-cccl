@@ -18,9 +18,14 @@ u"""This module provides class for managing resource configuration."""
 
 from __future__ import print_function
 
+import logging
+
 from f5_cccl.resource.ltm.pool_member import ApiPoolMember
 from f5_cccl.resource.ltm.pool_member import IcrPoolMember
 from f5_cccl.resource import Resource
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Pool(Resource):
@@ -53,9 +58,10 @@ class Pool(Resource):
 
     def __eq__(self, other):
         if not isinstance(other, Pool):
-            raise ValueError(
+            LOGGER.warning(
                 "Invalid comparison of Pool object with object "
-                "of type {}".format(type(other)))
+                "of type %s", type(other))
+            return False
 
         for key in self.properties:
             if key == 'membersReference' or key == 'monitor':

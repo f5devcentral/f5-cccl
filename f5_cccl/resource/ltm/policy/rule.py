@@ -18,9 +18,15 @@
 
 from functools import total_ordering
 
+
+import logging
+
 from f5_cccl.resource import Resource
 from f5_cccl.resource.ltm.policy.action import Action
 from f5_cccl.resource.ltm.policy.condition import Condition
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @total_ordering
@@ -36,6 +42,12 @@ class Rule(Resource):
     )
 
     def __init__(self, name, partition, **data):
+        """Create a Rule object.
+
+        actions and conditions attributes are guaranteed to
+        be initialized, if non exist, they will be empty
+        lists.
+        """
         super(Rule, self).__init__(name, partition)
         self._data['ordinal'] = data.get('ordinal', 0)
         self._data['actions'] = self._create_actions(
@@ -85,7 +97,9 @@ class Rule(Resource):
             name = "{}".format(index - unsupported_actions)
             try:
                 new_actions.append(Action(name, action))
-            except ValueError:
+            except ValueError as e:
+                LOGGER.warning(
+                    "Create actions: Caught ValueError: %s", str(e))
                 unsupported_actions += 1
 
         return [action.data for action in sorted(new_actions)]
@@ -103,7 +117,9 @@ class Rule(Resource):
             name = "{}".format(index - unsupported_conditions)
             try:
                 new_conditions.append(Condition(name, condition))
-            except ValueError:
+            except ValueError as e:
+                LOGGER.warning(
+                    "Create conditions: Caught ValueError: %s", str(e))
                 unsupported_conditions += 1
 
         return [condition.data for condition in sorted(new_conditions)]

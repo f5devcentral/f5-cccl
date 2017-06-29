@@ -16,7 +16,12 @@
 # limitations under the License.
 #
 
+import logging
+
 from f5_cccl.resource import Resource
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ApplicationService(Resource):
@@ -53,9 +58,10 @@ class ApplicationService(Resource):
 
     def __eq__(self, other):
         if not isinstance(other, ApplicationService):
-            raise ValueError(
+            LOGGER.warning(
                 "Invalid comparison of Application Service object with object "
-                "of type {}".format(type(other)))
+                "of type %s", type(other))
+            return False
 
         if not all(v in self._data['variables']
                    for v in other.data['variables']):

@@ -16,10 +16,13 @@
 #
 """F5 Common Controller Core Library to read, diff and apply BIG-IP config."""
 
+import logging
+
 from f5_cccl.bigip import CommonBigIP
 from f5_cccl.service.manager import ServiceManager
 
 
+LOGGER = logging.getLogger("f5_cccl")
 API_SCHEMA = "./f5_cccl/schemas/cccl-api-schema.yml"
 
 
@@ -49,6 +52,7 @@ class F5CloudServiceManager(object):
         :param port: Port to use for connection (default: 443)
         :param token: Use for token authentication (default None)
         """
+        LOGGER.debug("F5CloudServiceManager initialize")
         self._bigip = CommonBigIP(hostname,
                                   username,
                                   password,

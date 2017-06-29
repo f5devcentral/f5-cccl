@@ -18,12 +18,16 @@ u"""This module provides class for managing resource configuration."""
 #
 
 import copy
+import logging
 
 import f5_cccl.exceptions as cccl_exc
 
 from f5.sdk_exception import F5SDKError
 from icontrol.exceptions import iControlUnexpectedHTTPError
 from requests.utils import quote as urlquote
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Resource(object):
@@ -50,6 +54,11 @@ class Resource(object):
 
     """
 
+    @classmethod
+    def classname(cls):
+        """Return the class name of the resource."""
+        return cls.__name__
+
     def __init__(self, name, partition):
         u"""Initialize a BIG-IP resource object from a CCCL schema object.
 
@@ -58,6 +67,7 @@ class Resource(object):
             partition (string): the resource partition
         """
         if not name:
+            LOGGER.error("Resource instantiation error: undefined name")
             raise ValueError(
                 "must have at least name({})".format(name))
 
@@ -105,12 +115,15 @@ class Resource(object):
             F5CcclResourceConflictError: resouce cannot be created because
             it already exists on the BIG-IP
         """
+        LOGGER.info("Creating %s: /%s/%s",
+                    self.classname(), self.partition, self.name)
         try:
             obj = self._uri_path(bigip).create(**self._data)
             return obj
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
         except F5SDKError as err:
+            LOGGER.error("Create FAILED: /%s/%s", self.partition, self.name)
             raise cccl_exc.F5CcclResourceCreateError(str(err))
 
     def read(self, bigip):
@@ -128,6 +141,8 @@ class Resource(object):
             F5CcclResourceNotFoundError: resouce cannot be loaded because
             it does not exist on the BIG-IP
         """
+        LOGGER.info("Loading %s: /%s/%s",
+                    self.classname(), self.partition, self.name)
         try:
             obj = self._uri_path(bigip).load(
                 name=urlquote(self.name),
@@ -136,6 +151,7 @@ class Resource(object):
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
         except F5SDKError as err:
+            LOGGER.error("Load FAILED: /%s/%s", self.partition, self.name)
             raise cccl_exc.F5CcclError(str(err))
 
     def update(self, bigip, data=None, modify=False):
@@ -159,6 +175,8 @@ class Resource(object):
             F5CcclResourceNotFoundError: resouce cannot be updated because
             it does not exist on the BIG-IP
         """
+        LOGGER.info("Updating %s: /%s/%s",
+                    self.classname(), self.partition, self.name)
         if not data:
             data = self._data
         try:
@@ -173,6 +191,7 @@ class Resource(object):
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
         except F5SDKError as err:
+            LOGGER.error("Update FAILED: /%s/%s", self.partition, self.name)
             raise cccl_exc.F5CcclResourceUpdateError(str(err))
 
     def delete(self, bigip):
@@ -190,6 +209,8 @@ class Resource(object):
             F5CcclResourceNotFoundError: resouce cannot be deleted because
             it already exists on the BIG-IP
         """
+        LOGGER.info("Deleting %s: /%s/%s",
+                    self.classname(), self.partition, self.name)
         try:
             obj = self._uri_path(bigip).load(
                 name=urlquote(self.name),
@@ -202,6 +223,7 @@ class Resource(object):
         except iControlUnexpectedHTTPError as err:
             self._handle_http_error(err)
         except F5SDKError as err:
+            LOGGER.error("Delete FAILED: /%s/%s", self.partition, self.name)
             raise cccl_exc.F5CcclResourceDeleteError(str(err))
 
     @property
@@ -234,10 +256,12 @@ class Resource(object):
         """
         raise NotImplementedError
 
-    @staticmethod
-    def _handle_http_error(error):
+    def _handle_http_error(self, error):
         u"""Extract the error code and reraise a CCCL Error."""
         code = error.response.status_code
+        LOGGER.error(
+            "HTTP error(%d): CCCL resource(%s) /%s/%s.",
+            code, self.classname(), self.partition, self.name)
         if code == 404:
             raise cccl_exc.F5CcclResourceNotFoundError(str(error))
         elif code == 409:

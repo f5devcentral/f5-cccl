@@ -16,8 +16,12 @@
 # limitations under the License.
 #
 
+import logging
 
 from f5_cccl.resource import Resource
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Node(Resource):
@@ -41,9 +45,10 @@ class Node(Resource):
 
     def __eq__(self, other):
         if not isinstance(other, Node):
-            raise ValueError(
+            LOGGER.warning(
                 "Invalid comparison of Node object with object "
-                "of type {}".format(type(other)))
+                "of type %s", type(other))
+            return False
 
         if self.name != other.name:
             return False

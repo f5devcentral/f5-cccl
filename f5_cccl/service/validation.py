@@ -17,13 +17,18 @@
 """This module defines the schema validator used by f5-cccl."""
 
 from __future__ import print_function
-import f5_cccl.exceptions as cccl_exc
+
+import logging
+
 import jsonschema
 from jsonschema import Draft4Validator
 from jsonschema import validators
 import simplejson as json
 import yaml
 
+import f5_cccl.exceptions as cccl_exc
+
+LOGGER = logging.getLogger(__name__)
 DEFAULT_SCHEMA = "./f5_cccl/schemas/cccl-api-schema.yml"
 
 
@@ -48,7 +53,8 @@ def read_yaml_or_json(target):
     elif target.lower().endswith('.yaml') or target.lower().endswith('.yml'):
         return read_yaml(target)
     else:
-        raise cccl_exc.F5CcclError('json or yaml file expected.')
+        raise cccl_exc.F5CcclError(
+            'CCCL API schema json or yaml file expected.')
 
 
 class ServiceConfigValidator(object):
@@ -58,11 +64,21 @@ class ServiceConfigValidator(object):
     against the default schema.
 
     Optionally accepts an alternate json or yaml schema to validate against.
+
     """
 
     def __init__(self, schema=DEFAULT_SCHEMA):
-        """Choose schema."""
-        self.schema = read_yaml_or_json(schema)
+        """Choose schema.
+
+        Raises:
+            F5CcclError: Failed to read the CCCL API schema.
+        """
+        try:
+            self.schema = read_yaml_or_json(schema)
+        except IOError as error:
+            LOGGER.error("%s", error)
+            raise cccl_exc.F5CcclError('CCCL API schema could not be read.')
+
         self.validate_properties = None
 
     def __set_defaults(self, validator, properties, instance, schema):
@@ -82,6 +98,8 @@ class ServiceConfigValidator(object):
 
     def validate(self, cfg):
         """Check a config against the schema, returns `None` at succeess."""
+        LOGGER.debug("Validating desired config against CCCL API schema.")
+
         validator_with_defaults = self._extend_with_default(Draft4Validator)
         try:
             return validator_with_defaults(self.schema).validate(cfg)

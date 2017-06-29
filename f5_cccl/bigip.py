@@ -16,12 +16,16 @@ u"""This module provides a class for managing a BIG-IP."""
 # limitations under the License.
 
 from copy import copy
+import logging
+from time import time
 
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 from f5.bigip import ManagementRoot
+from f5.sdk_exception import F5SDKError
 
+import f5_cccl.exceptions as cccl_exc
 from f5_cccl.resource.ltm.app_service import ApplicationService
 from f5_cccl.resource.ltm.monitor.http_monitor import IcrHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import IcrHTTPSMonitor
@@ -34,6 +38,8 @@ from f5_cccl.resource.ltm.virtual import IcrVirtualServer
 from f5_cccl.resource.ltm.node import Node
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+LOGGER = logging.getLogger(__name__)
 
 
 class CommonBigIP(ManagementRoot):
@@ -57,6 +63,8 @@ class CommonBigIP(ManagementRoot):
     def __init__(self, hostname, username, password, partition, prefix=None,
                  port=443, token=None, manage_types=None):
         """Initialize the CommonBigIP object."""
+        LOGGER.debug("CommonBigIP.__init__()")
+
         super_kwargs = {"port": port}
         if token:
             super_kwargs["token"] = token
@@ -77,6 +85,9 @@ class CommonBigIP(ManagementRoot):
         if manage_types is None:
             manage_types = ['/tm/ltm/virtual', '/tm/ltm/pool',
                             '/tm/ltm/monitor', '/tm/sys/application/service']
+
+        LOGGER.info("CommonBigIP managed types: %s",
+                    ",".join(manage_types))
 
         self._manage_virtual = '/tm/ltm/virtual' in manage_types
         self._manage_pool = '/tm/ltm/pool' in manage_types
@@ -118,103 +129,170 @@ class CommonBigIP(ManagementRoot):
 
     def refresh(self):
         """Refresh the internal cache with the BIG-IP state."""
+        LOGGER.debug("Refreshing the BIG-IP cached state...")
+        try:
+            self._refresh()
+        except F5SDKError as error:
+            LOGGER.error("F5 SDK Error: %s", error)
+            raise cccl_exc.F5CcclCacheRefreshError(
+                "CommonBigIP: failed to refresh internal BIG-IP state.")
+
+    def _create_resource(self, resource_type, resource_obj):
+        """Create an iControl REST resource and handle exceptions on init.
+
+        If some error occurs during the creation of a resource object,
+        this wrapper will handle the known exceptions that might occur.
+
+        We should never get a resource that does not have a name and
+        partition, so creating a bare resource will allow us to try
+        updates and to perform deletions.
+        """
+        icr_resource = None
+        try:
+            icr_resource = resource_type(**resource_obj.raw)
+        except (ValueError, TypeError) as error:
+            LOGGER.error(
+                "Failed to create iControl REST resource %s, %s: error(%s)",
+                resource_obj.name, resource_type.__name__, str(error))
+
+            # An error occurred because the constructor did not like the
+            # input.  Use resource name and partition to allow for its
+            # management.  If we get a response from the big-ip, where
+            # the object name and partition is not defined, then
+            # add None.
+            icr_resource = resource_type(resource_obj.name,
+                                         resource_obj.partition)
+
+        return icr_resource
+
+    def _refresh(self):
+        """Refresh the internal cache with the BIG-IP state."""
+        start_time = time()
+
         partition_filter = "$filter=partition+eq+{}".format(self._partition)
 
         #  Retrieve the list of virtual servers in managed partition.
         query = partition_filter
 
         #  Retrieve the lists of health monitors
+        LOGGER.debug("Retrieving http_monitors from BIG-IP /%s...",
+                     self._partition)
         http_monitors = self.tm.ltm.monitor.https.get_collection(
             requests_params={"params": query})
+        LOGGER.debug("Retrieving https_monitors from BIG-IP /%s...",
+                     self._partition)
         https_monitors = self.tm.ltm.monitor.https_s.get_collection(
             requests_params={"params": query})
+        LOGGER.debug("Retrieving tcp_monitors from BIG-IP /%s...",
+                     self._partition)
         tcp_monitors = self.tm.ltm.monitor.tcps.get_collection(
             requests_params={"params": query})
+        LOGGER.debug("Retrieving gateway icmp_monitors from BIG-IP /%s...",
+                     self._partition)
         icmp_monitors = (
             self.tm.ltm.monitor.gateway_icmps.get_collection(
                 requests_params={"params": query})
         )
+        LOGGER.debug("Retrieving iApps from BIG-IP /%s...",
+                     self._partition)
         iapps = self.tm.sys.application.services.get_collection(
             requests_params={"params": query})
+        LOGGER.debug("Retrieving nodes from BIG-IP /%s...",
+                     self._partition)
         nodes = self.tm.ltm.nodes.get_collection(
             requests_params={"params": query})
+        LOGGER.debug("Retrieving virtual addresses from BIG-IP /%s...",
+                     self._partition)
         virtual_addresses = self.tm.ltm.virtual_address_s.get_collection(
             requests_params={"params": query})
 
         #  Retrieve the list of virtuals, pools, and policies in the
         #  managed partition getting all subCollections.
         query = "{}&expandSubcollections=true".format(partition_filter)
+
+        LOGGER.debug("Retrieving virtual servers from BIG-IP /%s...",
+                     self._partition)
         virtuals = self.tm.ltm.virtuals.get_collection(
             requests_params={"params": query})
 
+        LOGGER.debug("Retrieving pools from BIG-IP /%s...",
+                     self._partition)
         pools = self.tm.ltm.pools.get_collection(
             requests_params={"params": query})
 
+        LOGGER.debug("Retrieving LTM policies from BIG-IP /%s...",
+                     self._partition)
         policies = self.tm.ltm.policys.get_collection(
             requests_params={"params": query})
 
         #  Refresh the virtuals cache.
         self._virtuals = {
-            v.name: IcrVirtualServer(**v.raw) for v in virtuals
-            if self._manageable_resource(v)
+            v.name: self._create_resource(IcrVirtualServer, v)
+            for v in virtuals if self._manageable_resource(v)
         }
 
         #  Refresh the virtuals cache.
         self._all_virtuals = {
-            v.name: IcrVirtualServer(**v.raw) for v in virtuals
+            v.name: self._create_resource(IcrVirtualServer, v)
+            for v in virtuals
         }
 
         #  Refresh the virtual address cache.
         self._virtual_addresses = {
-            v.name: IcrVirtualAddress(**v.raw) for v in virtual_addresses
-            if self._manageable_resource(v)
+            v.name: self._create_resource(IcrVirtualAddress, v)
+            for v in virtual_addresses if self._manageable_resource(v)
         }
 
         #  Refresh the pool cache
         self._pools = {
-            p.name: IcrPool(**p.raw) for p in pools
-            if self._manageable_resource(p)
+            p.name: self._create_resource(IcrPool, p)
+            for p in pools if self._manageable_resource(p)
         }
 
         #  Refresh the all-pool cache
         self._all_pools = {
-            p.name: IcrPool(**p.raw) for p in pools
+            p.name: self._create_resource(IcrPool, p)
+            for p in pools
         }
 
         #  Refresh the policy cache
         self._policies = {
-            p.name: IcrPolicy(**p.raw) for p in policies
-            if self._manageable_resource(p)
+            p.name: self._create_resource(IcrPolicy, p)
+            for p in policies if self._manageable_resource(p)
         }
 
         #  Refresh the iapp cache
         self._iapps = {
-            i.name: ApplicationService(**i.raw) for i in iapps
-            if i.name.startswith(self._prefix)
+            i.name: self._create_resource(ApplicationService, i)
+            for i in iapps if i.name.startswith(self._prefix)
         }
 
         #  Refresh the node cache
         self._nodes = {
-            n.name: Node(**n.raw) for n in nodes
+            n.name: self._create_resource(Node, n)
+            for n in nodes
         }
 
         #  Refresh the health monitor cache
         self._monitors['http'] = {
-            m.name: IcrHTTPMonitor(**m.raw) for m in http_monitors
-            if self._manageable_resource(m)
+            m.name: self._create_resource(IcrHTTPMonitor, m)
+            for m in http_monitors if self._manageable_resource(m)
         }
         self._monitors['https'] = {
-            m.name: IcrHTTPSMonitor(**m.raw) for m in https_monitors
-            if self._manageable_resource(m)
+            m.name: self._create_resource(IcrHTTPSMonitor, m)
+            for m in https_monitors if self._manageable_resource(m)
         }
         self._monitors['tcp'] = {
-            m.name: IcrTCPMonitor(**m.raw) for m in tcp_monitors
-            if self._manageable_resource(m)
+            m.name: self._create_resource(IcrTCPMonitor, m)
+            for m in tcp_monitors if self._manageable_resource(m)
         }
         self._monitors['icmp'] = {
-            m.name: IcrICMPMonitor(**m.raw) for m in icmp_monitors
-            if self._manageable_resource(m)
+            m.name: self._create_resource(IcrICMPMonitor, m)
+            for m in icmp_monitors if self._manageable_resource(m)
         }
+
+        LOGGER.debug(
+            "BIG-IP refresh took %.5f seconds.", (time() - start_time))
 
     def get_virtuals(self, all_virtuals=False):
         """Return the index of virtual servers."""
@@ -227,6 +305,7 @@ class CommonBigIP(ManagementRoot):
         """Return the index of pools."""
         if all_pools:
             return self._all_pools
+
         return self._pools
 
     def get_app_svcs(self):

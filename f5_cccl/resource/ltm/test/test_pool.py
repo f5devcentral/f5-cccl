@@ -192,8 +192,8 @@ def test_compare_equal_pools(cccl_pool0):
 
 def test_compare_pool_and_dict(cccl_pool0):
     pool = ApiPool(partition="Common", **cccl_pool0)
-    with pytest.raises(ValueError):
-        pool == cccl_pool0
+
+    assert not pool == cccl_pool0
 
 
 def test_get_uri_path(bigip, cccl_pool0):

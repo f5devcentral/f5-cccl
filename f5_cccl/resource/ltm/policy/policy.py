@@ -16,12 +16,16 @@
 # limitations under the License.
 #
 
+import logging
 from operator import itemgetter
 
 from f5_cccl.resource import Resource
 from f5_cccl.resource.ltm.policy.action import Action
 from f5_cccl.resource.ltm.policy.condition import Condition
 from f5_cccl.resource.ltm.policy.rule import Rule
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Policy(Resource):
