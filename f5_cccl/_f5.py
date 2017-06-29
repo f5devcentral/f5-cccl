@@ -838,8 +838,13 @@ class CloudBigIP(BigIP):
 
         ADDR_IDX = 2
         IP_IDX = 0
-        old_addr = \
-            v.__dict__['destination'].split('/')[ADDR_IDX].split(':')[IP_IDX]
+        dest = v.__dict__['destination'].split('/')[ADDR_IDX]
+        if dest.count(':') > 1:
+            # IPv6
+            old_addr = dest.split('.')[IP_IDX]
+        else:
+            # IPv4
+            old_addr = dest.split(':')[IP_IDX]
 
         no_change = all(data[key] == val for key, val in v.__dict__.iteritems()
                         if key in data)
@@ -907,11 +912,11 @@ class CloudBigIP(BigIP):
             name: Name of the Virtual Address
         """
         if not self.ltm.virtual_address_s.virtual_address.exists(
-                name=urllib.quote(name), partition=partition):
+                name=urllib.quote(name, safe=':'), partition=partition):
             return None
         else:
             return self.ltm.virtual_address_s.virtual_address.load(
-                name=urllib.quote(name), partition=partition)
+                name=urllib.quote(name, safe=':'), partition=partition)
 
     def virtual_address_create(self, partition, name):
         """Create a Virtual Address.
