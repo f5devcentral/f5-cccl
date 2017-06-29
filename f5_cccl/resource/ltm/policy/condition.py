@@ -18,7 +18,12 @@
 
 from __future__ import print_function
 
+import logging
+
 from f5_cccl.resource import Resource
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Condition(Resource):

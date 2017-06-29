@@ -19,7 +19,12 @@ BIG-IP for purposes of abstracting the F5-SDK library.
 # limitations under the License.
 #
 
+import logging
+
 from f5_cccl.resource import Resource
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Monitor(Resource):

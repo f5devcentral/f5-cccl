@@ -79,4 +79,8 @@ class F5CcclResourceDeleteError(F5CcclError):
 
 
 class F5CcclApplyConfigError(F5CcclError):
-    u"""General resource delete failure."""
+    u"""General config deployment failure."""
+
+
+class F5CcclCacheRefreshError(F5CcclError):
+    u"""Failed to update the BigIP configuration state."""

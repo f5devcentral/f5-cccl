@@ -19,6 +19,8 @@
 from __future__ import print_function
 
 
+import logging
+
 from f5_cccl.resource.ltm.monitor.http_monitor import ApiHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import ApiHTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import ApiICMPMonitor
@@ -28,6 +30,9 @@ from f5_cccl.resource.ltm.pool import ApiPool
 from f5_cccl.resource.ltm.virtual import ApiVirtualServer
 from f5_cccl.resource.ltm.virtual_address import ApiVirtualAddress
 from f5_cccl.resource.ltm.app_service import ApplicationService
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ServiceConfigReader(object):
@@ -44,6 +49,8 @@ class ServiceConfigReader(object):
         config_dict['https_monitors'] = dict()
         config_dict['icmp_monitors'] = dict()
         config_dict['tcp_monitors'] = dict()
+
+        LOGGER.debug("Loading desired service configuration...")
 
         virtuals = service_config.get('virtualServers', list())
         config_dict['virtuals'] = {

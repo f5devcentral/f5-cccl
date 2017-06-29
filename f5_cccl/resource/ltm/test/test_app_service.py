@@ -240,8 +240,7 @@ def test_eq():
     assert appsvc1 != appsvc3
 
     # different objects
-    with pytest.raises(ValueError):
-        assert appsvc1 != pool 
+    assert appsvc1 != pool 
 
 
 def test_uri_path(bigip):

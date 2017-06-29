@@ -116,8 +116,7 @@ def test_eq():
     assert node != node2
 
     # different objects
-    with pytest.raises(ValueError):
-        assert node != pool 
+    assert node != pool 
 
 
 def test_uri_path(bigip):
