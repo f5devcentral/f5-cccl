@@ -34,9 +34,13 @@ class VirtualServer(Resource):
     """Virtual Server class for managing configuration on BIG-IP."""
 
     ipv4_dest_pattern = re.compile(
-        "\\/(\\w+)\\/([a-zA-Z0-9_\\-\\.%]+):(\\d+)$"
+        "\\/([a-zA-Z][\\w_\\.-]+)\\/" +
+        "((?:[a-zA-Z0-9_\\-\\.]+)(?:%\\d+)?):(\\d+)$"
     )
-    ipv6_dest_pattern = re.compile("\\/(\\w+)\\/([a-fA-F0-9:%]+)\\.(\\d+)$")
+    ipv6_dest_pattern = re.compile(
+        "\\/([a-zA-Z][\\w_\\.-]+)\\/" +
+        "((?:[a-fA-F0-9:]+)(?:%\\d+)?)\\.(\\d+)$"
+    )
 
     properties = dict(description=None,
                       destination=None,
