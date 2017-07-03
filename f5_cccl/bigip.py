@@ -116,16 +116,27 @@ class CommonBigIP(ManagementRoot):
         return rsc.name.startswith(self._prefix) and \
             getattr(rsc, 'appService', None) is None
 
-    def find_unreferenced_virtual_addrs(self):
+    def get_virtual_address_references(self):
         """The list of virtual addresses to remove from existing config."""
-        virtual_addrs = copy(self._virtual_addresses)
+        unreferenced = copy(self._virtual_addresses)
         all_virtuals = self._all_virtuals
+        referenced = dict()
 
+        # For each virtual in managed partition:
         for virtual in all_virtuals:
-            (virtual_addr) = all_virtuals[virtual].destination[2]
-            virtual_addrs.pop(virtual_addr, None)
+            # Get the name of virtual address from virtual destination.
+            vaddr_name = all_virtuals[virtual].destination[2]
 
-        return virtual_addrs
+            # This virtual server references the virtual address.
+            # Remove it from the list of unreferenced virtual addresses.
+            # If the virtual name is not found, it is a no-op.
+            vaddr = unreferenced.pop(vaddr_name, None)
+            if vaddr:
+                # This virtual refers to the virtual address.  Add it to
+                # the map of referenced virtual addresses.
+                referenced[vaddr_name] = vaddr
+
+        return (referenced, unreferenced)
 
     def refresh(self):
         """Refresh the internal cache with the BIG-IP state."""
