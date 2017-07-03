@@ -193,9 +193,22 @@ class ServiceConfigDeployer(object):
         # Delete extraneous virtual addresses
         LOGGER.debug("Remove superfluous virtual addresses.")
         desired = desired_config.get('virtual_addresses', dict())
-        extra_vaddrs = self._bigip.find_unreferenced_virtual_addrs()
-        delete_vaddrs = self._get_resource_tasks(extra_vaddrs, desired)[2]
+        (referenced, unreferenced) = (
+            self._bigip.get_virtual_address_references()
+        )
+        delete_vaddrs = self._get_resource_tasks(unreferenced, desired)[2]
         self._delete_resources(delete_vaddrs)
+
+        # Get the set of virtual addresses that are created by virtuals
+        # but not in the set of desired virtual addresses.
+        update_vaddrs = list()
+        auto_created = self._get_resource_tasks(referenced, desired)[2]
+        for vaddr in auto_created:
+            if vaddr.data['enabled'] == "no":
+                vaddr.data['enabled'] = "yes"
+                update_vaddrs.append(vaddr)
+
+        self._update_resources(update_vaddrs)
 
     def deploy(self, desired_config):  # pylint: disable=too-many-locals
         """Deploy the managed partition with the desired config.
