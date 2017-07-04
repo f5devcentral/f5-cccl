@@ -187,6 +187,30 @@ def test_ipv4_destination():
     assert destination[2] == "my_virtual_addr%2"
     assert destination[3] == "80"
 
+    cfg = copy(cfg_test)
+    cfg['destination'] = "/Test-1/my_virtual_addr%2:80"
+    virtual = VirtualServer(
+        **cfg
+    )
+
+    destination = virtual.destination
+    assert destination[0] == "/Test-1/my_virtual_addr%2:80"
+    assert destination[1] == "Test-1"
+    assert destination[2] == "my_virtual_addr%2"
+    assert destination[3] == "80"
+
+    cfg = copy(cfg_test)
+    cfg['destination'] = "/Test.1/my_virtual_addr%2:80"
+    virtual = VirtualServer(
+        **cfg
+    )
+
+    destination = virtual.destination
+    assert destination[0] == "/Test.1/my_virtual_addr%2:80"
+    assert destination[1] == "Test.1"
+    assert destination[2] == "my_virtual_addr%2"
+    assert destination[3] == "80"
+
 
 def test_ipv6_destination():
     cfg = copy(cfg_test)
