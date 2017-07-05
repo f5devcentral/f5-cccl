@@ -14,8 +14,11 @@
 # limitations under the License.
 #
 
+import copy
 import simplejson as json
+import pdb
 import pytest
+import yaml
 
 from jsonschema import validators, Draft4Validator, exceptions
 from mock import Mock
@@ -23,8 +26,11 @@ from mock import mock_open
 from mock import patch
 
 import f5_cccl.service.validation
+from f5_cccl.service.validation import ServiceConfigValidator
 
 from f5_cccl.exceptions import F5CcclError
+from f5_cccl.exceptions import F5CcclSchemaError
+from f5_cccl.exceptions import F5CcclValidationError
 
 read_yaml = f5_cccl.service.validation.read_yaml
 mock_read_yaml = Mock()
@@ -32,93 +38,65 @@ validators_extend = validators.extend
 mock_validators_extend = Mock()
 
 
-class TestSchemaValidator(object):
+class TestConfigValidator(object):
     """Test Class for testing validator.ServiceConfigValidator"""
 
-    @pytest.fixture()
-    def store_code_space(self):
-        self.validators_extend = validators.extend
-
     @pytest.fixture(autouse=True)
-    def create_target(self):
-        self.schema = Mock()
-        read_yaml_or_json = Mock()
-        with patch('f5_cccl.service.validation.read_yaml_or_json',
-                   read_yaml_or_json, create=True):
-            self.validator = \
-                f5_cccl.service.validation.ServiceConfigValidator(schema=self.schema)
-        self.read_yaml_or_json = read_yaml_or_json
+    def default_schema(self):
+        with open('f5_cccl/schemas/cccl-api-schema.yml', 'r') as fp:
+            yaml_data = yaml.load(fp)
+        return yaml_data
 
     @pytest.fixture()
-    def extended_validator(self, request, store_code_space):
-        request.addfinalizer(self.code_space_teardown)
-        validators.extend = Mock()
+    def valid_config(self):
+        with open('f5_cccl/schemas/tests/service.json', 'r') as fp:
+            service_data = json.load(fp)
+        return service_data
 
-    def code_space_teardown(self):
-        validators.extend = self.validators_extend
+    def test__init__(self, default_schema):
+        """Test the creation of the CCCL service config validator."""
 
-    def create_generator(self, items):
-        for item in items:
-            yield item
+        # Test a schema that does not exist.
+        with pytest.raises(F5CcclSchemaError) as e:
+            validator = ServiceConfigValidator(schema="test_schema.json")
+        assert str(e.value) == ("F5CcclSchemaError - Schema provided is invalid: " +
+                                "CCCL API schema could not be read.")
 
-    def test__init__(self):
-        self.read_yaml_or_json.assert_called_once_with(self.schema)
-        assert self.read_yaml_or_json() == self.validator.schema, \
-            "ServiceConfigValidator.schema is what we expect.."
+        bad_schema='f5_cccl/service/test/bad_schema.json'
+        with pytest.raises(F5CcclSchemaError) as e:
+            validator = ServiceConfigValidator(schema=bad_schema)
+        assert str(e.value) == ("F5CcclSchemaError - Schema provided is invalid: " +
+                                "Invalid API schema")
 
-    def test__set_defaults(self):
-        set_defaults = self.validator._ServiceConfigValidator__set_defaults
-        validator, properties, instance, schema = \
-            ('validator', Mock(), Mock(), 'schema')
-        errors = [1, 2, 3]
-        self.validator.validate_properties = \
-            Mock(return_value=[errors])
-        default = dict(default='default')
-        properties.items = Mock(return_value=[['item', default]])
-        result = set_defaults(validator, properties, instance, schema)
-        assert errors in result, "Generator has our errors"
-        self.validator.validate_properties.assert_called_once_with(
-            validator, properties, instance, schema)
+        bad_schema='f5_cccl/service/test/bad_decode_schema.json'
+        with pytest.raises(F5CcclSchemaError) as e:
+            validator = ServiceConfigValidator(schema=bad_schema)
+        assert str(e.value) == ("F5CcclSchemaError - Schema provided is invalid: " +
+                                "CCCL API schema could not be decoded.")
 
-    def test_extend_with_default(self, extended_validator):
-        validator_class = Mock()
-        validator_class.VALIDATORS = dict(properties="baz")
-        self.validator._extend_with_default(validator_class)
-        validators.extend.assert_called_once_with(
-            validator_class,
-            dict(properties=self.validator._ServiceConfigValidator__set_defaults))
-        assert self.validator.validate_properties == \
-            validator_class.VALIDATORS["properties"], \
-            "Confirm validator properties"
+        validator = ServiceConfigValidator()
+        assert validator.validator
+        assert validator.validator.META_SCHEMA == Draft4Validator.META_SCHEMA
+        assert validator.validator.schema == default_schema
 
-    def test_validate(self):
-        # set up
-        expected = "No exception"
-        side_effect = [expected, exceptions.SchemaError("SchemaError"),
-                       exceptions.ValidationError("ValidationError")]
-        returned_defaults = Mock()
-        validator_with_defaults = Mock(return_value=returned_defaults)
-        validate = Mock(side_effect=side_effect)
-        returned_defaults.validate = validate
-        self.validator.schema = "schema"
-        self.validator._extend_with_default = \
-            Mock(return_value=validator_with_defaults)
-        cfg = "cfg"
+    def test_validate(self, valid_config):
+        """Test the validation method."""
+        validator = ServiceConfigValidator()
 
-        # test positive case
-        result = self.validator.validate(cfg)
-        self.validator._extend_with_default.assert_called_once_with(
-            Draft4Validator)
-        assert result == expected, expected
-        validate.assert_called_once_with(cfg)
-        validator_with_defaults.assert_called_once_with(self.validator.schema)
+        try:
+            validator.validate(valid_config)
+        except F5CcclValidationError as e:
+            assert False, "ValidationError raised for valid config"
 
-        # test negative cases
-        expected_exceptions = [F5CcclError, F5CcclError]
-        while expected_exceptions:
-            expected = expected_exceptions.pop(0)
-            with pytest.raises(expected):
-                self.validator.validate(cfg)
+        # Modify the configuration to make invalid.
+        invalid_config = copy.deepcopy(valid_config)
+        virtuals = invalid_config['virtualServers']
+        for virtual in virtuals:
+            virtual.pop('destination', None)
+            virtual.pop('name', None)
+
+        with pytest.raises(F5CcclValidationError):
+            validator.validate(invalid_config)
 
 
 @pytest.fixture()

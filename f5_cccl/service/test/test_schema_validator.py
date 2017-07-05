@@ -26,7 +26,7 @@ def validate(validator, services):
         return 'Schema Valid'
     except jsonschema.exceptions.SchemaError:
         return 'Schema Error'
-    except cccl_exc.ValidationError as e:
+    except cccl_exc.F5CcclValidationError as e:
         return 'Validator Error'
 
 
