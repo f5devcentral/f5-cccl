@@ -35,21 +35,21 @@ class F5CcclError(Exception):
         return classname
 
 
-class SchemaError(F5CcclError):
+class F5CcclSchemaError(F5CcclError):
     """Error raised when base schema defining API is invalid."""
 
     def __init__(self, msg):
         """Initialize with base schema invalid message."""
-        super(SchemaError, self).__init__(msg)
+        super(F5CcclSchemaError, self).__init__(msg)
         self.msg = 'Schema provided is invalid: ' + msg
 
 
-class ValidationError(F5CcclError):
+class F5CcclValidationError(F5CcclError):
     """Error raised when service config is invalid against the API schema."""
 
     def __init__(self, msg):
         """Initialize with base config does not match schema message."""
-        super(ValidationError, self).__init__(msg)
+        super(F5CcclValidationError, self).__init__(msg)
         self.msg = 'Service congifuration provided does not match schema: ' + \
             msg
 
