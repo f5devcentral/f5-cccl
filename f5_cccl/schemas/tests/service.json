@@ -45,7 +45,7 @@
 	  "name": "192.168.0.1%2",
 	  "autoDelete": "false",
 	  "enabled": "yes",
-	  "address": "192.168.0.1"
+	  "address": "192.168.0.1%2"
 	},
 	{
 	  "name": "MyVaddr",
