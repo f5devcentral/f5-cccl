@@ -19,6 +19,7 @@
 from __future__ import print_function
 
 import logging
+from time import time
 
 import jsonschema
 from jsonschema import Draft4Validator
@@ -66,20 +67,35 @@ class ServiceConfigValidator(object):
     Optionally accepts an alternate json or yaml schema to validate against.
 
     """
-
     def __init__(self, schema=DEFAULT_SCHEMA):
-        """Choose schema.
+        """Choose schema and initialize extended Draft4Validator.
 
         Raises:
-            F5CcclError: Failed to read the CCCL API schema.
+            F5CcclSchemaError: Failed to read or validate the CCCL
+            API schema file.
         """
+
         try:
             self.schema = read_yaml_or_json(schema)
+        except json.JSONDecodeError as error:
+            LOGGER.error("%s", error)
+            raise cccl_exc.F5CcclSchemaError(
+                'CCCL API schema could not be decoded.')
         except IOError as error:
             LOGGER.error("%s", error)
-            raise cccl_exc.F5CcclError('CCCL API schema could not be read.')
+            raise cccl_exc.F5CcclSchemaError(
+                'CCCL API schema could not be read.')
 
-        self.validate_properties = None
+        try:
+            Draft4Validator.check_schema(self.schema)
+            self.validate_properties = Draft4Validator.VALIDATORS["properties"]
+            validator_with_defaults = validators.extend(
+                Draft4Validator,
+                {"properties": self.__set_defaults})
+            self.validator = validator_with_defaults(self.schema)
+        except jsonschema.SchemaError as error:
+            LOGGER.error("%s", error)
+            raise cccl_exc.F5CcclSchemaError("Invalid API schema")
 
     def __set_defaults(self, validator, properties, instance, schema):
         """Helper function to simply return when setting defaults."""
@@ -91,21 +107,16 @@ class ServiceConfigValidator(object):
                                               schema):
             yield error
 
-    def _extend_with_default(self, validator_class):
-        self.validate_properties = validator_class.VALIDATORS["properties"]
-        return validators.extend(validator_class,
-                                 {"properties": self.__set_defaults})
-
     def validate(self, cfg):
         """Check a config against the schema, returns `None` at succeess."""
         LOGGER.debug("Validating desired config against CCCL API schema.")
+        start_time = time()
 
-        validator_with_defaults = self._extend_with_default(Draft4Validator)
         try:
-            return validator_with_defaults(self.schema).validate(cfg)
-        except jsonschema.exceptions.SchemaError as err:
-            msg = str(err)
-            raise cccl_exc.SchemaError(msg)
+            LOGGER.debug("validate start")
+            self.validator.validate(cfg)
         except jsonschema.exceptions.ValidationError as err:
             msg = str(err)
-            raise cccl_exc.ValidationError(msg)
+            raise cccl_exc.F5CcclValidationError(msg)
+        finally:
+            LOGGER.debug("validate took %.5f seconds.", (time() - start_time))
