@@ -17,11 +17,9 @@
 import json
 import pickle
 import pytest
-from f5_cccl.test.conftest import big_ip
-import pdb
-from f5_cccl.bigip import CommonBigIP
-from f5_cccl.resource import ltm
+from f5_cccl.test.conftest import bigip_proxy
 
+from f5_cccl.resource import ltm
 from f5_cccl.service.manager import ServiceConfigDeployer
 from f5_cccl.service.manager import ServiceManager
 from f5_cccl.service.config_reader import ServiceConfigReader
@@ -36,7 +34,7 @@ def service_manager():
     schema = 'f5_cccl/schemas/cccl-api-schema.yml'
 
     service_mgr = ServiceManager(
-        big_ip(),
+        bigip_proxy(),
         partition,
         schema)
 
@@ -52,7 +50,7 @@ def test_apply_config(service_manager):
 class TestServiceConfigDeployer:
 
     def setup(self):
-        self.bigip = big_ip()
+        self.bigip = bigip_proxy()
         self.partition = "test"
 
         svcfile = 'f5_cccl/schemas/tests/service.json'

@@ -18,7 +18,6 @@ from copy import copy, deepcopy
 from f5_cccl.resource.ltm.app_service import ApplicationService
 from f5_cccl.resource.ltm.pool import Pool
 from f5_cccl.resource import Resource
-from f5_cccl.bigip import CommonBigIP
 from mock import Mock
 import pytest
 
