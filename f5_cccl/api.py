@@ -18,7 +18,7 @@
 
 import logging
 
-from f5_cccl.bigip import CommonBigIP
+from f5_cccl.bigip import BigIPProxy
 from f5_cccl.service.manager import ServiceManager
 
 
@@ -39,30 +39,25 @@ class F5CloudServiceManager(object):
     under its control.
     """
 
-    def __init__(self, hostname, username, password, partition, prefix=None,
-                 port=443, token=None, schema_path=API_SCHEMA):
+    def __init__(self, bigip, partition, prefix=None, schema_path=API_SCHEMA):
         """Initialize an instance of the F5 CCCL service manager.
 
-        :param hostname: BIG-IP hostname or ip address.
-        :param username: Access BIG-IP as user
-        :param password: User password
+        :param bigip: BIG-IP management root.
         :param partition: Name of BIG-IP partition to manage.
-        :param prefix: Optional string to prepend to resource names
-        (default: None).
-        :param port: Port to use for connection (default: 443)
-        :param token: Use for token authentication (default None)
+        :param prefix:  The prefix assigned to resources that should be
+        managed by this CCCL instance.  This is prepended to the
+        resource name (default: None)
+        :param schema_path: User defined schema (default:
+        f5_cccl/schemas/cccl-api-schema.yml)
         """
         LOGGER.debug("F5CloudServiceManager initialize")
-        self._bigip = CommonBigIP(hostname,
-                                  username,
-                                  password,
-                                  partition,
-                                  prefix=prefix,
-                                  port=port,
-                                  token=token)
+        self._bigip_proxy = BigIPProxy(bigip,
+                                       partition,
+                                       prefix=prefix)
 
-        self._service_manager = ServiceManager(self._bigip, partition,
-                                               schema_path, prefix)
+        self._service_manager = ServiceManager(self._bigip_proxy,
+                                               partition,
+                                               schema_path)
 
     def apply_config(self, services):
         """Apply service configurations to the BIG-IP partition.
