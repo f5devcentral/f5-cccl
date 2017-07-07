@@ -584,7 +584,7 @@ class MockHealthMonitor():
         self.partition = partition
 
 
-class BigIPTest(bigip.CommonBigIP):
+class MockBigIP(ManagementRoot):
     """BIG-IP configuration tests.
 
     Test BIG-IP configuration given various cloud states and existing
@@ -670,38 +670,38 @@ class BigIPTest(bigip.CommonBigIP):
             self.bigip_data = json.load(json_data)
 
 
-@pytest.fixture()
-def big_ip():
-    """Fixture to supply a mocked BIG-IP."""
-    # Mock the call to _get_tmos_version(), which tries to make a
-    # connection
+@pytest.fixture
+def bigip_proxy():
+
     with patch.object(ManagementRoot, '_get_tmos_version'):
-        big_ip = BigIPTest('1.2.3.4', 'admin', 'admin', 'test1')
+        mgmt_root = MockBigIP('1.2.3.4', 'admin', 'admin')
+
+    mgmt_root.tm = MockTm()
+
+    mgmt_root.tm.ltm.pools.get_collection = \
+        Mock(side_effect=mgmt_root.mock_pools_get_collection)
+    mgmt_root.tm.ltm.policys.get_collection = \
+        Mock(side_effect=mgmt_root.mock_policys_get_collection)
+    mgmt_root.tm.ltm.virtuals.get_collection = \
+        Mock(side_effect=mgmt_root.mock_virtuals_get_collection)
+    mgmt_root.tm.ltm.monitor.https.get_collection = \
+        Mock(side_effect=mgmt_root.mock_monitors_get_collection)
+    mgmt_root.tm.ltm.monitor.https_s.get_collection = \
+        Mock(side_effect=mgmt_root.mock_monitors_get_collection)
+    mgmt_root.tm.ltm.monitor.tcps.get_collection = \
+        Mock(side_effect=mgmt_root.mock_monitors_get_collection)
+    mgmt_root.tm.ltm.monitor.gateway_icmps.get_collection = \
+        Mock(side_effect=mgmt_root.mock_monitors_get_collection)
+    mgmt_root.tm.sys.application.services.get_collection = \
+        Mock(side_effect=mgmt_root.mock_iapps_get_collection)
+    mgmt_root.tm.ltm.nodes.get_collection = \
+        Mock(side_effect=mgmt_root.mock_nodes_get_collection)
+    mgmt_root.tm.ltm.virtual_address_s.get_collection = \
+        Mock(side_effect=mgmt_root.mock_vas_get_collection)
 
     bigip_state='f5_cccl/test/bigip_data.json'
-    big_ip.read_test_data(bigip_state)
+    mgmt_root.read_test_data(bigip_state)
 
-    big_ip.tm = MockTm()
+    bigip_proxy = bigip.BigIPProxy(mgmt_root, 'test1')
 
-    big_ip.tm.ltm.pools.get_collection = \
-        Mock(side_effect=big_ip.mock_pools_get_collection)
-    big_ip.tm.ltm.policys.get_collection = \
-        Mock(side_effect=big_ip.mock_policys_get_collection)
-    big_ip.tm.ltm.virtuals.get_collection = \
-        Mock(side_effect=big_ip.mock_virtuals_get_collection)
-    big_ip.tm.ltm.monitor.https.get_collection = \
-        Mock(side_effect=big_ip.mock_monitors_get_collection)
-    big_ip.tm.ltm.monitor.https_s.get_collection = \
-        Mock(side_effect=big_ip.mock_monitors_get_collection)
-    big_ip.tm.ltm.monitor.tcps.get_collection = \
-        Mock(side_effect=big_ip.mock_monitors_get_collection)
-    big_ip.tm.ltm.monitor.gateway_icmps.get_collection = \
-        Mock(side_effect=big_ip.mock_monitors_get_collection)
-    big_ip.tm.sys.application.services.get_collection = \
-        Mock(side_effect=big_ip.mock_iapps_get_collection)
-    big_ip.tm.ltm.nodes.get_collection = \
-        Mock(side_effect=big_ip.mock_nodes_get_collection)
-    big_ip.tm.ltm.virtual_address_s.get_collection = \
-        Mock(side_effect=big_ip.mock_vas_get_collection)
-
-    return big_ip
+    return bigip_proxy
