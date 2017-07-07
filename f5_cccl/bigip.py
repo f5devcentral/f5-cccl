@@ -22,7 +22,6 @@ from time import time
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-from f5.bigip import ManagementRoot
 from f5.sdk_exception import F5SDKError
 
 import f5_cccl.exceptions as cccl_exc
@@ -42,8 +41,8 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 LOGGER = logging.getLogger(__name__)
 
 
-class CommonBigIP(ManagementRoot):
-    """CommonBigIP class.
+class BigIPProxy(object):
+    """BigIPProxy class.
 
     Manages the resources for the partition(s) of the specified BIG-IP
 
@@ -52,31 +51,20 @@ class CommonBigIP(ManagementRoot):
       the accounts with proper permissions, for either local or remote auth).
 
     Args:
-        hostname: IP address of BIG-IP
-        port: Port of BIG-IP
-        username: BIG-IP username
-        password: BIG-IP password
+        bigip: Management Root of the BIG-IP
         partitions: List of BIG-IP partitions to manage
-        token: The optional auth token to use with BIG-IP (e.g. "tmos")
+        prefix: Opetional string to prepend to resource names
+        manage_types: A list of types managed by this proxy object.
     """
 
-    def __init__(self, hostname, username, password, partition, prefix=None,
-                 port=443, token=None, manage_types=None):
-        """Initialize the CommonBigIP object."""
-        LOGGER.debug("CommonBigIP.__init__()")
+    def __init__(self, bigip, partition, prefix=None, manage_types=None):
+        """Initialize the BigIPProxy object."""
+        LOGGER.debug("BigIPProxy.__init__()")
 
-        super_kwargs = {"port": port}
-        if token:
-            super_kwargs["token"] = token
-        super(CommonBigIP, self).__init__(hostname, username, password,
-                                          **super_kwargs)
-        self._hostname = hostname
-        self._port = port
-        self._username = username
-        self._password = password
+        self._bigip = bigip
         self._partition = partition
-        self._prefix = ""
 
+        self._prefix = ""
         if prefix:
             self._prefix = prefix
 
@@ -86,7 +74,7 @@ class CommonBigIP(ManagementRoot):
             manage_types = ['/tm/ltm/virtual', '/tm/ltm/pool',
                             '/tm/ltm/monitor', '/tm/sys/application/service']
 
-        LOGGER.info("CommonBigIP managed types: %s",
+        LOGGER.info("BigIPProxy managed types: %s",
                     ",".join(manage_types))
 
         self._manage_virtual = '/tm/ltm/virtual' in manage_types
@@ -103,6 +91,10 @@ class CommonBigIP(ManagementRoot):
         self._iapps = dict()
         self._monitors = dict()
         self._nodes = dict()
+
+    def mgmt_root(self):
+        """Return a reference to the proxied BIG-IP."""
+        return self._bigip
 
     def _manageable_resource(self, rsc):
         """Determine if the resource will be managed.
@@ -146,7 +138,7 @@ class CommonBigIP(ManagementRoot):
         except F5SDKError as error:
             LOGGER.error("F5 SDK Error: %s", error)
             raise cccl_exc.F5CcclCacheRefreshError(
-                "CommonBigIP: failed to refresh internal BIG-IP state.")
+                "BigIPProxy: failed to refresh internal BIG-IP state.")
 
     def _create_resource(self, resource_type, resource_obj):
         """Create an iControl REST resource and handle exceptions on init.
@@ -188,34 +180,35 @@ class CommonBigIP(ManagementRoot):
         #  Retrieve the lists of health monitors
         LOGGER.debug("Retrieving http_monitors from BIG-IP /%s...",
                      self._partition)
-        http_monitors = self.tm.ltm.monitor.https.get_collection(
+        http_monitors = self._bigip.tm.ltm.monitor.https.get_collection(
             requests_params={"params": query})
         LOGGER.debug("Retrieving https_monitors from BIG-IP /%s...",
                      self._partition)
-        https_monitors = self.tm.ltm.monitor.https_s.get_collection(
+        https_monitors = self._bigip.tm.ltm.monitor.https_s.get_collection(
             requests_params={"params": query})
         LOGGER.debug("Retrieving tcp_monitors from BIG-IP /%s...",
                      self._partition)
-        tcp_monitors = self.tm.ltm.monitor.tcps.get_collection(
+        tcp_monitors = self._bigip.tm.ltm.monitor.tcps.get_collection(
             requests_params={"params": query})
         LOGGER.debug("Retrieving gateway icmp_monitors from BIG-IP /%s...",
                      self._partition)
         icmp_monitors = (
-            self.tm.ltm.monitor.gateway_icmps.get_collection(
+            self._bigip.tm.ltm.monitor.gateway_icmps.get_collection(
                 requests_params={"params": query})
         )
         LOGGER.debug("Retrieving iApps from BIG-IP /%s...",
                      self._partition)
-        iapps = self.tm.sys.application.services.get_collection(
+        iapps = self._bigip.tm.sys.application.services.get_collection(
             requests_params={"params": query})
         LOGGER.debug("Retrieving nodes from BIG-IP /%s...",
                      self._partition)
-        nodes = self.tm.ltm.nodes.get_collection(
+        nodes = self._bigip.tm.ltm.nodes.get_collection(
             requests_params={"params": query})
         LOGGER.debug("Retrieving virtual addresses from BIG-IP /%s...",
                      self._partition)
-        virtual_addresses = self.tm.ltm.virtual_address_s.get_collection(
-            requests_params={"params": query})
+        virtual_addresses = \
+            self._bigip.tm.ltm.virtual_address_s.get_collection(
+                requests_params={"params": query})
 
         #  Retrieve the list of virtuals, pools, and policies in the
         #  managed partition getting all subCollections.
@@ -223,17 +216,17 @@ class CommonBigIP(ManagementRoot):
 
         LOGGER.debug("Retrieving virtual servers from BIG-IP /%s...",
                      self._partition)
-        virtuals = self.tm.ltm.virtuals.get_collection(
+        virtuals = self._bigip.tm.ltm.virtuals.get_collection(
             requests_params={"params": query})
 
         LOGGER.debug("Retrieving pools from BIG-IP /%s...",
                      self._partition)
-        pools = self.tm.ltm.pools.get_collection(
+        pools = self._bigip.tm.ltm.pools.get_collection(
             requests_params={"params": query})
 
         LOGGER.debug("Retrieving LTM policies from BIG-IP /%s...",
                      self._partition)
-        policies = self.tm.ltm.policys.get_collection(
+        policies = self._bigip.tm.ltm.policys.get_collection(
             requests_params={"params": query})
 
         #  Refresh the virtuals cache.

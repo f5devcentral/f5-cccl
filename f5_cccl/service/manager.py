@@ -33,9 +33,9 @@ LOGGER = logging.getLogger(__name__)
 class ServiceConfigDeployer(object):
     """CCCL config deployer class."""
 
-    def __init__(self, bigip):
+    def __init__(self, bigip_proxy):
         """Initialize the config deployer."""
-        self._bigip = bigip
+        self._bigip = bigip_proxy
 
     def _get_resource_tasks(self, existing, desired):
         """Get the list of resources to create, delete, update."""
@@ -62,7 +62,7 @@ class ServiceConfigDeployer(object):
         for resource in create_list:
             try:
                 start_time = time()
-                resource.create(self._bigip)
+                resource.create(self._bigip.mgmt_root())
                 LOGGER.debug("Created %s in %.5f seconds.",
                              resource.name, (time() - start_time))
             except exc.F5CcclResourceConflictError:
@@ -86,7 +86,7 @@ class ServiceConfigDeployer(object):
         for resource in update_list:
             try:
                 start_time = time()
-                resource.update(self._bigip)
+                resource.update(self._bigip.mgmt_root())
                 LOGGER.debug("Updated %s in %.5f seconds.",
                              resource.name, (time() - start_time))
             except exc.F5CcclResourceNotFoundError as e:
@@ -111,7 +111,7 @@ class ServiceConfigDeployer(object):
         for resource in delete_list:
             try:
                 start_time = time()
-                resource.delete(self._bigip)
+                resource.delete(self._bigip.mgmt_root())
                 LOGGER.debug("Deleted %s in %.5f seconds.",
                              resource.name, (time() - start_time))
             except exc.F5CcclResourceNotFoundError:
@@ -309,18 +309,22 @@ class ServiceConfigDeployer(object):
 class ServiceManager(object):
     """CCCL apply config implementation class."""
 
-    def __init__(self, bigip, partition, schema, prefix=None):
+    def __init__(self, bigip_proxy, partition, schema):
         """Initialize the ServiceManager.
 
+        Args:
+            bigip_proxy:  BigIPProxy object, f5_cccl.bigip.BigIPProxy.
+            partition: The managed partition.
+            schema: Schema that defines the structure of a service
+            configuration.
+
         Raises:
-        F5CcclError: Error initializing the validator or reading the
-        API schema.
+            F5CcclError: Error initializing the validator or reading the
+            API schema.
         """
-        self._bigip = bigip
         self._partition = partition
-        self._prefix = prefix
         self._config_validator = ServiceConfigValidator(schema)
-        self._service_deployer = ServiceConfigDeployer(self._bigip)
+        self._service_deployer = ServiceConfigDeployer(bigip_proxy)
         self._config_reader = ServiceConfigReader(self._partition)
 
     def get_partition(self):
@@ -328,7 +332,18 @@ class ServiceManager(object):
         return self._partition
 
     def apply_config(self, service_config):
-        """Apply the desired service configuration."""
+        """Apply the desired service configuration.
+        Args:
+            service_config: The desired configuration state of the mananged
+            partition.
+
+        Returns:
+            The number of resources that were not successfully deployed.
+
+        Raises:
+            F5CcclValidationError: Indicates that the service_configuration
+            does not conform to the API schema.
+        """
 
         LOGGER.debug("apply_config start")
         start_time = time()
