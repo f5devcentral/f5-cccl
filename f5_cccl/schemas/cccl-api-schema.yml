@@ -17,8 +17,24 @@
   # represents the list of service definitions to apply
   # to a partition.
   $schema: "http://json-schema.org/draft-04/schema#"
-  id: "http://github.com/f5devcentral/f5-cccl/schemas/cccl-api-schema.json"
+  id: "http://github.com/f5devcentral/f5-cccl/schemas/cccl-api-schema.yml"
   type: "object"
+  description: |
+    "The CCCL "Cecil" library allows clients to define services that describe
+    LTM resources on a managed partition of the BIG-IP.  The managed resources
+    are defined in this schema definitions section.
+
+    The structure of the service definition is a collection of lists of
+    supported resources.  Initially this is virtual addresses; virtual servers;
+    pools and pool members; L7 policies, rules, actions and conditions; health
+    monitors; and iApps.
+
+    Where appropriate some basic constraints are defined by the schema; however,
+    not all actual constraints can be enforced by the schema.  It is the
+    responsibility of the client application to ensure that all dependencies
+    among the specified resources are met; otherwise, the service will be deployed
+    in a degraded state.
+    "
   definitions:
 
     portType: 
@@ -28,13 +44,20 @@
       maximum: 65535
 
     virtualAddressType:
-      definition: "Defines the BigIP virtual address resource."
+      definition: "Defines the BigIP virtual address resource.  Virtual addresses need
+      not be defined explicitly and should be auto created by the virtual server unless
+      there is a good reason to have virtual address lifespan be separate from the
+      virtual server.  For example, a virtual server that has a shared virtual address that
+      lives in the Common partition or in the case of OpenStack were the creation of a VIP
+      is separate from the listener(virtual server)"
       type: "object"
       properties:
         name:
+          description: "Name of the virtual address.  Full path length restriction is 255"
           type: "string"
+          minLength: 1
         address:
-          description: "This is the VIP"
+          description: "This is the VIP address (ipv4 or ipv6), default value is any6"
           type: "string"
         enabled:
           type: "string"
@@ -47,22 +70,25 @@
           type: "string"
           description: |
             "Indicates if the virtual address will be automatically deleted on deletion
-            of the last associated virtual server"
+            of the last associated virtual server.  Default is true"
           enum:
             - "true"
             - "false"
         description:
           type: "string"
+          maxLength: 512
         trafficGroup:
           description: |
             "Specifies the traffic group of the virtual address.  The default traffic
             group is inherited from the containing folder"
           type: "string"
+      required:
+        - "name"
 
     routeDomainType: 
       type: "object"
-      description: "Defines the route domain name and id pair"
-      properties: 
+      description: "Defines the route domain name and id pair."
+      properties:
         id: 
           type: "integer"
         name: 
@@ -73,7 +99,7 @@
 
     snatConfigType:
       type: "object"
-      description: "For describing a SNAT configuration"
+      description: "Describes a SNAT configuration for virtual server."
       properties:
         type:
           type: "string"
@@ -88,7 +114,7 @@
         - "type"
 
     profileReferenceType:
-      description: "Defines an LTM profile"
+      description: "Defines a reference to LTM profile."
       type: "object"
       properties:
         name:
@@ -106,7 +132,7 @@
         - "partition"
 
     policyReferenceType:
-      description: "Defines an LTM profile"
+      description: "Defines a reference to LTM policy."
       type: "object"
       properties:
         name:
@@ -125,12 +151,18 @@
           description: "The name of the rule"
           type: "string"
           minLength: 1
-          maxLength: 256
         actions:
+          description: |
+            "Ordered list of actions to perform on successful match.
+            The order of the action in the list indicates the name of the action."
           items: 
             $ref: "#definitions/l7RuleActionType"
             type: "array"
-        conditions: 
+        conditions:
+          description: |
+            "Ordered list of conditions to evaluate.  The order of the condition
+            in the list indicates the name and the order in which the condition
+            is evaluated."
           items: 
             $ref: "#definitions/l7ConditionType"
             type: "array"
@@ -139,6 +171,21 @@
 
     l7RuleActionType: 
       type: "object"
+      description: |
+        "Defines an L7 Policy action. The only supported actions are forward and redirect.
+
+        The supported forwarding actions are forward to pool and reset(block).
+        The supported redirect action is redirect to location (URI)
+
+        All actions apply to requests only, request must always be present and set to 'True'.
+
+        For foward actions, either 'pool' or 'reset' must be defined, but not both.
+        If the forward to pool attribute is set, then the full path of the pool must be
+        provided.  If the 'reset' attribute is 'True', the request will be blocked.
+
+        For redirect actions, the 'location' attribute must point to a valid URI path.
+        (e.g. http://www.myredirect-target.com)
+        "
       properties: 
         forward:
           type: "boolean"
@@ -148,16 +195,17 @@
           description: "This policy action is performed on connection requests."
         reset:
           type: "boolean"
-          description: "This action will reset a connection."
+          description: "This action will reset/reject a connection."
         pool:
-          description: "This action will direct the stream to this pool."
+          description: "This action will direct the stream to this pool. Full path of
+           pool is required"
           type: "string"
         redirect:
           type: "boolean"
           description: "This action will redirect the request."
         location:
           type: "string"
-          description: "This action will come from the given location."
+          description: "This reply will come from the given location."
         httpReply:
           type: "boolean"
           description: "This action will affect a reply to a given HTTP request."
@@ -179,6 +227,26 @@
 
     l7ConditionType:
       type: "object"
+      description: |
+        "Defines an L7 Policy condition.
+        The supported operands are http-host, http-uri, http-header, and http-cookie
+
+        Operands
+            httpHost   -- Provides all or part of the HTTP Host header, only match against
+                          host part is supported.  A list of values to match against is required.
+            httpUri    -- Provides all or part of the request URI.  The parts of the uri
+                          matched are, path, pathSegment, extension.  If pathSegment part of
+                          the URI is matched, then an index that indicates what part of the path
+                          needs to be matched.
+            httpCookie -- Returns the value of a particular cookie or cookie attribute.  If
+                          matching a HTTP cookie, tmName must be defined.  A list of values
+                          to match against is required.
+            httpHeader -- Returns the value of a particular header.  If matching a HTTP header,
+                          tmName must be defined.  A list of values to match against is required.
+
+        Supported match operators are equals, startsWith, endsWith, and contains.  These match
+        operators can be negated by setting 'not' to true.
+        "
       properties:
 
         # Match modifiers
@@ -197,12 +265,16 @@
 
         # Match types
         equals:
+          description: "The value matches if it equals a certain value."
           type: "boolean"
         startsWith:
+          description: "The value matches if it starts with a certain string."
           type: "boolean"
         endsWith:
+          description: "The value matches if it ends with a certain string."
           type: "boolean"
         contains:
+          description: "The value matches if it contains a certain string."
           type: "boolean"
 
         # Operand types
@@ -275,11 +347,15 @@
     l7PolicyType: 
       id: "#/definitions/l7PolicyType"
       type: "object"
+      description: |
+        "A policy comprises a prioritized list of rules that match defined conditions and run
+        specific actions, which you can assign to a virtual server that directs traffic accordingly.
+        The priority of each rule is implied by its order in the list."
       properties: 
         name: 
           type: "string"
           description: "Name of the policy object"
-        strategy: 
+        strategy:
           type: "string"
           description: |
             "Specifies the method to determine which actions get executed in the
@@ -295,12 +371,14 @@
             description: |
               "List of rules associated with this policy.  This can be an empty list"
             $ref: "#definitions/l7RuleType"
-      required: 
+      required:
         - "name"
         - "rules"
 
     healthMonitorType: 
       type: "object"
+      description: |
+        "Defines a health monitor, supported types are http, https, tcp, and gateway-icmp"
       properties: 
         interval: 
           type: "integer"
@@ -352,11 +430,14 @@
     poolMemberType: 
       id: "#/definitions/poolMemberType"
       type: "object"
+      description: |
+        "Defines the pool member.  If a name is not provided, then it is derived from
+        the address and port.
       properties:
         name:
           type: "string"
           definition: |
-            "Specifies the name of the pool member.  This has the form: <address>:<port>"
+            "Specifies the name of the pool member.  The default has the form: <address>:<port>"
         connectionLimit:
           type: "integer"
           definition: |
@@ -413,13 +494,11 @@
       properties: 
         name: 
           description: "Name of the pool object."
-          maxLength: 256
-          minLength: 1
           type: "string"
+          minLength: 1
         description: 
           description: "Specifies descriptive text that identifies the virtual server."
-          maxLength: 256
-          minLength: 0
+          maxLength: 512
           type: "string"
         loadBalancingMode: 
           default: "round-robin"
@@ -445,12 +524,15 @@
             - "weighted-least-connections-member"
             - "weighted-least-connections-node"
           type: "string"
-        members: 
+        members:
+          description: "List of pool members"
           items:
             $ref: "#definitions/poolMemberType"
             type: "array"
         monitors:
-          items: 
+          description: |
+            "A list of health monitors identified by their full path attribute."
+          items:
             type: "string"
           type: "array"
       required: 
@@ -538,14 +620,12 @@
           description: "Specifies the virtual server name"
           type: "string"
           minLength: 1
-          maxLength: 256
 
         description:
           description: |
             "Specifies descriptive text that identifies the virtual server."
           type: "string"
-          minLength: 0
-          maxLength: 256
+          maxLength: 512
 
         destination: 
           description: |
@@ -557,7 +637,7 @@
 
         pool: 
           description: |
-            "Specifies the name of a default pool to which you want the virtual
+            "Specifies the full path of a default pool to which you want the virtual
             server to automatically direct traffic."
           type: "string"
 
@@ -609,7 +689,6 @@
             If snatpool is set, then the snatpool configuration item must be defined."
           $ref: "#/definitions/snatConfigType"
 
-        # These 2 options are mutually exclusive and should not be specified together.
         vlansEnabled: 
           description: |
             "Enables/disables the virtual server on the list of VLANS and
@@ -626,8 +705,8 @@
           items: 
             type: "string"
             description: "VLANs and tunnels that you have specifically enabled."
-            maxLength: 256
             minLength: 1
+            maxLength: 64
 
       required: 
         - "destination"
@@ -646,11 +725,11 @@
       items:
         $ref: "#/definitions/l7PolicyType"
       type: "array"
-    pools: 
-      items: 
+    pools:
+      items:
         $ref: "#/definitions/poolType"
       type: "array"
-    monitors: 
+    monitors:
       items: 
         $ref: "#/definitions/healthMonitorType"
       type: "array"
