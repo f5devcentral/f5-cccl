@@ -307,7 +307,7 @@ class CloudBigIP(BigIP):
             cloud_policy_list = []
             if self._manage_policy:
                 for policy in policies:
-                        cloud_policy_list.append(policy['name'])
+                    cloud_policy_list.append(policy['name'])
 
             # Configure iApps
             f5_iapp_list = []
@@ -519,7 +519,12 @@ class CloudBigIP(BigIP):
         # Search pool members for nodes still in-use, if the node is still
         # being used, remove it from the node list
         for pool in pool_list:
-            member_list = self.get_pool_member_list(partition, pool)
+            if type(pool) is dict:
+                member_list = self.get_pool_member_list(partition,
+                                                        pool['name'],
+                                                        pool['iappName'])
+            else:
+                member_list = self.get_pool_member_list(partition, pool)
             for member in member_list:
                 name = member[:member.find(':')]
                 if name in node_list:
@@ -552,7 +557,7 @@ class CloudBigIP(BigIP):
                                         partition=partition)
         node.delete()
 
-    def get_pool(self, partition, name):
+    def get_pool(self, partition, name, iappName=None):
         """Get a pool object.
 
         Args:
@@ -561,28 +566,19 @@ class CloudBigIP(BigIP):
         """
         # return pool object
 
-        # FIXME(kenr): This is the efficient way to lookup a pool object:
-        #
-        #       p = self.ltm.pools.pool.load(
-        #           name=name,
-        #           partition=partition
-        #       )
-        #       return p
-        #
-        # However, this won't work for iapp created pools because they
-        # add a subPath component that is the iapp name appended by '.app'.
-        # To properly use the above code, we need to pass in the iapp name.
-        #
-        # The alternative (below) is to get the collection of pool objects
-        # and then search the list for the matching pool name. However, we
-        # will return the first pool found even though there are multiple
-        # choices (if iapps are used).  See issue #138.
-        pools = self.ltm.pools.get_collection()
-        for pool in pools:
-            if pool.partition == partition and pool.name == name:
-                return pool
-        raise Exception("Failed to retrieve resource for pool {} "
-                        "in partition {}".format(name, partition))
+        if iappName:
+            p = self.ltm.pools.pool.load(
+                name=name,
+                partition=partition,
+                subPath=iappName + '.app'
+            )
+        else:
+            p = self.ltm.pools.pool.load(
+                name=name,
+                partition=partition
+            )
+
+        return p
 
     def get_pool_list(self, partition, all_pools):
         """Get a list of pool names for a partition.
@@ -597,9 +593,14 @@ class CloudBigIP(BigIP):
         for pool in pools:
             appService = getattr(pool, 'appService', None)
             # pool must match partition and not belong to an appService
-            if pool.partition == partition and \
-               (appService is None or all_pools):
-                pool_list.append(pool.name)
+            if pool.partition == partition:
+                if appService is None:
+                    pool_list.append(pool.name)
+                elif all_pools:
+                    pool_list.append({
+                        "name": pool.name,
+                        "iappName": appService.split("/")[-1]
+                    })
         return pool_list
 
     def pool_create(self, pool):
@@ -667,15 +668,16 @@ class CloudBigIP(BigIP):
                                      partition=partition)
         return m
 
-    def get_pool_member_list(self, partition, pool):
+    def get_pool_member_list(self, partition, pool, iappName=None):
         """Get a list of pool-member names.
 
         Args:
             partition: Partition name
             pool: Name of pool
         """
+        logger.debug(" In member list func for pool %s", pool)
         member_list = []
-        p = self.get_pool(partition, pool)
+        p = self.get_pool(partition, pool, iappName)
         members = p.members_s.get_collection()
         for member in members:
             member_list.append(member.name)
