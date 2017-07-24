@@ -18,7 +18,9 @@ import json
 import pytest
 
 from f5_cccl.api import F5CloudServiceManager
+from f5_cccl.exceptions import F5CcclConfigurationReadError
 from f5_cccl.resource import ltm
+from f5_cccl.resource.ltm.virtual import ApiVirtualServer
 from f5_cccl.service.manager import ServiceConfigDeployer
 from f5_cccl.service.config_reader import ServiceConfigReader
 
@@ -54,3 +56,10 @@ class TestServiceConfigReader:
         assert len(config.get('tcp_monitors')) == 1
         assert len(config.get('l7policies')) == 1
         assert len(config.get('iapps')) == 1
+
+    def test_create_config_item_exception(self):
+
+        with patch.object(ApiVirtualServer, '__init__', side_effect=ValueError("test exception")):
+            reader = ServiceConfigReader(self.partition)
+            with pytest.raises(F5CcclConfigurationReadError) as e:
+                reader.read_config(self.service)
