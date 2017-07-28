@@ -21,6 +21,7 @@ from __future__ import print_function
 
 import logging
 
+import f5_cccl.exceptions as cccl_error
 from f5_cccl.resource.ltm.monitor.http_monitor import ApiHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import ApiHTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import ApiICMPMonitor
@@ -42,6 +43,34 @@ class ServiceConfigReader(object):
         """Initializer."""
         self._partition = partition
 
+    def _create_config_item(self, resource_type, obj):
+        """Create an API resource object and handle exceptions.
+
+        This is a factory method to create resource objects in
+        such a way that any exceptions that are raised might
+        be handled and the appropriate F5CcclConfigurationReadError.
+
+        :param resource_type: The type of resource to create.
+        :param obj: The configuration object.
+        :returns: A resource object.
+        :rtype: f5_cccl.resource.Resource
+        :raises:  f5_cccl.exceptions.F5CcclConfigurationReadError
+        """
+        config_resource = None
+        try:
+            config_resource = resource_type(
+                partition=self._partition,
+                **obj)
+        except (ValueError, TypeError) as error:
+            msg_format = \
+                "Failed to create resource {}, {} from config: error({})"
+            msg = msg_format.format(
+                obj.get('name'), resource_type.__name__, str(error))
+            LOGGER.error(msg)
+            raise cccl_error.F5CcclConfigurationReadError(msg)
+
+        return config_resource
+
     def read_config(self, service_config):
         """Read the service configuration and save as resource object."""
         config_dict = dict()
@@ -54,26 +83,26 @@ class ServiceConfigReader(object):
 
         virtuals = service_config.get('virtualServers', list())
         config_dict['virtuals'] = {
-            v['name']: ApiVirtualServer(partition=self._partition, **v)
+            v['name']: self._create_config_item(ApiVirtualServer, v)
             for v in virtuals
         }
 
         # Get the list of explicitly defined virtual addresses.
         virtual_addresses = service_config.get('virtualAddresses', list())
         config_dict['virtual_addresses'] = {
-            va['name']: ApiVirtualAddress(partition=self._partition, **va)
+            va['name']: self._create_config_item(ApiVirtualAddress, va)
             for va in virtual_addresses
         }
 
         pools = service_config.get('pools', list())
         config_dict['pools'] = {
-            p['name']: ApiPool(partition=self._partition, **p)
+            p['name']: self._create_config_item(ApiPool, p)
             for p in pools
         }
 
         policies = service_config.get('l7Policies', list())
         config_dict['l7policies'] = {
-            p['name']: ApiPolicy(partition=self._partition, **p)
+            p['name']: self._create_config_item(ApiPolicy, p)
             for p in policies
         }
 
@@ -83,28 +112,24 @@ class ServiceConfigReader(object):
             monitor_name = monitor.get('name', None)
             if monitor_type == "http":
                 config_dict['http_monitors'].update(
-                    {monitor_name: ApiHTTPMonitor(
-                        partition=self._partition,
-                        **monitor)})
+                    {monitor_name: self._create_config_item(
+                        ApiHTTPMonitor, monitor)})
             if monitor_type == "https":
                 config_dict['https_monitors'].update(
-                    {monitor_name: ApiHTTPSMonitor(
-                        partition=self._partition,
-                        **monitor)})
+                    {monitor_name: self._create_config_item(
+                        ApiHTTPSMonitor, monitor)})
             if monitor_type == "icmp":
                 config_dict['icmp_monitors'].update(
-                    {monitor_name: ApiICMPMonitor(
-                        partition=self._partition,
-                        **monitor)})
+                    {monitor_name: self._create_config_item(
+                        ApiICMPMonitor, monitor)})
             if monitor_type == "tcp":
                 config_dict['tcp_monitors'].update(
-                    {monitor_name: ApiTCPMonitor(
-                        partition=self._partition,
-                        **monitor)})
+                    {monitor_name: self._create_config_item(
+                        ApiTCPMonitor, monitor)})
 
         iapps = service_config.get('iapps', list())
         config_dict['iapps'] = {
-            i['name']: ApplicationService(partition=self._partition, **i)
+            i['name']: self._create_config_item(ApplicationService, i)
             for i in iapps
         }
 

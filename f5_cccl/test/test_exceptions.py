@@ -98,3 +98,12 @@ def test_raise_f5cccl_resource_delete_error():
             raise exceptions.F5CcclResourceDeleteError()
 
         f()
+
+
+def test_raise_f5cccl_configuration_read_error():
+    """Test raising a F5CcclConfigurationReadError."""
+    with pytest.raises(exceptions.F5CcclConfigurationReadError):
+        def f():
+            raise exceptions.F5CcclConfigurationReadError()
+
+        f()

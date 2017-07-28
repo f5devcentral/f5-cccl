@@ -84,3 +84,7 @@ class F5CcclApplyConfigError(F5CcclError):
 
 class F5CcclCacheRefreshError(F5CcclError):
     u"""Failed to update the BigIP configuration state."""
+
+
+class F5CcclConfigurationReadError(F5CcclError):
+    u"""Failed to create a Resource from the API configuration."""
