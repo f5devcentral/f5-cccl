@@ -7,8 +7,10 @@ env:
   global:
     - REPO="f5-cccl"
     - PKG_VERSION=$(python -c "import f5_cccl; print f5_cccl.__version__")
-# services:  # needed for later work to build .deb and .rpm natively
-#   - docker
+    - MARATHON_BIGIP_CTLR_COMMIT_ISH=5624ca109e3c003ae051b211d18ede75d8661e2d
+    - K8S_BIGIP_CTLR_COMMIT_ISH=a37e2d3e0ef17ff3fa9534511ced92ec642ce101
+services:
+   - docker
 before_install:
   - git config --global user.email "OpenStack_TravisCI@f5.com"
   - git config --global user.name "Travis F5 Openstack"
@@ -25,4 +27,18 @@ script:
 # https://docs.travis-ci.com/user/pull-requests/#Pull-Requests-and-Security-Restrictions
   - if [ "$COVERALLS_REPO_TOKEN" != "" ]; then tox -e coverage; fi
   - tox -e functional
-before_deploy: PKG_VERSION=$(python -c "import f5; print(f5_cccl.__version__)")
+deploy:
+  # push marathon dev-image for nightly regression tests
+  - provider: script
+    skip_cleanup: true
+    script: ./build-tools/system-test-img.sh F5Networks/marathon-bigip-ctlr $MARATHON_BIGIP_CTLR_COMMIT_ISH ./build-tools/build-runtime-images.sh $DOCKER_NAMESPACE
+    on:
+      python: "3.5"
+      all_branches: true
+  # push k8s dev-image for nightly regression tests
+  - provider: script
+    skip_cleanup: true
+    script: ./build-tools/system-test-img.sh F5Networks/k8s-bigip-ctlr $K8S_BIGIP_CTLR_COMMIT_ISH "make prod" $DOCKER_NAMESPACE
+    on:
+      python: "3.5"
+      all_branches: true
