@@ -241,6 +241,13 @@ class ServiceConfigDeployer(object):
         (create_pools, update_pools, delete_pools) = (
             self._get_resource_tasks(existing, desired))
 
+        # Get the list of irule tasks
+        LOGGER.debug("Getting iRule tasks...")
+        existing = self._bigip.get_irules()
+        desired = desired_config.get('irules', dict())
+        (create_irules, update_irules, delete_irules) = (
+            self._get_resource_tasks(existing, desired))
+
         # Get the list of policy tasks
         LOGGER.debug("Getting policy tasks...")
         existing = self._bigip.get_l7policies()
@@ -262,11 +269,13 @@ class ServiceConfigDeployer(object):
 
         LOGGER.debug("Building task lists...")
         create_tasks = create_vaddrs + create_monitors + \
-            create_pools + create_policies + create_virtuals + create_iapps
+            create_pools + create_irules + create_policies + \
+            create_virtuals + create_iapps
         update_tasks = update_vaddrs + update_monitors + \
-            update_pools + update_policies + update_virtuals + update_iapps
+            update_pools + update_irules + update_policies + \
+            update_virtuals + update_iapps
         delete_tasks = delete_iapps + delete_virtuals + delete_policies + \
-            delete_pools + delete_monitors
+            delete_irules + delete_pools + delete_monitors
 
         taskq_len = len(create_tasks) + len(update_tasks) + len(delete_tasks)
 

@@ -379,6 +379,7 @@ class BigIPTest(unittest.TestCase):
     virtuals = {}
     profiles = {}
     policies = {}
+    irules = {}
     pools = {}
     virtuals = {}
     members = {}

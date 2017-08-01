@@ -712,6 +712,20 @@
         - "destination"
         - "name"
 
+    iRuleType:
+      description: "Defines a reference to an iRule."
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        partition:
+          type: "string"
+        apiAnonymous:
+          type: "string"
+      required:
+        - "name"
+        - "partition"
+
   properties:
     virtualAddresses:
       items:
@@ -736,4 +750,8 @@
     iapps: 
       items: 
         $ref: "#/definitions/iAppType"
+      type: "array"
+    irules:
+      items:
+        $ref: "#/definitions/iRuleType"
       type: "array"

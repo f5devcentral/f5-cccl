@@ -26,6 +26,7 @@ from f5_cccl.resource.ltm.monitor.http_monitor import ApiHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import ApiHTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import ApiICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import ApiTCPMonitor
+from f5_cccl.resource.ltm.irule import ApiIRule
 from f5_cccl.resource.ltm.policy import ApiPolicy
 from f5_cccl.resource.ltm.pool import ApiPool
 from f5_cccl.resource.ltm.virtual import ApiVirtualServer
@@ -98,6 +99,12 @@ class ServiceConfigReader(object):
         config_dict['pools'] = {
             p['name']: self._create_config_item(ApiPool, p)
             for p in pools
+        }
+
+        irules = service_config.get('iRules', list())
+        config_dict['irules'] = {
+            p['name']: self._create_config_item(ApiIRule, p)
+            for p in irules
         }
 
         policies = service_config.get('l7Policies', list())
