@@ -113,6 +113,37 @@ class Policy():
         return Policy(name)
 
 
+class IRule():
+    """A mock BIG-IP iRule."""
+
+    def __init__(self, name, **kwargs):
+        """Initialize the object."""
+        self.name = name
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        self.raw = self.__dict__
+
+    def modify(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def update(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def create(self, partition=None, name=None, **kwargs):
+        """Create the iRule object."""
+        pass
+
+    def delete(self):
+        """Delete the iRule object."""
+        pass
+
+    def load(self, name=None, partition=None):
+        """Load the iRule object."""
+        return IRule(name)
+
+
 class VirtualAddress():
     """A mock BIG-IP VirtualAddress."""
 
@@ -545,6 +576,18 @@ class MockPolicys():
         pass
 
 
+class MockIRules():
+    """A mock Ltm iRules object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.policy = IRule('test')
+
+    def get_collection(self):
+        """Get collection of iRules."""
+        pass
+
+
 class MockNodes():
     """A mock Ltm nodes object."""
 
@@ -567,6 +610,7 @@ class MockLtm():
         self.pools = MockPools()
         self.nodes = MockNodes()
         self.policys = MockPolicys()
+        self.rules = MockIRules()
         self.virtual_address_s = MockVirtualAddresses()
 
 class MockTm():
@@ -632,6 +676,16 @@ class MockBigIP(ManagementRoot):
 
         return policies
 
+    def mock_irules_get_collection(self, requests_params=None):
+        """Mock: Return a mocked collection of iRules."""
+        irules = []
+        #print 'bigip_data:', self.bigip_data
+        for p in self.bigip_data['irules']:
+            irule = IRule(**p)
+            irules.append(irule)
+
+        return irules
+
     def mock_iapps_get_collection(self, requests_params=None):
         """Mock: Return a mocked collection of app svcs."""
         iapps = []
@@ -682,6 +736,8 @@ def bigip_proxy():
         Mock(side_effect=mgmt_root.mock_pools_get_collection)
     mgmt_root.tm.ltm.policys.get_collection = \
         Mock(side_effect=mgmt_root.mock_policys_get_collection)
+    mgmt_root.tm.ltm.rules.get_collection = \
+        Mock(side_effect=mgmt_root.mock_irules_get_collection)
     mgmt_root.tm.ltm.virtuals.get_collection = \
         Mock(side_effect=mgmt_root.mock_virtuals_get_collection)
     mgmt_root.tm.ltm.monitor.https.get_collection = \

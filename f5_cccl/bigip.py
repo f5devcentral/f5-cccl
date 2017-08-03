@@ -35,6 +35,7 @@ from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual_address import IcrVirtualAddress
 from f5_cccl.resource.ltm.virtual import IcrVirtualServer
 from f5_cccl.resource.ltm.node import Node
+from f5_cccl.resource.ltm.irule import IcrIRule
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -82,6 +83,7 @@ class BigIPProxy(object):
         self._manage_monitor = '/tm/ltm/monitor' in manage_types
         self._manage_policy = '/tm/ltm/policy' in manage_types
         self._manage_iapp = '/tm/sys/application/service' in manage_types
+        self._manage_irule = '/tm/ltm/rule' in manage_types
 
         # BIG-IP resources
         self._virtuals = dict()
@@ -91,6 +93,7 @@ class BigIPProxy(object):
         self._iapps = dict()
         self._monitors = dict()
         self._nodes = dict()
+        self._irules = dict()
 
     def mgmt_root(self):
         """Return a reference to the proxied BIG-IP."""
@@ -210,6 +213,10 @@ class BigIPProxy(object):
             self._bigip.tm.ltm.virtual_address_s.get_collection(
                 requests_params={"params": query})
 
+        LOGGER.debug("Retrieving LTM iRules from BIG-IP /%s...",
+                     self._partition)
+        irules = self._bigip.tm.ltm.rules.get_collection(
+            requests_params={"params": query})
         #  Retrieve the list of virtuals, pools, and policies in the
         #  managed partition getting all subCollections.
         query = "{}&expandSubcollections=true".format(partition_filter)
@@ -257,6 +264,12 @@ class BigIPProxy(object):
         self._all_pools = {
             p.name: self._create_resource(IcrPool, p)
             for p in pools
+        }
+
+        #  Refresh the iRule cache
+        self._irules = {
+            p.name: self._create_resource(IcrIRule, p)
+            for p in irules if self._manageable_resource(p)
         }
 
         #  Refresh the policy cache
@@ -356,3 +369,7 @@ class BigIPProxy(object):
     def get_virtual_addresses(self):
         """Return the index of virtual_addresses."""
         return self._virtual_addresses
+
+    def get_irules(self):
+        """Return the index of iRules."""
+        return self._irules
