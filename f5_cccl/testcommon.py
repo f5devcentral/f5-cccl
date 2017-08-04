@@ -142,6 +142,7 @@ class Virtual(object):
                                                    None)
         self.profiles = kwargs.get('profiles', [])
         self.policies = kwargs.get('policies', [])
+        self.rules = kwargs.get('rules', [])
         self.partition = kwargs.get('partition', None)
 
     def modify(self, **kwargs):
@@ -379,7 +380,7 @@ class BigIPTest(unittest.TestCase):
     virtuals = {}
     profiles = {}
     policies = {}
-    irules = {}
+    rules = {}
     pools = {}
     virtuals = {}
     members = {}

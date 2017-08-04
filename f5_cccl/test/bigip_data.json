@@ -34,6 +34,14 @@
             "rateLimitDstMask": 0,
             "rateLimitMode": "object",
             "rateLimitSrcMask": 0,
+            "rules": [
+                "/test/https_redirect"
+            ],
+            "rulesReference": [
+              {
+                "link": "https://localhost/mgmt/tm/ltm/rule/~test~https_redirect?ver=12.1.0"
+              }
+            ],
             "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~virtual1?ver=12.1.0",
             "serviceDownImmediateAction": "none",
             "source": "0.0.0.0/0",
@@ -815,5 +823,15 @@
     ],
     "policies": [],
     "virtual_addresses": [],
-    "irules": []
+    "rules": [
+        {
+            "apiAnonymous": "when HTTP_REQUEST {HTTP::redirect https://[getfield [HTTP::host] ':' 1][HTTP::uri]}",
+            "fullPath": "/test/https_redirect",
+            "generation": 1,
+            "kind": "tm:ltm:rule:rulestate",
+            "name": "https_redirect",
+            "partition": "test",
+            "selfLink": "https://localhost/mgmt/tm/ltm/rule/~test~https_redirect?ver=12.1.0"
+        }
+    ]
 }
