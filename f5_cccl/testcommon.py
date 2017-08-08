@@ -360,6 +360,7 @@ class MockLtm(object):
         self.monitor = MockMonitor()
         self.virtuals = MockVirtuals()
         self.pools = MockPools()
+        self.data_group = MockPools()
 
 
 class MockHealthMonitor(object):
@@ -369,6 +370,26 @@ class MockHealthMonitor(object):
         """Initialize the object."""
         self.name = name
         self.partition = partition
+
+
+class MockDataGroupInternals(object):
+    """A mock Ltm data-group internals object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        pass
+
+    def get_collection(self):
+        """Get collection of nodes."""
+        pass
+
+
+class MockDataGroup(object):
+    """A mock Ltm data_group object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.internals = MockDataGroupInternals()
 
 
 class BigIPTest(unittest.TestCase):

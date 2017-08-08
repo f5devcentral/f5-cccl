@@ -84,9 +84,9 @@ class TestServiceConfigDeployer:
         args, kwargs = deployer._create_resources.call_args_list[0]
 
         # The quantity of resources defined in service.json
-        resources_to_create = 9
+        resources_to_create = 10
         assert resources_to_create == len(args[0])
-        assert args[0][8].name == 'MyAppService0'
+        assert args[0][9].name == 'MyAppService0'
 
         # Should update one app service
         self.service['iapps'][0]['name'] = 'MyAppService'
@@ -104,7 +104,7 @@ class TestServiceConfigDeployer:
 
         assert deployer._delete_resources.called
         args, kwargs = deployer._delete_resources.call_args_list[0]
-        assert 7 == len(args[0])
+        assert 8 == len(args[0])
         expected_set = set(['appsvc', 'MyAppService'])
         result_set = set([args[0][0].name, args[0][1].name])
         assert expected_set == result_set

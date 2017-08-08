@@ -32,6 +32,7 @@ from f5_cccl.resource.ltm.pool import ApiPool
 from f5_cccl.resource.ltm.virtual import ApiVirtualServer
 from f5_cccl.resource.ltm.virtual_address import ApiVirtualAddress
 from f5_cccl.resource.ltm.app_service import ApplicationService
+from f5_cccl.resource.ltm.internal_data_group import ApiInternalDataGroup
 
 
 LOGGER = logging.getLogger(__name__)
@@ -111,6 +112,12 @@ class ServiceConfigReader(object):
         config_dict['l7policies'] = {
             p['name']: self._create_config_item(ApiPolicy, p)
             for p in policies
+        }
+
+        internal_dgs = service_config.get('internalDataGroups', list())
+        config_dict['internaldatagroups'] = {
+            p['name']: self._create_config_item(ApiInternalDataGroup, p)
+            for p in internal_dgs
         }
 
         monitors = service_config.get('monitors', list())
