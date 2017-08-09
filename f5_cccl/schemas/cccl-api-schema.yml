@@ -131,6 +131,10 @@
         - "name"
         - "partition"
 
+    iruleReferenceType:
+      description: "Full path to a LTM iRule."
+      type: "string"
+
     policyReferenceType:
       description: "Defines a reference to LTM policy."
       type: "object"
@@ -665,6 +669,13 @@
             type: "array"
             $ref: "#/definitions/profileReferenceType"
 
+        iRules:
+          description: |
+            "References the set of iRules that are associated with virtual server"
+          items:
+            type: "array"
+            $ref: "#/definitions/iruleReferenceType"
+
         policies:
           description: |
             "References the set of policies that are associated with virtual server"
@@ -724,7 +735,6 @@
           type: "string"
       required:
         - "name"
-        - "partition"
 
   properties:
     virtualAddresses:
@@ -751,7 +761,7 @@
       items: 
         $ref: "#/definitions/iAppType"
       type: "array"
-    irules:
+    iRules:
       items:
         $ref: "#/definitions/iRuleType"
       type: "array"

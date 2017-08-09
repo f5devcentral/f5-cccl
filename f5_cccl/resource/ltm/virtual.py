@@ -54,7 +54,8 @@ class VirtualServer(Resource):
                       connectionLimit=0,
                       pool=None,
                       policies=list(),
-                      profiles=list())
+                      profiles=list(),
+                      rules=list())
 
     def __init__(self, name, partition, **properties):
         """Create a Virtual server instance."""

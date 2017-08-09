@@ -104,7 +104,7 @@ class TestServiceConfigDeployer:
 
         assert deployer._delete_resources.called
         args, kwargs = deployer._delete_resources.call_args_list[0]
-        assert 6 == len(args[0])
+        assert 7 == len(args[0])
         expected_set = set(['appsvc', 'MyAppService'])
         result_set = set([args[0][0].name, args[0][1].name])
         assert expected_set == result_set

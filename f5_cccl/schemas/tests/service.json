@@ -72,6 +72,9 @@
 	  {"name": "http", "partition": "Common", "context": "all"},
 	  {"name": "clientssl", "partition": "Common", "context": "clientside"}
 	],
+	"iRules": [
+	  "/Test/https_redirect"
+	],
 	"policies": [
 	  {"name": "wrapper_policy", "partition": "Test"}
 	]
@@ -169,5 +172,11 @@
 		]
 	  }
 	]
-  }]
+  }],
+  "iRules": [
+    {
+      "name": "https_redirect",
+      "apiAnonymous": "when HTTP_REQUEST {HTTP::redirect https://[getfield [HTTP::host] ':' 1][HTTP::uri]}"
+    }
+  ]
 }

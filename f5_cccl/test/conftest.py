@@ -581,7 +581,7 @@ class MockIRules():
 
     def __init__(self):
         """Initialize the object."""
-        self.policy = IRule('test')
+        self.rule = IRule('test')
 
     def get_collection(self):
         """Get collection of iRules."""
@@ -679,8 +679,7 @@ class MockBigIP(ManagementRoot):
     def mock_irules_get_collection(self, requests_params=None):
         """Mock: Return a mocked collection of iRules."""
         irules = []
-        #print 'bigip_data:', self.bigip_data
-        for p in self.bigip_data['irules']:
+        for p in self.bigip_data['rules']:
             irule = IRule(**p)
             irules.append(irule)
 
