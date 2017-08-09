@@ -669,7 +669,7 @@
             type: "array"
             $ref: "#/definitions/profileReferenceType"
 
-        rules:
+        iRules:
           description: |
             "References the set of iRules that are associated with virtual server"
           items:
@@ -735,7 +735,6 @@
           type: "string"
       required:
         - "name"
-        - "partition"
 
   properties:
     virtualAddresses:
@@ -762,7 +761,7 @@
       items: 
         $ref: "#/definitions/iAppType"
       type: "array"
-    irules:
+    iRules:
       items:
         $ref: "#/definitions/iRuleType"
       type: "array"

@@ -73,7 +73,7 @@
 	  {"name": "clientssl", "partition": "Common", "context": "clientside"}
 	],
 	"iRules": [
-	  {"name": "https_redirect", "partition": "Test"}
+	  "/Test/https_redirect"
 	],
 	"policies": [
 	  {"name": "wrapper_policy", "partition": "Test"}
