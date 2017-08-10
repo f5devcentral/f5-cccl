@@ -178,5 +178,17 @@
       "name": "https_redirect",
       "apiAnonymous": "when HTTP_REQUEST {HTTP::redirect https://[getfield [HTTP::host] ':' 1][HTTP::uri]}"
     }
+  ],
+  "internalDataGroups": [
+    {
+      "name": "test-dgs",
+      "type": "string",
+      "records": [
+        {
+          "name": "record-name",
+          "data": "data-value"
+        }
+      ]
+    }
   ]
 }

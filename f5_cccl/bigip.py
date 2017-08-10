@@ -36,6 +36,7 @@ from f5_cccl.resource.ltm.virtual_address import IcrVirtualAddress
 from f5_cccl.resource.ltm.virtual import IcrVirtualServer
 from f5_cccl.resource.ltm.node import Node
 from f5_cccl.resource.ltm.irule import IcrIRule
+from f5_cccl.resource.ltm.internal_data_group import IcrInternalDataGroup
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -84,6 +85,8 @@ class BigIPProxy(object):
         self._manage_policy = '/tm/ltm/policy' in manage_types
         self._manage_iapp = '/tm/sys/application/service' in manage_types
         self._manage_irule = '/tm/ltm/rule' in manage_types
+        self._manage_internal_data_group = \
+            '/tm/ltm/data-group/internal' in manage_types
 
         # BIG-IP resources
         self._virtuals = dict()
@@ -94,6 +97,7 @@ class BigIPProxy(object):
         self._monitors = dict()
         self._nodes = dict()
         self._irules = dict()
+        self._internal_data_groups = dict()
 
     def mgmt_root(self):
         """Return a reference to the proxied BIG-IP."""
@@ -171,7 +175,7 @@ class BigIPProxy(object):
 
         return icr_resource
 
-    def _refresh(self):
+    def _refresh(self):  # pylint: disable=too-many-locals
         """Refresh the internal cache with the BIG-IP state."""
         start_time = time()
 
@@ -217,6 +221,12 @@ class BigIPProxy(object):
                      self._partition)
         irules = self._bigip.tm.ltm.rules.get_collection(
             requests_params={"params": query})
+
+        LOGGER.debug("Retrieving LTM Internal data-groups from BIG-IP /%s...",
+                     self._partition)
+        int_dgs = self._bigip.tm.ltm.data_group.internals.get_collection(
+            requests_params={"params": query})
+
         #  Retrieve the list of virtuals, pools, and policies in the
         #  managed partition getting all subCollections.
         query = "{}&expandSubcollections=true".format(partition_filter)
@@ -270,6 +280,12 @@ class BigIPProxy(object):
         self._irules = {
             p.name: self._create_resource(IcrIRule, p)
             for p in irules if self._manageable_resource(p)
+        }
+
+        #  Refresh the data_group cache
+        self._internal_data_groups = {
+            p.name: self._create_resource(IcrInternalDataGroup, p)
+            for p in int_dgs if self._manageable_resource(p)
         }
 
         #  Refresh the policy cache
@@ -373,3 +389,7 @@ class BigIPProxy(object):
     def get_irules(self):
         """Return the index of iRules."""
         return self._irules
+
+    def get_internal_data_groups(self):
+        """Return the index of internal data_groups."""
+        return self._internal_data_groups

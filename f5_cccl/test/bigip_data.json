@@ -833,5 +833,22 @@
             "partition": "test",
             "selfLink": "https://localhost/mgmt/tm/ltm/rule/~test~https_redirect?ver=12.1.0"
         }
+    ],
+    "internaldatagroups": [
+        {
+            "fullPath": "/test/test-dg",
+            "generation": 1,
+            "kind": "tm:ltm:data-group:internal:internal-state",
+            "name": "test-dg",
+            "partition": "test",
+            "records": [
+                {
+                    "name": "record-name",
+                    "data": "data-value"
+                }
+            ],
+            "selfLink": "https://localhost/mgmt/tm/ltm/data-group/internal/~test~test-dg?ver=12.1.0",
+            "type": "string"
+        }
     ]
 }

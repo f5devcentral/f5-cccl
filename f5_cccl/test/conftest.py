@@ -399,6 +399,38 @@ class Iapp():
         pass
 
 
+class InternalDataGroup():
+    """A mock BIG-IP data_group internal."""
+
+    def __init__(self, name, **kwargs):
+        """Initialize the object."""
+        self.name = name
+        #self.partition = partition
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        self.raw = self.__dict__
+
+    def modify(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def update(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def create(self, partition=None, name=None, **kwargs):
+        """Create the iRule object."""
+        pass
+
+    def delete(self):
+        """Delete the iRule object."""
+        pass
+
+    def load(self, name=None, partition=None):
+        """Load the iRule object."""
+        return InternalDataGroup(name, partition)
+
+
 class MockFolder():
     """A mock BIG-IP folder object."""
 
@@ -600,6 +632,51 @@ class MockNodes():
         pass
 
 
+class MockDataGroupInternals():
+    """A mock Ltm data-group internals object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.internal = MockDataGroupInternal()
+        pass
+
+
+class MockDataGroupInternal():
+    """A mock Ltm data-group internal object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        pass
+
+    def modify(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def update(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def create(self, partition=None, name=None, **kwargs):
+        """Create the object."""
+        pass
+
+    def delete(self):
+        """Delete the object."""
+        pass
+
+    def load(self, name=None, partition=None):
+        """Load the object."""
+        return InternalDataGroup(name)
+
+
+class MockDataGroup():
+    """A mock Ltm data_group object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.internals = MockDataGroupInternals()
+
+
 class MockLtm():
     """A mock BIG-IP ltm object."""
 
@@ -612,6 +689,7 @@ class MockLtm():
         self.policys = MockPolicys()
         self.rules = MockIRules()
         self.virtual_address_s = MockVirtualAddresses()
+        self.data_group = MockDataGroup()
 
 class MockTm():
     def __init__(self):
@@ -716,6 +794,15 @@ class MockBigIP(ManagementRoot):
 
         return vas
 
+    def mock_data_group_internals_get_collection(self, requests_params=None):
+        """Mock: Return a mocked collection of data_group internal."""
+        int_dgs = []
+        for p in self.bigip_data['internaldatagroups']:
+            dg = InternalDataGroup(**p)
+            int_dgs.append(dg)
+
+        return int_dgs
+
     def read_test_data(self, bigip_state):
         """Read test data for the Big-IP state."""
         # Read the BIG-IP state
@@ -753,6 +840,8 @@ def bigip_proxy():
         Mock(side_effect=mgmt_root.mock_nodes_get_collection)
     mgmt_root.tm.ltm.virtual_address_s.get_collection = \
         Mock(side_effect=mgmt_root.mock_vas_get_collection)
+    mgmt_root.tm.ltm.data_group.internals.get_collection = \
+        Mock(side_effect=mgmt_root.mock_data_group_internals_get_collection)
 
     bigip_state='f5_cccl/test/bigip_data.json'
     mgmt_root.read_test_data(bigip_state)

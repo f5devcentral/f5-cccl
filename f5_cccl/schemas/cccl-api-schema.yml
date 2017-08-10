@@ -736,6 +736,41 @@
       required:
         - "name"
 
+    internalDataGroupType:
+      description: "Defines an internal data group."
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        partition:
+          type: "string"
+        type:
+          type: "string"
+          enum:
+            - "string"
+            - "integer"
+            - "ip"
+          default: "string"
+        records:
+          items:
+            type: "array"
+            description: |
+              "List of records associated with this data group."
+            $ref: "#definitions/internalDataGroupRecordType"
+      required:
+        - "name"
+
+    internalDataGroupRecordType:
+      description: "Defines a data group record."
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        data:
+          type: "string"
+      required:
+        - "name"
+
   properties:
     virtualAddresses:
       items:
@@ -764,4 +799,8 @@
     iRules:
       items:
         $ref: "#/definitions/iRuleType"
+      type: "array"
+    internalDataGroups:
+      items:
+        $ref: "#/definitions/internalDataGroupType"
       type: "array"
