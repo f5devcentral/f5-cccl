@@ -277,13 +277,13 @@ class ServiceConfigDeployer(object):
 
         LOGGER.debug("Building task lists...")
         create_tasks = create_vaddrs + create_monitors + \
-            create_pools + create_irules + create_internal_data_groups + \
+            create_pools + create_internal_data_groups + create_irules + \
             create_policies + create_virtuals + create_iapps
         update_tasks = update_vaddrs + update_monitors + \
-            update_pools + update_irules + update_internal_data_groups + \
+            update_pools + update_internal_data_groups + update_irules + \
             update_policies + update_virtuals + update_iapps
         delete_tasks = delete_iapps + delete_virtuals + delete_policies + \
-            delete_internal_data_groups + delete_irules + delete_pools + \
+            delete_irules + delete_internal_data_groups + delete_pools + \
             delete_monitors
 
         taskq_len = len(create_tasks) + len(update_tasks) + len(delete_tasks)

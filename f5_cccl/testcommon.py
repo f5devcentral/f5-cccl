@@ -360,7 +360,7 @@ class MockLtm(object):
         self.monitor = MockMonitor()
         self.virtuals = MockVirtuals()
         self.pools = MockPools()
-        self.data_group = MockPools()
+        self.data_group = MockDataGroupInternals()
 
 
 class MockHealthMonitor(object):
