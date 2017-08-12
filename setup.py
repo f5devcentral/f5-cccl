@@ -37,6 +37,9 @@ setup(
     install_requires=install_requires,
     packages=find_packages(exclude=['*.test', '*.test.*', 'test*', 'test']),
     data_files=[],
+    package_data={
+        'f5_cccl': ['schemas/*.yaml', 'schemas/*.json', 'schemas/*.yml'],
+    },
     classifiers=[
     ],
     entry_points={}

@@ -17,13 +17,15 @@
 """F5 Common Controller Core Library to read, diff and apply BIG-IP config."""
 
 import logging
+import pkg_resources
 
 from f5_cccl.bigip import BigIPProxy
 from f5_cccl.service.manager import ServiceManager
 
+resource_package = __name__
+api_schema = "schemas/cccl-api-schema.yml"
 
 LOGGER = logging.getLogger("f5_cccl")
-API_SCHEMA = "./f5_cccl/schemas/cccl-api-schema.yml"
 
 
 class F5CloudServiceManager(object):
@@ -39,7 +41,7 @@ class F5CloudServiceManager(object):
     under its control.
     """
 
-    def __init__(self, bigip, partition, prefix=None, schema_path=API_SCHEMA):
+    def __init__(self, bigip, partition, prefix=None, schema_path=None):
         """Initialize an instance of the F5 CCCL service manager.
 
         :param bigip: BIG-IP management root.
@@ -47,14 +49,16 @@ class F5CloudServiceManager(object):
         :param prefix:  The prefix assigned to resources that should be
         managed by this CCCL instance.  This is prepended to the
         resource name (default: None)
-        :param schema_path: User defined schema (default:
-        f5_cccl/schemas/cccl-api-schema.yml)
+        :param schema_path: User defined schema (default: from package)
         """
         LOGGER.debug("F5CloudServiceManager initialize")
         self._bigip_proxy = BigIPProxy(bigip,
                                        partition,
                                        prefix=prefix)
 
+        if schema_path is None:
+            schema_path = pkg_resources.resource_filename(resource_package,
+                                                          api_schema)
         self._service_manager = ServiceManager(self._bigip_proxy,
                                                partition,
                                                schema_path)
