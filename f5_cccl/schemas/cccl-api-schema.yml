@@ -20,7 +20,7 @@ $schema: "http://json-schema.org/draft-04/schema#"
 id: "http://github.com/f5devcentral/f5-cccl/schemas/cccl-api-schema.yml"
 type: "object"
 description: |
-  "The CCCL "Cecil" library allows clients to define services that describe
+  The CCCL "Cecil" library allows clients to define services that describe
   LTM resources on a managed partition of the BIG-IP.  The managed resources
   are defined in this schema definitions section.
 
@@ -34,7 +34,6 @@ description: |
   responsibility of the client application to ensure that all dependencies
   among the specified resources are met; otherwise, the service will be deployed
   in a degraded state.
-  "
 definitions:
 
   portType: 
@@ -44,12 +43,13 @@ definitions:
     maximum: 65535
 
   virtualAddressType:
-    definition: "Defines the BigIP virtual address resource.  Virtual addresses need
-    not be defined explicitly and should be auto created by the virtual server unless
-    there is a good reason to have virtual address lifespan be separate from the
-    virtual server.  For example, a virtual server that has a shared virtual address that
-    lives in the Common partition or in the case of OpenStack were the creation of a VIP
-    is separate from the listener(virtual server)"
+    definition: >
+      Defines the BigIP virtual address resource.  Virtual addresses need
+      not be defined explicitly and should be auto created by the virtual server unless
+      there is a good reason to have virtual address lifespan be separate from the
+      virtual server.  For example, a virtual server that has a shared virtual address that
+      lives in the Common partition or in the case of OpenStack were the creation of a VIP
+      is separate from the listener(virtual server)
     type: "object"
     properties:
       name:
@@ -61,16 +61,16 @@ definitions:
         type: "string"
       enabled:
         type: "string"
-        description: |
-          "Specifies whether a virtual server IP address is enabled. The default value is yes."
+        description: >
+          Specifies whether a virtual server IP address is enabled. The default value is yes.
         enum:
           - "yes"
           - "no"
       autoDelete:
         type: "string"
-        description: |
-          "Indicates if the virtual address will be automatically deleted on deletion
-          of the last associated virtual server.  Default is true"
+        description: >
+          Indicates if the virtual address will be automatically deleted on deletion
+          of the last associated virtual server.  Default is true
         enum:
           - "true"
           - "false"
@@ -78,9 +78,9 @@ definitions:
         type: "string"
         maxLength: 512
       trafficGroup:
-        description: |
-          "Specifies the traffic group of the virtual address.  The default traffic
-          group is inherited from the containing folder"
+        description: >
+          Specifies the traffic group of the virtual address.  The default traffic
+          group is inherited from the containing folder
         type: "string"
     required:
       - "name"
@@ -108,8 +108,8 @@ definitions:
           - "automap"
       pool:
         type: "string"
-        desctiption: |
-          "Full path to snat pool, (e.g. /Common/my_snatpool)"
+        desctiption: >
+          Full path to snat pool, (e.g. /Common/my_snatpool)
     required:
       - "type"
 
@@ -156,17 +156,17 @@ definitions:
         type: "string"
         minLength: 1
       actions:
-        description: |
-          "Ordered list of actions to perform on successful match.
-          The order of the action in the list indicates the name of the action."
+        description: >
+          Ordered list of actions to perform on successful match.
+          The order of the action in the list indicates the name of the action.
         items: 
           $ref: "#definitions/l7RuleActionType"
           type: "array"
       conditions:
-        description: |
-          "Ordered list of conditions to evaluate.  The order of the condition
+        description: >
+          Ordered list of conditions to evaluate.  The order of the condition
           in the list indicates the name and the order in which the condition
-          is evaluated."
+          is evaluated.
         items: 
           $ref: "#definitions/l7ConditionType"
           type: "array"
@@ -176,7 +176,7 @@ definitions:
   l7RuleActionType: 
     type: "object"
     description: |
-      "Defines an L7 Policy action. The only supported actions are forward and redirect.
+      Defines an L7 Policy action. The only supported actions are forward and redirect.
 
       The supported forwarding actions are forward to pool and reset(block).
       The supported redirect action is redirect to location (URI)
@@ -189,7 +189,6 @@ definitions:
 
       For redirect actions, the 'location' attribute must point to a valid URI path.
       (e.g. http://www.myredirect-target.com)
-      "
     properties: 
       forward:
         type: "boolean"
@@ -232,7 +231,7 @@ definitions:
   l7ConditionType:
     type: "object"
     description: |
-      "Defines an L7 Policy condition.
+      Defines an L7 Policy condition.
       The supported operands are http-host, http-uri, http-header, and http-cookie
 
       Operands
@@ -250,9 +249,8 @@ definitions:
 
       Supported match operators are equals, startsWith, endsWith, and contains.  These match
       operators can be negated by setting 'not' to true.
-      "
-    properties:
 
+    properties:
       # Match modifiers
       caseSensitive: 
         default: false
@@ -351,19 +349,19 @@ definitions:
   l7PolicyType: 
     id: "#/definitions/l7PolicyType"
     type: "object"
-    description: |
-      "A policy comprises a prioritized list of rules that match defined conditions and run
+    description: >
+      A policy comprises a prioritized list of rules that match defined conditions and run
       specific actions, which you can assign to a virtual server that directs traffic accordingly.
-      The priority of each rule is implied by its order in the list."
+      The priority of each rule is implied by its order in the list.
     properties: 
       name: 
         type: "string"
         description: "Name of the policy object"
       strategy:
         type: "string"
-        description: |
-          "Specifies the method to determine which actions get executed in the
-          case where there are multiple rules that match. The default is first."
+        description: >
+          Specifies the method to determine which actions get executed in the
+          case where there are multiple rules that match. The default is first.
         enum:
           - "/Common/first-match"
           - "/Common/best-match"
@@ -372,8 +370,8 @@ definitions:
       rules: 
         items:
           type: "array"
-          description: |
-            "List of rules associated with this policy.  This can be an empty list"
+          description: >
+            List of rules associated with this policy.  This can be an empty list
           $ref: "#definitions/l7RuleType"
     required:
       - "name"
@@ -381,23 +379,23 @@ definitions:
 
   healthMonitorType: 
     type: "object"
-    description: |
-      "Defines a health monitor, supported types are http, https, tcp, and gateway-icmp"
+    description: >
+      Defines a health monitor, supported types are http, https, tcp, and gateway-icmp
     properties: 
       interval: 
         type: "integer"
-        definition: |
-          "Specifies, in seconds, the frequency at which the system issues the monitor
+        definition: >
+          Specifies, in seconds, the frequency at which the system issues the monitor
           check when either the resource is down or the status of the resource is
-          unknown. The default is 5."
+          unknown. The default is 5.
         minimum: 1
         maximum: 86400
         default: 5
       timeout: 
         type: "integer"
-        definition: |
-          "Specifies the number of seconds to wait after a resource first responds
-          correctly to the monitor before setting the resource to up."
+        definition: >
+          Specifies the number of seconds to wait after a resource first responds
+          correctly to the monitor before setting the resource to up.
         minimum: 1
         maximum: 86400
         default: 16
@@ -415,17 +413,17 @@ definitions:
         minLength: 1
       send: 
         type: "string"
-        description: |
-          "Specifies the text string that the monitor sends to the target object.
-          You must include \r\n at the end of a non-empty Send String."
+        description: >
+          Specifies the text string that the monitor sends to the target object.
+          You must include \r\n at the end of a non-empty Send String.
         minLength: 1
       recv: 
         type: "string"
-        description: |
-          "Specifies the regular expression representing the text string that the 
+        description: >
+          Specifies the regular expression representing the text string that the 
           monitor looks for in the returned resource. The most common receive 
           expressions contain a text string that is included in an HTML file on
-          your site. The text string can be regular text, HTML tags, or image names."
+          your site. The text string can be regular text, HTML tags, or image names.
         minLength: 1
     required: 
       - "name"
@@ -434,21 +432,21 @@ definitions:
   poolMemberType: 
     id: "#/definitions/poolMemberType"
     type: "object"
-    description: |
-      "Defines the pool member.  If a name is not provided, then it is derived from
+    description: >
+      Defines the pool member.  If a name is not provided, then it is derived from
       the address and port.
     properties:
       name:
         type: "string"
-        definition: |
-          "Specifies the name of the pool member.  The default has the form: <address>:<port>"
+        definition: >
+          Specifies the name of the pool member.  The default has the form: <address>:<port>
       connectionLimit:
         type: "integer"
-        definition: |
-          "Specifies a maximum established connection limit for a pool member or node. When 
+        definition: >
+          Specifies a maximum established connection limit for a pool member or node. When 
           the current connections count reaches this number, the system does not send additional 
           connections to that pool member or node. The default is 0, meaning that there is no
-          limit to the number of connections."
+          limit to the number of connections.
         default: 0
       description:
         type: "string"
@@ -472,20 +470,21 @@ definitions:
         $ref: "#/definitions/routeDomainType"
       priorityGroup: 
         type: "integer"
-        definition: |
-          "Specifies a number representing the priority group for the pool member.
-          The default is 0, meaning that the member has no priority."
+        definition: >
+          Specifies a number representing the priority group for the pool member.
+          The default is 0, meaning that the member has no priority.
         default: 0
       ratio:
-        definition: "Specifies the ratio weight to assign to the pool member.
-        The default is 1, which means that each pool member has an equal ratio proportion."
+        definition: >
+          Specifies the ratio weight to assign to the pool member.
+          The default is 1, which means that each pool member has an equal ratio proportion.
         minimum: 1
         maximum: 65535
         default: 1
         type: "integer"
       rateLimit:
-        definition: |
-          "Specifies the maximum number of connections per second allowed for a pool member."
+        definition: >
+          Specifies the maximum number of connections per second allowed for a pool member.
         default: 0
         type: "integer"
     required: 
@@ -534,8 +533,8 @@ definitions:
           $ref: "#definitions/poolMemberType"
           type: "array"
       monitors:
-        description: |
-          "A list of health monitors identified by their full path attribute."
+        description: >
+          A list of health monitors identified by their full path attribute.
         items:
           type: "string"
         type: "array"
@@ -619,6 +618,7 @@ definitions:
 
   virtualServerType: 
     id: "#/definitions/virtualServerType"
+    type: object
     properties: 
       name: 
         description: "Specifies the virtual server name"
@@ -626,23 +626,23 @@ definitions:
         minLength: 1
 
       description:
-        description: |
-          "Specifies descriptive text that identifies the virtual server."
+        description: >
+          Specifies descriptive text that identifies the virtual server.
         type: "string"
         maxLength: 512
 
       destination: 
-        description: |
-          "Specifies destination IP address information to which 
+        description: >
+          Specifies destination IP address information to which 
           the virtual server sends traffic.  This can be an IP address 
           or a previously created virtual-address.  This is of the
-          form /<partition>/<ip_address>%<route_domain>:<service_port>"
+          form /<partition>/<ip_address>%<route_domain>:<service_port>
         type: "string"
 
       pool: 
-        description: |
-          "Specifies the full path of a default pool to which you want the virtual
-          server to automatically direct traffic."
+        description: >
+          Specifies the full path of a default pool to which you want the virtual
+          server to automatically direct traffic.
         type: "string"
 
       ipProtocol: 
@@ -656,63 +656,63 @@ definitions:
 
       connectionLimit: 
         type: "integer"
-        description: |
-          "Specifies the maximum number of concurrent connections allowed for
+        description: >
+          Specifies the maximum number of concurrent connections allowed for
           the virtual server. Setting this to 0 turns off connection limits.
-          The default is 0."
+          The default is 0.
         default: 0
 
       profiles:
-        description: |
-          "References the set of profiles that are associated with virtual server"
+        description: >
+          References the set of profiles that are associated with virtual server
         items:
           type: "array"
           $ref: "#/definitions/profileReferenceType"
 
       iRules:
-        description: |
-          "References the set of iRules that are associated with virtual server"
+        description: >
+          References the set of iRules that are associated with virtual server
         items:
           type: "array"
           $ref: "#/definitions/iruleReferenceType"
 
       policies:
-        description: |
-          "References the set of policies that are associated with virtual server"
+        description: >
+          References the set of policies that are associated with virtual server
         items:
           type: "array"
           $ref: "#/definitions/policyReferenceType"
 
       enabled:
         type: "boolean"
-        description: |
-          "Enables/disables the virtual server."
+        description: >
+          Enables/disables the virtual server.
 
       sourceAddressTranslation: 
         type: "string"
         description: |
-          "Specifies the type of address translation pool, used for implementing
+          Specifies the type of address translation pool, used for implementing
           selective and intelligent source address translation. The default is automap.
           Supported values are:
             automap
             snatpool
             None
-          If snatpool is set, then the snatpool configuration item must be defined."
+          If snatpool is set, then the snatpool configuration item must be defined.
         $ref: "#/definitions/snatConfigType"
 
       vlansEnabled: 
-        description: |
-          "Enables/disables the virtual server on the list of VLANS and
+        description: >
+          Enables/disables the virtual server on the list of VLANS and
           tunnels listed in the list of vlans.  The default is the virtual server is
           enabled on all VLANS and tunnel, which corresponds to the setting vlansDisabled=True
-          with an emptly vlans list."
+          with an emptly vlans list.
         type: "boolean"
 
       vlans: 
         type: "array"
-        description: |
-          "The virtual server is enabled/disabled on this set of VLANs.
-          See vlans-disabled and vlans-enabled."
+        description: >
+          The virtual server is enabled/disabled on this set of VLANs.
+          See vlans-disabled and vlans-enabled.
         items: 
           type: "string"
           description: "VLANs and tunnels that you have specifically enabled."
@@ -754,8 +754,8 @@ definitions:
       records:
         items:
           type: "array"
-          description: |
-            "List of records associated with this data group."
+          description: >
+            List of records associated with this data group.
           $ref: "#definitions/internalDataGroupRecordType"
     required:
       - "name"
@@ -773,34 +773,42 @@ definitions:
 
 properties:
   virtualAddresses:
+    description: "List of all virtualAddresses resources that should exist"
     items:
       $ref: "#/definitions/virtualAddressType"
     type: "array"
   virtualServers:
+    description: "List of all virtualServer resources that should exist"
     items:
       $ref: "#/definitions/virtualServerType"
     type: "array"
   l7Policies:
+    description: "List of all l7Policy resources that should exist"
     items:
       $ref: "#/definitions/l7PolicyType"
     type: "array"
   pools:
+    description: "List of all pool resources that should exist"
     items:
       $ref: "#/definitions/poolType"
     type: "array"
   monitors:
+    description: "List of all monitor resources that should exist"
     items: 
       $ref: "#/definitions/healthMonitorType"
     type: "array"
   iapps: 
+    description: "List of all iApp resources that should exist"
     items: 
       $ref: "#/definitions/iAppType"
     type: "array"
   iRules:
+    description: "List of all iRule resources that should exist"
     items:
       $ref: "#/definitions/iRuleType"
     type: "array"
   internalDataGroups:
+    description: "List of all data group resources that should exist"
     items:
       $ref: "#/definitions/internalDataGroupType"
     type: "array"
