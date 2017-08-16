@@ -16,7 +16,7 @@
 from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual import VirtualServer
 from f5_cccl.resource.ltm.node import Node
-from f5_cccl.resource.ltm.app_service import ApplicationService
+from f5_cccl.resource.ltm.app_service import IcrApplicationService
 
 
 def test_bigip_refresh(bigip_proxy):
@@ -32,7 +32,7 @@ def test_bigip_refresh(bigip_proxy):
         test_virtuals.append(VirtualServer(**v))
     test_iapps = []
     for i in big_ip.bigip_data['iapps']:
-        test_iapps.append(ApplicationService(**i))
+        test_iapps.append(IcrApplicationService(**i))
     test_nodes = []
     for n in big_ip.bigip_data['nodes']:
         test_nodes.append(Node(**n))

@@ -48,13 +48,8 @@ class ApplicationService(Resource):
                 for opt in value:
                     if opt in properties:
                         self._data[opt] = properties.get(opt, value)
-            else:
+            if key == "template":
                 self._data[key] = properties.get(key, value)
-
-                if key == "variables":
-                    # Remove 'encrypted' key and its value from ICR data
-                    for v in self._data[key]:
-                        v.pop('encrypted', None)
 
     def __eq__(self, other):
         if not isinstance(other, ApplicationService):
@@ -96,3 +91,96 @@ class ApplicationService(Resource):
         """
         self._data['executeAction'] = 'definition'
         super(ApplicationService, self).update(bigip, data=data, modify=modify)
+
+
+class IcrApplicationService(ApplicationService):
+    """Parse iControl REST input to create canonical Application Service."""
+    def __init__(self, name, partition, **properties):
+        super(IcrApplicationService, self).__init__(name,
+                                                    partition,
+                                                    **properties)
+        for key, value in self.properties.items():
+            if key == "variables":
+                self._data[key] = properties.get(key, value)
+                # Remove 'encrypted' key and its value from ICR data
+                for v in self._data[key]:
+                    v.pop('encrypted', None)
+            if key == "tables":
+                self._data[key] = properties.get(key, value)
+
+
+class ApiApplicationService(ApplicationService):
+    """Parse the CCCL input to create the canonical Application Service."""
+    def __init__(self, name, partition, **properties):
+        super(ApiApplicationService, self).__init__(name,
+                                                    partition,
+                                                    **properties)
+        members = []
+        if 'poolMemberTable' in properties:
+            members = properties['poolMemberTable'].get("members", [])
+
+        self._data["variables"] = self._iapp_build_variables(properties)
+        self._data["tables"] = self._iapp_build_tables(members, properties)
+
+    def _iapp_build_variables(self, config):
+        """Create a list of name-value objects."""
+        variables = []
+        for key, value in config['variables'].items():
+            var = {'name': key, 'value': value}
+            variables.append(var)
+
+        return variables
+
+    def _iapp_build_tables(self, members, config):
+        """Create a dict that defines the tables for an iApp.
+
+        Args:
+            members: list of pool members
+            config: BIG-IP config dict
+        """
+        # The schema says only one of poolMemberTable or tableName is
+        # valid, so if the user set both it should have already been rejected.
+        # But if not, prefer the new poolMemberTable over tableName.
+        tables = []
+        if 'poolMemberTable' in config:
+            tableConfig = config['poolMemberTable']
+
+            # Construct columnNames array from the 'name' prop of each column
+            columnNames = [col['name'] for col in tableConfig['columns']]
+
+            # Construct rows array - one row for each node, interpret the
+            # 'kind' or 'value' from the column spec.
+            rows = []
+            for node in members:
+                row = []
+                for col in tableConfig['columns']:
+                    if 'value' in col:
+                        row.append(col['value'])
+                    elif 'kind' in col:
+                        if col['kind'] == 'IPAddress':
+                            row.append(str(node['address']))
+                        elif col['kind'] == 'Port':
+                            row.append(str(node['port']))
+
+                rows.append({'row': row})
+
+            # Done - add the generated pool member table to the set of tables
+            # we're going to configure.
+            tables.append({
+                'name': tableConfig['name'],
+                'columnNames': columnNames,
+                'rows': rows
+            })
+
+        # Add other tables
+        if 'tables' in config:
+            for key in config['tables']:
+                data = config['tables'][key]
+                table = {'columnNames': data['columns'],
+                         'name': key,
+                         'rows': []}
+                for row in data['rows']:
+                    table['rows'].append({'row': row})
+                tables.append(table)
+
+        return tables
