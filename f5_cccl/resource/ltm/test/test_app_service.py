@@ -15,7 +15,7 @@
 #
 
 from copy import copy, deepcopy
-from f5_cccl.resource.ltm.app_service import ApplicationService
+from f5_cccl.resource.ltm.app_service import ApiApplicationService
 from f5_cccl.resource.ltm.pool import Pool
 from f5_cccl.resource import Resource
 from mock import Mock
@@ -23,6 +23,116 @@ import pytest
 
 
 cfg_test = {
+  "name": "MyAppService",
+  "template": "/Common/f5.http",
+  "partition": "test",
+  "options": {"description": "This is a test iApp"},
+  "poolMemberTable": {
+    "name": "pool__members",
+    "columns": [
+      {"name": "addr", "kind": "IPAddress"},
+      {"name": "port", "kind": "Port"},
+      {"name": "connection_limit", "value": "0"}
+    ],
+    "members": [
+      {"address": "10.2.3.4", "port": 30001},
+      {"address": "10.2.3.4", "port": 30002},
+      {"address": "10.2.3.4", "port": 30003},
+      {"address": "10.2.3.4", "port": 30004},
+      {"address": "10.2.3.4", "port": 30005}
+    ]
+  },
+  "variables": {
+    "net__client_mode": "wan",
+    "net__server_mode": "lan",
+    "pool__addr": "10.10.1.100",
+    "pool__port": "80",
+    "pool__pool_to_use": "/#create_new#",
+    "pool__lb_method": "round-robin",
+    "pool__http": "/#create_new#",
+    "pool__mask": "255.255.255.255",
+    "pool__persist": "/#do_not_use#",
+    "monitor__monitor": "/#create_new#",
+    "monitor__uri": "/",
+    "monitor__frequency": "30",
+    "monitor__response": "none",
+    "ssl_encryption_questions__advanced": "yes",
+    "net__vlan_mode": "all",
+    "net__snat_type": "automap",
+    "client__tcp_wan_opt": "/#create_new#",
+    "client__standard_caching_with_wa": "/#create_new#",
+    "client__standard_caching_without_wa": "/#do_not_use#",
+    "server__tcp_lan_opt": "/#create_new#",
+    "server__oneconnect": "/#create_new#",
+    "server__ntlm": "/#do_not_use#"
+  }
+}
+
+cfg_test2 = {
+  "name": "appsvc",
+  "template": "/Common/appsvcs_integration_v2.0.002",
+  "partition": "test",
+  "options": {"description": "This is a test iApp"},
+  "poolMemberTable": {
+    "name": "pool__Members",
+    "columns": [
+      {"name": "Index", "value": "0"},
+      {"name": "IPAddress", "kind": "IPAddress"},
+      {"name": "Port", "kind": "Port"},
+      {"name": "ConnectionLimit", "value": "1000"},
+      {"name": "Ratio", "value": "1"},
+      {"name": "PriorityGroup", "value": "0"},
+      {"name": "State", "value": "enabled"}
+    ],
+    "members": [
+      {"address": "10.2.3.5", "port": 30001},
+      {"address": "10.2.3.5", "port": 30002},
+      {"address": "10.2.3.5", "port": 30003},
+      {"address": "10.2.3.5", "port": 30004},
+      {"address": "10.2.3.5", "port": 30005}
+    ]
+  },
+  "tables": {
+    "l7policy__rulesMatch": {
+      "columns": ["Group", "Operand", "Negate", "Condition", "Value",
+                  "CaseSensitive", "Missing"],
+      "rows": [["0", "http-uri/request/path", "no", "starts-with",
+                "/env", "no", "no"],
+               ["default", "", "no", "", "", "no", "no"]]
+    },
+    "l7policy__rulesAction": {
+      "columns": ["Group", "Target", "Parameter"],
+      "rows": [["0", "forward/request/reset", "none"],
+               ["default", "forward/request/select/pool", "pool:0"]]
+    },
+    "pool__Pools": {
+      "columns": ["Index", "Name", "Description", "LbMethod",
+                  "Monitor", "AdvOptions"],
+      "rows": [["0", "", "", "round-robin", "0", "none"]]
+    },
+    "monitor__Monitors": {
+      "columns": ["Index", "Name", "Type", "Options"],
+      "rows": [["0", "/Common/tcp", "none", "none"]]
+    }
+  },        
+  "variables": {
+    "pool__addr": "10.10.2.100",
+    "pool__port": "80",
+    "pool__mask": "255.255.255.255",
+    "vs__Name": "appsvc_iapp_vs",
+    "vs__ProfileClientProtocol": "/Common/tcp-wan-optimized",
+    "vs__ProfileServerProtocol": "/Common/tcp-lan-optimized",
+    "vs__ProfileHTTP": "/Common/http",
+    "vs__SNATConfig": "automap",
+    "iapp__logLevel": "7",
+    "iapp__routeDomain": "auto",
+    "iapp__mode": "auto",
+    "pool__DefaultPoolIndex": "0",
+    "l7policy__strategy": "/Common/first-match"
+  }
+}
+
+cfg_test_expected = {
   "name": "MyAppService",
   "template": "/Common/f5.http",
   "partition": "test",
@@ -63,7 +173,7 @@ cfg_test = {
   ]
 }
 
-cfg_test2 = {
+cfg_test2_expected = {
   "name": "appsvc",
   "template": "/Common/appsvcs_integration_v2.0.002",
   "partition": "test",
@@ -144,17 +254,19 @@ def restore_resource():
 
 def test_create_app_service(bigip, mock_resource):
     """Test Application Service creation."""
-    appsvc = ApplicationService(
+    appsvc = ApiApplicationService(
         **cfg_test
     )
     assert appsvc
 
     # verify all cfg items
-    expected = cfg_test
-    expected.update(cfg_test['options'])
-    del expected['options']
-    for k,v in expected.items():
-        assert appsvc.data[k] == v
+    expected = cfg_test_expected
+
+    assert appsvc.name == expected['name']
+    assert appsvc.partition == expected['partition']
+    assert appsvc.data['template'] == expected['template']
+    assert all(v in appsvc.data['variables'] for v in expected['variables'])
+    assert all(t in appsvc.data['tables'] for t in expected['tables'])
 
     appsvc.create(bigip)
 
@@ -163,18 +275,19 @@ def test_create_app_service(bigip, mock_resource):
 
 def test_update_app_service(bigip, mock_resource):
     """Test Application Service update."""
-    appsvc = ApplicationService(
+    appsvc = ApiApplicationService(
         **cfg_test2
     )
     assert appsvc
 
     # verify all cfg items
-    expected = cfg_test2
-    expected.update(cfg_test2['options'])
-    del expected['options']
+    expected = cfg_test2_expected
 
-    for k,v in expected.items():
-        assert appsvc.data[k] == v
+    assert appsvc.name == expected['name']
+    assert appsvc.partition == expected['partition']
+    assert appsvc.data['template'] == expected['template']
+    assert all(v in appsvc.data['variables'] for v in expected['variables'])
+    assert all(t in appsvc.data['tables'] for t in expected['tables'])
 
     appsvc.update(bigip)
 
@@ -184,20 +297,20 @@ def test_update_app_service(bigip, mock_resource):
 
 def test_hash():
     """Test Application Service hash."""
-    appsvc = ApplicationService(
+    appsvc = ApiApplicationService(
         **cfg_test
     )
-    appsvc1 = ApplicationService(
+    appsvc1 = ApiApplicationService(
         **cfg_test
     )
     cfg_changed = copy(cfg_test)
     cfg_changed['name'] = 'test'
-    appsvc2 = ApplicationService(
+    appsvc2 = ApiApplicationService(
         **cfg_changed
     )
     cfg_changed = copy(cfg_test)
     cfg_changed['partition'] = 'other'
-    appsvc3 = ApplicationService(
+    appsvc3 = ApiApplicationService(
         **cfg_changed
     )
     assert appsvc
@@ -215,15 +328,15 @@ def test_eq():
     partition = 'Common'
     name = 'app_svc'
 
-    appsvc1 = ApplicationService(
+    appsvc1 = ApiApplicationService(
         **cfg_test
     )
-    appsvc2 = ApplicationService(
+    appsvc2 = ApiApplicationService(
         **cfg_test
     )
     cfg_test3 = deepcopy(cfg_test)
-    cfg_test3['variables'][0]['value'] = 'changed'
-    appsvc3 = ApplicationService(
+    cfg_test3['variables']['net__client_mode'] = 'changed'
+    appsvc3 = ApiApplicationService(
         **cfg_test3
     )
     pool = Pool(
@@ -244,7 +357,7 @@ def test_eq():
 
 def test_uri_path(bigip):
     """Test Application Service URI."""
-    appsvc = ApplicationService(
+    appsvc = ApiApplicationService(
         **cfg_test
     )
     assert appsvc
