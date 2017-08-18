@@ -31,7 +31,7 @@ from f5_cccl.resource.ltm.policy import ApiPolicy
 from f5_cccl.resource.ltm.pool import ApiPool
 from f5_cccl.resource.ltm.virtual import ApiVirtualServer
 from f5_cccl.resource.ltm.virtual_address import ApiVirtualAddress
-from f5_cccl.resource.ltm.app_service import ApplicationService
+from f5_cccl.resource.ltm.app_service import ApiApplicationService
 from f5_cccl.resource.ltm.internal_data_group import ApiInternalDataGroup
 
 
@@ -143,7 +143,7 @@ class ServiceConfigReader(object):
 
         iapps = service_config.get('iapps', list())
         config_dict['iapps'] = {
-            i['name']: self._create_config_item(ApplicationService, i)
+            i['name']: self._create_config_item(ApiApplicationService, i)
             for i in iapps
         }
 

@@ -25,7 +25,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from f5.sdk_exception import F5SDKError
 
 import f5_cccl.exceptions as cccl_exc
-from f5_cccl.resource.ltm.app_service import ApplicationService
+from f5_cccl.resource.ltm.app_service import IcrApplicationService
 from f5_cccl.resource.ltm.monitor.http_monitor import IcrHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import IcrHTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import IcrICMPMonitor
@@ -296,7 +296,7 @@ class BigIPProxy(object):
 
         #  Refresh the iapp cache
         self._iapps = {
-            i.name: self._create_resource(ApplicationService, i)
+            i.name: self._create_resource(IcrApplicationService, i)
             for i in iapps if i.name.startswith(self._prefix)
         }
 
