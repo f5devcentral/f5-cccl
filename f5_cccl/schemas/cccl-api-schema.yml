@@ -565,6 +565,52 @@ definitions:
     - "columns"
     - "rows"
 
+  iAppAddressType:
+    type: "object"
+    properties:
+      name:
+        description: >
+          Specifies the name of the IP address column in the pool-member table
+        type: "string"
+        minLength: 1
+      kind:
+        type: "string"
+        enum:
+        - "IPAddress"
+    required:
+    - "name"
+    - "kind"
+
+  iAppPortType:
+    type: "object"
+    properties:
+      name:
+        description: >
+          Specifies the name of the port column in the pool-member table
+        type: "string"
+        minLength: 1
+      kind:
+        type: "string"
+        enum:
+         - "Port"
+    required:
+    - "name"
+    - "kind"
+
+  iAppValueType:
+    type: "object"
+    properties:
+      name:
+        description: >
+          Specifies the name of a value column in the pool-member table
+        type: "string"
+        minLength: 1
+      value:
+        type: "string"
+    required:
+    - "name"
+    - "value"
+
   iAppType:
     type: "object"
     properties:
@@ -595,23 +641,43 @@ definitions:
           trafficGroup:
             type: "string"
             minLength: 1
+      poolMemberTable:
+        desription: "Specifies the format and content of the pool members"
+        type: "object"
+        properties:
+          name:
+            description: "The pool-member table name"
+            type: "string"
+            minLength: 1
+          columns:
+            description: "Specifies the column names of the table"
+            type: "array"
+            items:
+              oneOf:
+              - $ref: "#/definitions/iAppAddressType"
+              - $ref: "#/definitions/iAppPortType"
+              - $ref: "#/definitions/iAppValueType"
+        required:
+        - "name"
+        - "columns"
+        members:
+          description: "List of pool members"
+          items:
+            type: "array"
+            $ref: "#definitions/poolMemberType"
       tables:
-        description: "Specifies an array of tables, e.g. L7 policies, pool
-                     members"
-        type: "array"
+        description: >
+          Specifies an array of tables, e.g. L7 policies
+        type: "object"
         patternProperties:
           "^[a-zA-Z0-9_-]+$":
             "$ref": "#/definitions/iappTableType"
       variables:
         description: "Application-service specific name-value pairs"
-        type  : "array"
-        items:
-          properties:
-            name:
-              type: "string"
-              minLength: 1
-            value:
-              type: "string"
+        type: "object"
+        patternProperties:
+          "^[a-zA-Z0-9_-]+$":
+            type: "string"
     required:
     - "template"
     - "variables"
