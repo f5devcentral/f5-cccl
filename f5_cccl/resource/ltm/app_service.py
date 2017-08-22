@@ -48,7 +48,7 @@ class ApplicationService(Resource):
                 for opt in value:
                     if opt in properties:
                         self._data[opt] = properties.get(opt, value)
-            if key == "template":
+            elif key == "template":
                 self._data[key] = properties.get(key, value)
 
     def __eq__(self, other):
@@ -138,9 +138,6 @@ class ApiApplicationService(ApplicationService):
             members: list of pool members
             config: BIG-IP config dict
         """
-        # The schema says only one of poolMemberTable or tableName is
-        # valid, so if the user set both it should have already been rejected.
-        # But if not, prefer the new poolMemberTable over tableName.
         tables = []
         if 'poolMemberTable' in config:
             tableConfig = config['poolMemberTable']
