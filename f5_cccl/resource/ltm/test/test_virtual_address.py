@@ -15,9 +15,10 @@
 #
 
 from copy import deepcopy
-from mock import Mock
+from mock import Mock, patch
 import pytest
 
+from f5_cccl.resource import Resource
 from f5_cccl.resource.ltm.virtual_address import VirtualAddress
 
 va_cfg = {
@@ -66,6 +67,18 @@ def test_create_virtual_address_defaults():
     assert not data['enabled']
     assert not data['description']
     assert data['trafficGroup'] ==  "/Common/traffic-group-1"
+
+
+def test_update_virtual_address():
+    va = VirtualAddress(**va_cfg)
+
+    assert 'address' in va.data
+
+    # Verify that immutable 'address' is not passed to parent method
+    with patch.object(Resource, 'update') as mock_method:
+        va.update(bigip)
+        assert 1 == mock_method.call_count
+        assert 'address' not in mock_method.call_args[1]['data']
 
 
 def test_equals_virtual_address():

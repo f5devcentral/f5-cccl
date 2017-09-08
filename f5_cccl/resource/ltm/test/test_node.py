@@ -15,9 +15,10 @@
 #
 
 from copy import copy
+from f5_cccl.resource import Resource
 from f5_cccl.resource.ltm.node import Node
 from f5_cccl.resource.ltm.pool import Pool
-from mock import Mock
+from mock import Mock, patch
 import pytest
 
 
@@ -44,6 +45,18 @@ def test_create_node():
     # verify all cfg items
     for k,v in cfg_test.items():
         assert node.data[k] == v
+
+
+def test_update_node():
+    node = Node(**cfg_test)
+
+    assert 'address' in node.data
+
+    # Verify that immutable 'address' is not passed to parent method
+    with patch.object(Resource, 'update') as mock_method:
+        node.update(bigip)
+        assert 1 == mock_method.call_count
+        assert 'address' not in mock_method.call_args[1]['data']
 
 
 def test_hash():

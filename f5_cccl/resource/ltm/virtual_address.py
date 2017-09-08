@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
+from copy import deepcopy
 import logging
 
 from f5_cccl.resource import Resource
@@ -48,6 +49,12 @@ class VirtualAddress(Resource):
 
     def _uri_path(self, bigip):
         return bigip.tm.ltm.virtual_address_s.virtual_address
+
+    def update(self, bigip, data=None, modify=False):
+        # 'address' is immutable, don't pass it in an update operation
+        tmp_data = deepcopy(data) if data is not None else deepcopy(self.data)
+        tmp_data.pop('address', None)
+        super(VirtualAddress, self).update(bigip, data=tmp_data, modify=modify)
 
 
 class IcrVirtualAddress(VirtualAddress):
