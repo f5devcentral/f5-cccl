@@ -31,7 +31,6 @@ requests.packages.urllib3.disable_warnings()
 
 def _wrap_instrument(f, counters, name):
     def instrumented(*args, **kwargs):
-        #pytest.set_trace()
         counters[name] += 1
         return f(*args, **kwargs)
     return instrumented
@@ -48,6 +47,7 @@ def instrument_bigip(mgmt_root):
         setattr(icr.session, method, instrumented)
     return mgmt_root
 
+
 @pytest.fixture(scope="module")
 def bigip():
     if pytest.symbols:
@@ -62,9 +62,9 @@ def bigip():
 
     yield bigip_fix
 
+
 @pytest.fixture(scope="function")
 def bigip_rest_counters(bigip):
-    #icr = mgmt_root.__dict__['_meta_data']['icr_session']
     counters = bigip.test_rest_calls
     for k in counters.keys():
         counters[k] = 0
@@ -74,18 +74,20 @@ def bigip_rest_counters(bigip):
     for k in counters.keys():
         counters[k] = 0
 
+
 @pytest.fixture(scope="function")
 def partition(bigip):
     name = "Test1"
     partition = None
 
+    # Cleanup partition, in case previous runs were interrupted
     try:
         bigip.tm.ltm.virtuals.virtual.load(
-            name="test_virtual", partition="Test1").delete()
+            name="test_virtual", partition=name).delete()
     except iControlUnexpectedHTTPError as icr_error:
         pass
     try:
-        bigip.tm.sys.folders.folder.load(name="Test1").delete()
+        bigip.tm.sys.folders.folder.load(name=name).delete()
     except iControlUnexpectedHTTPError as icr_error:
         pass
 

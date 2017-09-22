@@ -122,69 +122,6 @@ conditions = {
 }
 
 
-@pytest.fixture(scope="module", autouse=True)
-def bigip():
-
-    if pytest.symbols:
-        hostname = pytest.symbols.bigip_mgmt_ip
-        username = pytest.symbols.bigip_username
-        password = pytest.symbols.bigip_password
-
-        bigip = ManagementRoot(hostname, username, password)
-
-    else:
-        bigip = MagicMock()
-
-    yield bigip
-
-
-@pytest.fixture()
-def partition(bigip):
-    name="Test1"
-    partition = None
-
-    try:
-        partition = bigip.tm.sys.folders.folder.create(subPath="/", name=name)
-    except iControlUnexpectedHTTPError as icr_error:
-        code = icr_error.response.status_code
-        if code == 400:
-            print("Can't create partition {}".format(name))
-        elif code == 409:
-            print("Partition {} already exists".format(name))
-            partition = bigip.tm.sys.folders.folder.load(subPath="/", name=name)
-        else:
-            print("Unknown error creating partition.")
-        print(icr_error)
-
-    yield name
-
-    partition.delete()
-
-
-@pytest.fixture()
-def pool(bigip, partition):
-    name="pool1"
-    partition = partition
-    model = {'name': name, 'partition': partition}
-
-    try:
-        pool = bigip.tm.ltm.pools.pool.create(**model)
-    except iControlUnexpectedHTTPError as icr_error:
-        code = icr_error.response.status_code
-        if code == 400:
-            print("Can't create pool {}".format(name))
-        elif code == 409:
-            print("Pool {} already exists".format(name))
-            partition = bigip.tm.ltm.pools.pool.load(partition=partition, name=name)
-        else:
-            print("Unknown error creating pool.")
-        print(icr_error)
-
-    yield name
-
-    pool.delete()
-
-
 class TestPolicy(object):
 
     name = "test_policy"
