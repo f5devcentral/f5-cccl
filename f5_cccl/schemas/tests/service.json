@@ -61,15 +61,15 @@
   ],
   "virtualServers": [{
 	"name": "vs1",
-	"destination": "/Test/MyVaddr:80",
-	"pool": "/Test/pool1",
+	"destination": "/test/MyVaddr:80",
+	"pool": "/test/pool1",
 	"sourceAddress": "0.0.0.0/0",
 	"enabled": true,
 	"vlansEnabled": true,
-	"vlans": ["/Test/vlan-100", "/Common/http-tunnel"],
+	"vlans": ["/test/vlan-100", "/Common/http-tunnel"],
 	"sourceAddressTranslation": {
 	  "type": "snat",
-	  "pool": "/Test/snatpool1"
+	  "pool": "/test/snatpool1"
 	},
 	"profiles": [
 	  {"name": "tcp-lan-optimized", "partition": "Common", "context": "serverside"},
@@ -78,19 +78,19 @@
 	  {"name": "clientssl", "partition": "Common", "context": "clientside"}
 	],
 	"iRules": [
-	  "/Test/https_redirect"
+	  "/test/https_redirect"
 	],
 	"policies": [
-	  {"name": "wrapper_policy", "partition": "Test"}
+	  {"name": "wrapper_policy", "partition": "test"}
 	]
   }],
   "pools": [
-    { "name": "pool1",
+    { "name": "pool2",
       "members": [
         {"address": "172.16.0.100", "port": 8080, "routeDomain": {"id": 0}},
         {"address": "172.16.0.101", "port": 8080, "routeDomain": {"id": 0}}
       ],
-      "monitors": ["/Test/myhttp"]
+      "monitors": ["/test/myhttp"]
     }
   ],
   "monitors": [
@@ -108,7 +108,7 @@
 	  "type": "tcp" }
   ],
   "l7Policies": [{
-    "name": "wrapper_policy",
+    "name": "test_wrapper_policy",
 	"strategy": "/Common/first-match",
 	"rules": [
 	  {
@@ -151,7 +151,7 @@
 		  {
 			"forward": true,
 			"request": true,
-			"pool": "/Test/pool1"
+			"pool": "/test/pool2"
 		  }
 		]
 	  },
