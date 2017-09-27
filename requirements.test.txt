@@ -1,7 +1,7 @@
 git+https://github.com/F5Networks/pytest-symbols.git
 
 # Test Requirements
-f5-sdk==2.2.2
+f5-sdk==3.0.1
 ipaddress==1.0.17
 PyJWT==1.4.0
 mock==2.0.0
