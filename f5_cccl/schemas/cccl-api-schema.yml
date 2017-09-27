@@ -170,6 +170,9 @@ definitions:
         items: 
           $ref: "#definitions/l7ConditionType"
           type: "array"
+      description:
+        description: "Descriptive text that describes the rule"
+        type: "string"
     required:
       - "name"
 

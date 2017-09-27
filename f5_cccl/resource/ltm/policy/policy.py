@@ -45,8 +45,7 @@ class Policy(Resource):
 
         # Get the rules.
         rules = data.get('rules', list())
-        self._data['rules'] = self._create_rules(
-            partition, rules)
+        self._data['rules'] = self._create_rules(rules)
 
         self._data['strategy'] = data.get(
             'strategy',
@@ -82,7 +81,7 @@ class Policy(Resource):
     def __str__(self):
         return str(self._data)
 
-    def _create_rules(self, partition, rules):
+    def _create_rules(self, rules):
         """Create a list of the policy Rules from rules data.
 
         The order of the rules in the list is taken as the order
@@ -91,7 +90,7 @@ class Policy(Resource):
         new_rules = list()
         for index, rule in enumerate(rules):
             rule['ordinal'] = index
-            new_rules.append(Rule(partition=partition, **rule).data)
+            new_rules.append(Rule(**rule).data)
 
         return new_rules
 

@@ -39,8 +39,7 @@
         "name": "my_rule1",
         "selfLink": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules/~Test~my_rule1?ver=12.1.1",
         "generation": 2600,
-        "fullPath": "/Test/my_rule1",
-        "partition": "Test",
+        "fullPath": "my_rule1",
         "conditionsReference": {
           "isSubcollection": true,
           "link": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules/~Test~my_rule1/conditions?ver=12.1.1",
@@ -98,8 +97,7 @@
         "kind": "tm:ltm:policy:rules:rulesstate",
         "name": "my_rule2",
         "generation": 2600,
-        "fullPath": "/Test/my_rule2",
-        "partition": "Test",
+        "fullPath": "my_rule2",
         "selfLink": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules/~Test~my_rule2?ver=12.1.1"
       }
     ]
