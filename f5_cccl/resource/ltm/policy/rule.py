@@ -38,17 +38,19 @@ class Rule(Resource):
         name=None,
         ordinal=None,
         actions=None,
-        conditions=None
+        conditions=None,
+        description=None
     )
 
-    def __init__(self, name, partition, **data):
+    def __init__(self, name, **data):
         """Create a Rule object.
 
         actions and conditions attributes are guaranteed to
         be initialized, if non exist, they will be empty
         lists.
         """
-        super(Rule, self).__init__(name, partition)
+        super(Rule, self).__init__(name, '')
+        self._data['description'] = data.get('description', None)
         self._data['ordinal'] = data.get('ordinal', 0)
         self._data['actions'] = self._create_actions(
             data.get('actions', list()))

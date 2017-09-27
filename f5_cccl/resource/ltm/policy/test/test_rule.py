@@ -73,7 +73,7 @@ def rule_0():
             'conditions': []}
     data['conditions'].append(condition_0)
     data['actions'].append(action_0)
-    return Rule(name="rule_0", partition="Test", **data)
+    return Rule(name="rule_0", **data)
 
 
 @pytest.fixture
@@ -83,7 +83,7 @@ def rule_0_clone():
             'conditions': []}
     data['conditions'].append(condition_0)
     data['actions'].append(action_0)
-    return Rule(name="rule_0", partition="Test", **data)
+    return Rule(name="rule_0", **data)
 
 
 @pytest.fixture
@@ -93,7 +93,7 @@ def rule_1():
             'conditions': []}
     data['conditions'].append(condition_1)
     data['actions'].append(action_1)
-    return Rule(name="rule_1", partition="Test", **data)
+    return Rule(name="rule_1",  **data)
 
 
 @pytest.fixture
@@ -102,7 +102,7 @@ def rule_no_actions():
             'actions': [],
             'conditions': []}
     data['conditions'].append(condition_0)
-    return Rule(name="rule_0", partition="Test", **data)
+    return Rule(name="rule_0",  **data)
 
 
 @pytest.fixture
@@ -111,44 +111,45 @@ def rule_no_conditions():
             'actions': [],
             'conditions': []}
     data['actions'].append(action_1)
-    return Rule(name="rule_1", partition="Test", **data)
+    return Rule(name="rule_1",  **data)
 
 
 def test_create_rule():
     data = {'ordinal': "0",
             'actions': [],
-            'conditions': []}
+            'conditions': [],
+            'description': 'This is a rule description'}
 
-    rule = Rule(name="rule_0", partition="Test", **data)
+    rule = Rule(name="rule_0", **data)
 
     assert rule.name == "rule_0"
-    assert rule.partition == "Test"
     assert len(rule.data['conditions']) == 0
     assert len(rule.data['actions']) == 0
+    assert rule.data['description'] == 'This is a rule description'
 
     data['conditions'].append(condition_0)
     data['actions'].append(action_0)
 
-    rule = Rule(name="rule_1", partition="Test", **data)
+    rule = Rule(name="rule_1", **data)
     assert len(rule.data['conditions']) == 1
     assert len(rule.data['actions']) == 1
 
     data['conditions'] = [condition_2]
     data['actions'] = [action_0]
 
-    rule = Rule(name="rule_1", partition="Test", **data)
+    rule = Rule(name="rule_1", **data)
     assert len(rule.data['conditions']) == 0
     assert len(rule.data['actions']) == 1
 
     data['conditions'].append(condition_0)
-    rule = Rule(name="rule_1", partition="Test", **data)
+    rule = Rule(name="rule_1", **data)
     assert len(rule.data['conditions']) == 1
     assert len(rule.data['actions']) == 1
 
     data['conditions'] = [condition_0]
     data['actions'] = [action_2]
 
-    rule = Rule(name="rule_1", partition="Test", **data)
+    rule = Rule(name="rule_1", **data)
     assert len(rule.data['conditions']) == 1
     assert len(rule.data['actions']) == 0
 
