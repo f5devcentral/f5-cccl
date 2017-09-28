@@ -23,26 +23,29 @@ def test_bigip_refresh(bigip_proxy):
     """Test BIG-IP refresh function."""
     big_ip = bigip_proxy.mgmt_root()
 
-    test_pools = []
-    for p in big_ip.bigip_data['pools']:
-        pool = IcrPool(**p)
-        test_pools.append(pool)
-    test_virtuals = []
-    for v in big_ip.bigip_data['virtuals']:
-        test_virtuals.append(VirtualServer(**v))
-    test_iapps = []
-    for i in big_ip.bigip_data['iapps']:
-        test_iapps.append(IcrApplicationService(**i))
-    test_nodes = []
-    for n in big_ip.bigip_data['nodes']:
-        test_nodes.append(Node(**n))
+    test_pools = [
+        IcrPool(**p) for p in big_ip.bigip_data['pools']
+        if p['partition'] == 'test'
+    ]
+    test_virtuals = [
+        VirtualServer(**v) for v in big_ip.bigip_data['virtuals']
+        if v['partition'] == 'test'
+    ]
+    test_iapps = [
+        IcrApplicationService(**i) for i in big_ip.bigip_data['iapps']
+        if i['partition'] == 'test'
+    ]
+    test_nodes = [
+        Node(**n) for n in big_ip.bigip_data['nodes']
+        if n['partition'] == 'test'
+    ]
 
     # refresh the BIG-IP state
     bigip_proxy.refresh()
 
     # verify pools and pool members
     assert big_ip.tm.ltm.pools.get_collection.called
-    assert len(bigip_proxy._pools) == 2
+    assert len(bigip_proxy._pools) == 1
 
     assert len(bigip_proxy._pools) == len(test_pools)
     for pool in test_pools:
@@ -53,7 +56,7 @@ def test_bigip_refresh(bigip_proxy):
 
     # verify virtual servers 
     assert big_ip.tm.ltm.virtuals.get_collection.called
-    assert len(bigip_proxy._virtuals) == 2
+    assert len(bigip_proxy._virtuals) == 1
 
     assert len(bigip_proxy._virtuals) == len(test_virtuals)
     for v in test_virtuals:
@@ -86,13 +89,14 @@ def test_bigip_properties(bigip_proxy):
     """Test BIG-IP properties function."""
     big_ip = bigip_proxy
 
-    test_pools = []
-    for p in big_ip.mgmt_root().bigip_data['pools']:
-        pool = IcrPool(**p)
-        test_pools.append(pool)
-    test_virtuals = []
-    for v in big_ip.mgmt_root().bigip_data['virtuals']:
-        test_virtuals.append(VirtualServer(**v))
+    test_pools = [
+        IcrPool(**p) for p in big_ip.mgmt_root().bigip_data['pools']
+        if p['partition'] == 'test'
+    ]
+    test_virtuals = [
+        VirtualServer(**v) for v in big_ip.mgmt_root().bigip_data['virtuals']
+        if v['partition'] == 'test'
+    ]
 
     # refresh the BIG-IP state
     big_ip.refresh()

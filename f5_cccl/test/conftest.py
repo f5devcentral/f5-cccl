@@ -440,18 +440,26 @@ class MockFolder():
 
 
 class MockHttp():
-    """A mock Https http object."""
+    """A mock Http http object."""
 
-    def __init__(self):
+    def __init__(self, name=None, **kwargs):
         """Initialize the object."""
+        self.name = name
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        self.raw = self.__dict__
 
     def create(self, partition=None, **kwargs):
         """Create a http healthcheck object."""
         pass
 
+    def delete(self):
+        """Delete the monitor object."""
+        pass
+
     def load(self, name=None, partition=None):
-        """Load a http healthcheck object."""
-        return MockHttp() 
+        """Load an http healthcheck object."""
+        return MockHttp(name) 
 
 
 class MockHttps():
@@ -475,6 +483,10 @@ class MockTcp():
 
     def create(self, partition=None, **kwargs):
         """Create a tcp healthcheck object."""
+        pass
+
+    def delete(self):
+        """Delete the monitor object."""
         pass
 
     def load(self, name=None, partition=None):
@@ -505,6 +517,10 @@ class MockIcmp():
         """Create a tcp healthcheck object."""
         pass
 
+    def delete(self):
+        """Delete the monitor object."""
+        pass
+
     def load(self, name=None, partition=None):
         """Load a tcp healthcheck object."""
         return MockIcmp()
@@ -531,6 +547,10 @@ class MockHttpS():
 
     def create(self, partition=None, **kwargs):
         """Create a tcp healthcheck object."""
+        pass
+
+    def delete(self):
+        """Delete the monitor object."""
         pass
 
     def load(self, name=None, partition=None):
@@ -713,6 +733,10 @@ class MockBigIP(ManagementRoot):
     BIG-IP states
     """
 
+    def partition_from_params(self, params): 
+        """Extract partition name from the request params"""
+        return params.split("partition+eq+")[1].split("&expand")[0]
+
     def create_mock_pool(self, name, **kwargs):
         """Create a mock pool server object."""
         pool = Pool(name, **kwargs)
@@ -729,78 +753,90 @@ class MockBigIP(ManagementRoot):
 
     def mock_virtuals_get_collection(self, requests_params=None):
         """Mock: Return a mocked collection of virtuals."""
-        virtuals = []
-        for v in self.bigip_data['virtuals']:
-            virtual = Virtual(**v)
-            virtuals.append(virtual)
-
+        partition = self.partition_from_params(requests_params['params'])
+        resources = self.bigip_data['virtuals']
+        virtuals = [
+            Virtual(**r)
+            for r in resources if partition == r['partition']
+        ]
         return virtuals
 
     def mock_pools_get_collection(self, requests_params=None):
         """Mock: Return a mocked collection of pools."""
-        pools = []
-        for p in self.bigip_data['pools']:
-            pool = Pool(**p)
-            pools.append(pool)
-
+        partition = self.partition_from_params(requests_params['params'])
+        resources = self.bigip_data['pools']
+        pools = [
+            Pool(**r)
+            for r in resources if partition == r['partition']
+        ]
         return pools
 
     def mock_policys_get_collection(self, requests_params=None):
         """Mock: Return a mocked collection of policies."""
-        policies = []
-        for p in self.bigip_data['policies']:
-            policy = Policy(**p)
-            policies.append(policy)
-
+        partition = self.partition_from_params(requests_params['params'])
+        policies = [
+            Policy(**r)
+            for r in self.bigip_data['policies'] if partition == r['partition']
+        ]
         return policies
 
     def mock_irules_get_collection(self, requests_params=None):
         """Mock: Return a mocked collection of iRules."""
-        irules = []
-        for p in self.bigip_data['rules']:
-            irule = IRule(**p)
-            irules.append(irule)
-
+        partition = self.partition_from_params(requests_params['params'])
+        resources = self.bigip_data['rules']
+        irules = [
+            IRule(**r)
+            for r in resources if partition == r['partition']
+        ]
         return irules
 
     def mock_iapps_get_collection(self, requests_params=None):
         """Mock: Return a mocked collection of app svcs."""
-        iapps = []
-        for i in self.bigip_data['iapps']:
-            iapp = Iapp(**i)
-            iapps.append(iapp)
-
+        partition = self.partition_from_params(requests_params['params'])
+        resources = self.bigip_data['iapps']
+        iapps = [
+            Iapp(**r)
+            for r in resources if partition == r['partition']
+        ]
         return iapps
 
     def mock_monitors_get_collection(self, requests_params=None):
-        monitors = []
+        partition = self.partition_from_params(requests_params['params'])
+        resources = self.bigip_data['monitors']
+        monitors = [
+            MockHttp(**r)
+            for r in resources if partition == r['partition']
+        ]
         return monitors
 
     def mock_nodes_get_collection(self, requests_params=None):
         """Mock: Return a mocked collection of nodes."""
-        nodes = []
-        for n in self.bigip_data['nodes']:
-            node = MockNode(**n)
-            nodes.append(node)
-
+        partition = self.partition_from_params(requests_params['params'])
+        resources = self.bigip_data['nodes']
+        nodes = [
+            MockNode(**r)
+            for r in resources if partition == r['partition']
+        ]
         return nodes
 
     def mock_vas_get_collection(self, requests_params=None):
         """Mock: Return a mocked collection of virtual addresses."""
-        vas = []
-        for va in self.bigip_data['virtual_addresses']:
-            virtual_address = MockVirtualAddress(**va)
-            vas.append(virtual_address)
-
+        partition = self.partition_from_params(requests_params['params'])
+        resources = self.bigip_data['virtual_addresses']
+        vas = [
+            MockVirtualAddress(**r)
+            for r in resources if partition == r['partition']
+        ]
         return vas
 
     def mock_data_group_internals_get_collection(self, requests_params=None):
         """Mock: Return a mocked collection of data_group internal."""
-        int_dgs = []
-        for p in self.bigip_data['internaldatagroups']:
-            dg = InternalDataGroup(**p)
-            int_dgs.append(dg)
-
+        partition = self.partition_from_params(requests_params['params'])
+        resources = self.bigip_data['internaldatagroups']
+        int_dgs = [
+            InternalDataGroup(**r)
+            for r in resources if partition == r['partition']
+        ]
         return int_dgs
 
     def read_test_data(self, bigip_state):
@@ -846,6 +882,6 @@ def bigip_proxy():
     bigip_state='f5_cccl/test/bigip_data.json'
     mgmt_root.read_test_data(bigip_state)
 
-    bigip_proxy = bigip.BigIPProxy(mgmt_root, 'test1')
+    bigip_proxy = bigip.BigIPProxy(mgmt_root, 'test')
 
     return bigip_proxy

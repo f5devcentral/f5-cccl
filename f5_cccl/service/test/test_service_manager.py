@@ -19,7 +19,13 @@ import pickle
 import pytest
 from f5_cccl.test.conftest import bigip_proxy
 
-from f5_cccl.resource import ltm
+from f5_cccl.resource.ltm.app_service import ApplicationService 
+from f5_cccl.resource.ltm.virtual import VirtualServer 
+from f5_cccl.resource.ltm.pool import Pool 
+from f5_cccl.resource.ltm.monitor.http_monitor import HTTPMonitor 
+from f5_cccl.resource.ltm.policy.policy import Policy 
+from f5_cccl.resource.ltm.internal_data_group import InternalDataGroup
+from f5_cccl.resource.ltm.irule import IRule
 from f5_cccl.service.manager import ServiceConfigDeployer
 from f5_cccl.service.manager import ServiceManager
 from f5_cccl.service.config_reader import ServiceConfigReader
@@ -60,6 +66,41 @@ class TestServiceConfigDeployer:
         config_reader = ServiceConfigReader(self.partition)
         self.desired_config = config_reader.read_config(self.service)
 
+    def get_objects(self, objs, obj_type):
+        """Extract objects of obj_type from the list."""
+        objs = [obj for obj in objs if isinstance(obj, obj_type)]
+        return objs
+
+    def get_created_objects(self, service_manager, obj_type):
+        """Return list of created objects."""
+        deployer = service_manager._service_deployer
+        deployer._create_resources = Mock(return_value=[])
+
+        service_manager.apply_config(self.service)
+        assert deployer._create_resources.called
+        args, kwargs = deployer._create_resources.call_args_list[0]
+        return self.get_objects(args[0], obj_type) 
+
+    def get_updated_objects(self, service_manager, obj_type):
+        """Return list of updated objects."""
+        deployer = service_manager._service_deployer
+        deployer._update_resources = Mock(return_value=[])
+
+        service_manager.apply_config(self.service)
+        assert deployer._update_resources.called
+        args, kwargs = deployer._update_resources.call_args_list[0]
+        return self.get_objects(args[0], obj_type) 
+
+    def get_deleted_objects(self, service_manager, obj_type):
+        """Return list of deleted objects."""
+        deployer = service_manager._service_deployer
+        deployer._delete_resources = Mock(return_value=[])
+
+        service_manager.apply_config(self.service)
+        assert deployer._delete_resources.called
+        args, kwargs = deployer._delete_resources.call_args_list[0]
+        return self.get_objects(args[0], obj_type) 
+
     def test_create_deployer(self):
         deployer = ServiceConfigDeployer(
             self.bigip)
@@ -67,7 +108,6 @@ class TestServiceConfigDeployer:
         assert deployer
 
     def test_deploy(self):
-
         deployer = ServiceConfigDeployer(
             self.bigip)
         tasks_remaining = deployer.deploy(self.desired_config)
@@ -75,41 +115,135 @@ class TestServiceConfigDeployer:
 
     def test_app_services(self, service_manager):
         """Test create/update/delete of app services."""
-        deployer = service_manager._service_deployer
-
         # Should create one app service
-        deployer._create_resources = Mock(return_value=[])
-        service_manager.apply_config(self.service)
-        assert deployer._create_resources.called
-        args, kwargs = deployer._create_resources.call_args_list[0]
-
-        # The quantity of resources defined in service.json
-        resources_to_create = 10
-        assert resources_to_create == len(args[0])
-        assert args[0][9].name == 'MyAppService0'
+        objs = self.get_created_objects(service_manager, ApplicationService)
+        assert 1 == len(objs)
+        assert objs[0].name == 'MyAppService0'
 
         # Should update one app service
         self.service['iapps'][0]['name'] = 'MyAppService'
-        deployer._update_resources = Mock(return_value=[])
-        service_manager.apply_config(self.service)
-        assert deployer._update_resources.called
-        args, kwargs = deployer._update_resources.call_args_list[0]
-        assert 2 == len(args[0])
-        assert args[0][1].name == 'MyAppService'
+        objs = self.get_updated_objects(service_manager, ApplicationService)
+        assert 1 == len(objs)
+        assert objs[0].name == 'MyAppService'
 
         # Should delete two app services
-        self.service = {}
-        deployer._delete_resources = Mock(return_value=[])
-        service_manager.apply_config(self.service)
-
-        assert deployer._delete_resources.called
-        args, kwargs = deployer._delete_resources.call_args_list[0]
-        assert 8 == len(args[0])
+        self.service['iapps'] = []
+        objs = self.get_deleted_objects(service_manager, ApplicationService)
+        assert 2 == len(objs)
         expected_set = set(['appsvc', 'MyAppService'])
-        result_set = set([args[0][0].name, args[0][1].name])
+        result_set = set([objs[0].name, objs[1].name])
         assert expected_set == result_set
 
-        # Should not delete resources owned by iApps
-        for rsc in args[0][2:]:
-            assert not rsc.name.startswith('appsvc')
-            assert not rsc.name.startswith('MyAppService')
+    def test_virtual_servers(self, service_manager):
+        """Test create/update/delete of Virtual Servers."""
+        # Should create one Virtual Server 
+        objs = self.get_created_objects(service_manager, VirtualServer)
+        assert 1 == len(objs)
+        assert objs[0].name == 'vs1'
+
+        # Should update one Virtual Server
+        self.service['virtualServers'][0]['name'] = 'virtual2'
+        objs = self.get_updated_objects(service_manager, VirtualServer)
+        assert 1 == len(objs)
+        assert objs[0].name == 'virtual2'
+
+        # Should delete one Virtual Server
+        self.service['virtualServers'] = [] 
+        objs = self.get_deleted_objects(service_manager, VirtualServer)
+        assert 1 == len(objs)
+        assert 'virtual2' == objs[0].name
+
+    def test_pools(self, service_manager):
+        """Test create/update/delete of Pools."""
+        # Should create one Pool 
+        objs = self.get_created_objects(service_manager, Pool)
+        assert 1 == len(objs)
+        assert objs[0].name == 'pool2'
+
+        # Should update one Pool
+        self.service['pools'][0]['name'] = 'pool1'
+        objs = self.get_updated_objects(service_manager, Pool)
+        assert 1 == len(objs)
+        assert objs[0].name == 'pool1'
+
+        # Should delete one Pool
+        self.service['pools'] = [] 
+        objs = self.get_deleted_objects(service_manager, Pool)
+        assert 1 == len(objs)
+        assert 'pool1' == objs[0].name
+
+    def test_monitors(self, service_manager):
+        """Test create/update/delete of Health Monitors."""
+        # Should create one Monitor 
+        objs = self.get_created_objects(service_manager, HTTPMonitor)
+        assert 1 == len(objs)
+        assert objs[0].name == 'myhttp'
+
+        # Should update one Monitor
+        self.service['monitors'][0]['name'] = 'mon_http'
+        objs = self.get_updated_objects(service_manager, HTTPMonitor)
+        assert 1 == len(objs)
+        assert objs[0].name == 'mon_http'
+
+        # Should delete one Monitor
+        self.service['monitors'] = [] 
+        objs = self.get_deleted_objects(service_manager, HTTPMonitor)
+        assert 1 == len(objs)
+        assert 'mon_http' == objs[0].name
+
+    def test_policies(self, service_manager):
+        """Test create/update/delete of L7 Policies."""
+        # Should create one Policy 
+        objs = self.get_created_objects(service_manager, Policy)
+        assert 1 == len(objs)
+        assert objs[0].name == 'test_wrapper_policy'
+
+        # Should update one Policy
+        self.service['l7Policies'][0]['name'] = 'wrapper_policy'
+        objs = self.get_updated_objects(service_manager, Policy)
+        assert 1 == len(objs)
+        assert objs[0].name == 'wrapper_policy'
+
+        # Should delete one Policy
+        self.service['l7Policies'] = [] 
+        objs = self.get_deleted_objects(service_manager, Policy)
+        assert 1 == len(objs)
+        assert 'wrapper_policy' == objs[0].name
+
+    def test_internal_data_groups(self, service_manager):
+        """Test create/update/delete of Internal Data Groups."""
+        # Should create one Data Group 
+        objs = self.get_created_objects(service_manager, InternalDataGroup)
+        assert 1 == len(objs)
+        assert objs[0].name == 'test-dgs'
+
+        # Should update one Data Group
+        self.service['internalDataGroups'][0]['name'] = 'test-dg'
+        objs = self.get_updated_objects(service_manager, InternalDataGroup)
+        assert 1 == len(objs)
+        assert objs[0].name == 'test-dg'
+
+        # Should delete one Data Group
+        self.service['internalDataGroups'] = [] 
+        objs = self.get_deleted_objects(service_manager, InternalDataGroup)
+        assert 1 == len(objs)
+        assert 'test-dg' == objs[0].name
+
+    def test_irules(self, service_manager):
+        """Test create/update/delete of iRules."""
+        # Should create one iRule 
+        objs = self.get_created_objects(service_manager, IRule)
+        assert 1 == len(objs)
+        assert objs[0].name == 'https_redirect'
+
+        # Should update one iRule
+        self.service['iRules'][0]['name'] = 'https_redirector'
+        objs = self.get_updated_objects(service_manager, IRule)
+        assert 1 == len(objs)
+        assert objs[0].name == 'https_redirector'
+
+        # Should delete one iRule
+        self.service['iRules'] = [] 
+        objs = self.get_deleted_objects(service_manager, IRule)
+        assert 1 == len(objs)
+        assert 'https_redirector' == objs[0].name
