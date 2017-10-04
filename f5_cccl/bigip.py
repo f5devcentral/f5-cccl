@@ -175,6 +175,24 @@ class BigIPProxy(object):
 
         return icr_resource
 
+    def _policy_status_check(self, policy, virtuals):
+        """Delete non-legacy policies because they can't be updated."""
+        if policy.status != 'legacy':
+            for v in virtuals:
+                # First, remove non-legacy policies from virtuals
+                policies = [
+                    p for p in v.policiesReference.get('items', [])
+                    if p['name'] != policy.name
+                ]
+                v.policiesReference['items'] = policies
+                v.update()
+
+            # delete policy
+            policy.delete()
+            return False
+
+        return True
+
     def _refresh(self):  # pylint: disable=too-many-locals
         """Refresh the internal cache with the BIG-IP state."""
         start_time = time()
@@ -243,8 +261,14 @@ class BigIPProxy(object):
 
         LOGGER.debug("Retrieving LTM policies from BIG-IP /%s...",
                      self._partition)
-        policies = self._bigip.tm.ltm.policys.get_collection(
+        all_policies = self._bigip.tm.ltm.policys.get_collection(
             requests_params={"params": query})
+
+        #  Delete non-legacy policies
+        policies = [
+            p for p in all_policies
+            if self._policy_status_check(p, virtuals)
+        ]
 
         #  Refresh the virtuals cache.
         self._virtuals = {
