@@ -193,6 +193,8 @@ class BigIPProxy(object):
                     v.update()
 
             # delete policy
+            LOGGER.warning("Deleting policy /%s/%s due to invalid status: %s",
+                           policy.partition, policy.name, policy.status)
             policy.delete()
             return False
 
