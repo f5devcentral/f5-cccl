@@ -96,6 +96,7 @@ def create_server_ssl_profile(mgmt, partition, profile):
         # create ssl-server profile
         serverName = profile.get('serverName', None)
         sniDefault = profile.get('sniDefault', False)
+        peerCertMode = profile.get('peerCertMode', 'ignore')
         kwargs = {}
         if cert != "":
             kwargs = {'chain': cert_name}
@@ -104,6 +105,7 @@ def create_server_ssl_profile(mgmt, partition, profile):
                                   partition=partition,
                                   serverName=serverName,
                                   sniDefault=sniDefault,
+                                  peerCertMode=peerCertMode,
                                   **kwargs)
     except Exception as err:  # pylint: disable=broad-except
         incomplete += 1
