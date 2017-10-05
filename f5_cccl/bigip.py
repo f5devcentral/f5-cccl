@@ -180,12 +180,17 @@ class BigIPProxy(object):
         if policy.status != 'legacy':
             for v in virtuals:
                 # First, remove non-legacy policies from virtuals
-                policies = [
-                    p for p in v.policiesReference.get('items', [])
-                    if p['name'] != policy.name
-                ]
-                v.policiesReference['items'] = policies
-                v.update()
+                policies = []
+                policy_delete = False
+                for p in v.policiesReference.get('items', []):
+                    if p['name'] == policy.name:
+                        policy_delete = True
+                    else:
+                        policies.append(p)
+
+                if policy_delete:
+                    v.policiesReference['items'] = policies
+                    v.update()
 
             # delete policy
             policy.delete()
