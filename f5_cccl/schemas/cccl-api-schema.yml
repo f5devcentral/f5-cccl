@@ -85,18 +85,6 @@ definitions:
     required:
       - "name"
 
-  routeDomainType: 
-    type: "object"
-    description: "Defines the route domain name and id pair."
-    properties:
-      id: 
-        type: "integer"
-      name: 
-        type: "string"
-        default: ""
-    required: 
-      - "id"
-
   snatConfigType:
     type: "object"
     description: "Describes a SNAT configuration for virtual server."
@@ -442,7 +430,7 @@ definitions:
       name:
         type: "string"
         definition: >
-          Specifies the name of the pool member.  The default has the form: <address>:<port>
+          Specifies the name of the pool member.  The default has the form: <address>%<route_domain>:<port>
       connectionLimit:
         type: "integer"
         definition: >
@@ -464,13 +452,12 @@ definitions:
         default: "user-enabled"
       address:
         type: "string"
-        definition: "Specifies the IP address for the pool member."
+        definition: >
+          Specifies the IP address for the pool member. This is of the
+          form <ip_address>[%<route_domain>]
       port: 
         definition: "Specifies the service port for the pool member."
         $ref: "#/definitions/portType"
-      routeDomain:
-        definition: "Specifies the member IP address namespace."
-        $ref: "#/definitions/routeDomainType"
       priorityGroup: 
         type: "integer"
         definition: >
@@ -705,7 +692,7 @@ definitions:
           Specifies destination IP address information to which 
           the virtual server sends traffic.  This can be an IP address 
           or a previously created virtual-address.  This is of the
-          form /<partition>/<ip_address>%<route_domain>:<service_port>
+          form /<partition>/<ip_address>[%<route_domain>]:<service_port>
         type: "string"
 
       pool: 

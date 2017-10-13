@@ -20,6 +20,7 @@ from copy import deepcopy
 import logging
 
 from f5_cccl.resource import Resource
+from f5_cccl.utils.route_domain import normalize_address_with_route_domain
 
 
 LOGGER = logging.getLogger(__name__)
@@ -34,9 +35,10 @@ class Node(Resource):
                       state=None,
                       session=None)
 
-    def __init__(self, name, partition, **properties):
+    def __init__(self, name, partition, default_route_domain, **properties):
         """Create a Node instance."""
         super(Node, self).__init__(name, partition)
+        self._default_route_domain = default_route_domain
 
         for key, value in self.properties.items():
             if key == "name" or key == "partition":
@@ -55,14 +57,17 @@ class Node(Resource):
             return False
         if self.partition != other.partition:
             return False
-        if self._data['address'] != other.data['address']:
+        self_ip_rd = normalize_address_with_route_domain(
+            self._data['address'], self._default_route_domain)[0]
+        other_ip_rd = normalize_address_with_route_domain(
+            other.data['address'], self._default_route_domain)[0]
+        if self_ip_rd != other_ip_rd:
             return False
 
         # Check equivalence of states
         if other.data['state'] == 'up' or other.data['state'] == 'unchecked':
             if 'enabled' in other.data['session']:
                 return True
-
         return False
 
     def __hash__(self):  # pylint: disable=useless-super-delegation
@@ -76,3 +81,8 @@ class Node(Resource):
         tmp_data = deepcopy(data) if data is not None else deepcopy(self.data)
         tmp_data.pop('address', None)
         super(Node, self).update(bigip, data=tmp_data, modify=modify)
+
+
+class IcrNode(Node):
+    """Node instantiated from iControl REST pool member object."""
+    pass
