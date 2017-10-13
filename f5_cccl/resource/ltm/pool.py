@@ -102,7 +102,7 @@ class Pool(Resource):
 
 class ApiPool(Pool):
     """Parse the CCCL input to create the canonical Pool."""
-    def __init__(self, name, partition, **properties):
+    def __init__(self, name, partition, default_route_domain, **properties):
         """Parse the CCCL schema input."""
         pool_config = dict()
         for k, v in properties.items():
@@ -111,7 +111,8 @@ class ApiPool(Pool):
             pool_config[k] = v
 
         members_config = properties.get('members', None)
-        members = self._get_members(partition, members_config)
+        members = self._get_members(partition, default_route_domain,
+                                    members_config)
 
         monitors_config = properties.pop('monitors', None)
         pool_config['monitor'] = self._get_monitors(monitors_config)
@@ -120,15 +121,16 @@ class ApiPool(Pool):
                                       members,
                                       **pool_config)
 
-    def _get_members(self, partition, members):
+    def _get_members(self, partition, default_route_domain, members):
         """Get a list of members from the pool definition"""
         members_list = list()
         if members:
             for member in members:
-                m = ApiPoolMember(name=None,
-                                  partition=partition,
-                                  pool=self,
-                                  **member)
+                m = ApiPoolMember(
+                    partition=partition,
+                    default_route_domain=default_route_domain,
+                    pool=self,
+                    **member)
                 members_list.append(m)
 
         return members_list

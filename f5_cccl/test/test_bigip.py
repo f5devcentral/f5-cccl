@@ -15,7 +15,7 @@
 #
 from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual import VirtualServer
-from f5_cccl.resource.ltm.node import Node
+from f5_cccl.resource.ltm.node import IcrNode
 from f5_cccl.resource.ltm.app_service import IcrApplicationService
 
 
@@ -36,7 +36,7 @@ def test_bigip_refresh(bigip_proxy):
         if i['partition'] == 'test'
     ]
     test_nodes = [
-        Node(**n) for n in big_ip.bigip_data['nodes']
+        IcrNode(default_route_domain=0, **n) for n in big_ip.bigip_data['nodes']
         if n['partition'] == 'test'
     ]
 

@@ -64,7 +64,9 @@ class TestServiceConfigDeployer:
             self.service = json.loads(fp.read())
 
         config_reader = ServiceConfigReader(self.partition)
-        self.desired_config = config_reader.read_config(self.service)
+        self.default_route_domain = self.bigip.get_default_route_domain()
+        self.desired_config = config_reader.read_config(
+            self.service, self.default_route_domain)
 
     def get_objects(self, objs, obj_type):
         """Extract objects of obj_type from the list."""
@@ -110,7 +112,8 @@ class TestServiceConfigDeployer:
     def test_deploy(self):
         deployer = ServiceConfigDeployer(
             self.bigip)
-        tasks_remaining = deployer.deploy(self.desired_config)
+        tasks_remaining = deployer.deploy(
+            self.desired_config, self.default_route_domain)
         assert 0 == tasks_remaining
 
     def test_app_services(self, service_manager):

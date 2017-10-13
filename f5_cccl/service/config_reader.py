@@ -45,7 +45,8 @@ class ServiceConfigReader(object):
         """Initializer."""
         self._partition = partition
 
-    def _create_config_item(self, resource_type, obj):
+    def _create_config_item(self, resource_type, obj,
+                            default_route_domain=None):
         """Create an API resource object and handle exceptions.
 
         This is a factory method to create resource objects in
@@ -60,9 +61,15 @@ class ServiceConfigReader(object):
         """
         config_resource = None
         try:
-            config_resource = resource_type(
-                partition=self._partition,
-                **obj)
+            if default_route_domain is not None:
+                config_resource = resource_type(
+                    partition=self._partition,
+                    default_route_domain=default_route_domain,
+                    **obj)
+            else:
+                config_resource = resource_type(
+                    partition=self._partition,
+                    **obj)
         except (ValueError, TypeError) as error:
             msg_format = \
                 "Failed to create resource {}, {} from config: error({})"
@@ -73,7 +80,7 @@ class ServiceConfigReader(object):
 
         return config_resource
 
-    def read_config(self, service_config):
+    def read_config(self, service_config, default_route_domain):
         """Read the service configuration and save as resource object."""
         config_dict = dict()
         config_dict['http_monitors'] = dict()
@@ -98,7 +105,8 @@ class ServiceConfigReader(object):
 
         pools = service_config.get('pools', list())
         config_dict['pools'] = {
-            p['name']: self._create_config_item(ApiPool, p)
+            p['name']: self._create_config_item(ApiPool, p,
+                                                default_route_domain)
             for p in pools
         }
 
