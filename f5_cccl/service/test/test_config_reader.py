@@ -49,7 +49,7 @@ class TestServiceConfigReader:
 
     def test_get_config(self):
         reader = ServiceConfigReader(self.partition)
-        config = reader.read_ltm_config(self.ltm_service)
+        config = reader.read_ltm_config(self.ltm_service, 0)
 
         assert len(config.get('virtuals')) == 1
         assert len(config.get('pools')) == 1
@@ -60,7 +60,7 @@ class TestServiceConfigReader:
         assert len(config.get('l7policies')) == 1
         assert len(config.get('iapps')) == 1
 
-        config = reader.read_net_config(self.net_service)
+        config = reader.read_net_config(self.net_service, 0)
         assert len(config.get('arps')) == 1
         assert len(config.get('fdbTunnels')) == 1
         assert len(config.get('userFdbTunnels')) == 1
@@ -70,4 +70,4 @@ class TestServiceConfigReader:
         with patch.object(ApiVirtualServer, '__init__', side_effect=ValueError("test exception")):
             reader = ServiceConfigReader(self.partition)
             with pytest.raises(F5CcclConfigurationReadError) as e:
-                reader.read_ltm_config(self.ltm_service)
+                reader.read_ltm_config(self.ltm_service, 0)

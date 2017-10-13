@@ -20,11 +20,13 @@ from __future__ import print_function
 
 from copy import copy
 import logging
-from operator import itemgetter
 import re
+from operator import itemgetter
+from netaddr import IPAddress
 
 from f5_cccl.resource import Resource
 from f5_cccl.resource.ltm.profile import Profile
+from f5_cccl.utils.route_domain import normalize_address_with_route_domain
 
 
 LOGGER = logging.getLogger(__name__)
@@ -33,6 +35,8 @@ LOGGER = logging.getLogger(__name__)
 class VirtualServer(Resource):
     """Virtual Server class for managing configuration on BIG-IP."""
 
+    # FIXME(kenr): This assumes API will include a one-level
+    #              path (i.e. the partition)
     ipv4_dest_pattern = re.compile(
         "\\/([a-zA-Z][\\w_\\.-]+)\\/" +
         "((?:[a-zA-Z0-9_\\-\\.]+)(?:%\\d+)?):(\\d+)$"
@@ -40,6 +44,9 @@ class VirtualServer(Resource):
     ipv6_dest_pattern = re.compile(
         "\\/([a-zA-Z][\\w_\\.-]+)\\/" +
         "((?:[a-fA-F0-9:]+)(?:%\\d+)?)\\.(\\d+)$"
+    )
+    source_pattern = re.compile(
+        r'([\w.:]+)/(\d+)'
     )
 
     properties = dict(description=None,
@@ -58,7 +65,7 @@ class VirtualServer(Resource):
                       profiles=list(),
                       rules=list())
 
-    def __init__(self, name, partition, **properties):
+    def __init__(self, name, partition, default_route_domain, **properties):
         """Create a Virtual server instance."""
         super(VirtualServer, self).__init__(name, partition)
 
@@ -76,6 +83,59 @@ class VirtualServer(Resource):
                 if value is not None:
                     self._data[key] = value
 
+        # Need to normalize destination and source fields with route domain ID
+        try:
+            self.normalizeAddresses(default_route_domain)
+        # pylint: disable=broad-except
+        except Exception as error:
+            LOGGER.error(
+                "Virtual Server address normalization error: %s", error)
+
+    def normalizeAddresses(self, default_rd):
+        '''Normalize destination and source fields to include route domain
+
+        Adds the default route domain to the destination field if one is
+        not provided.
+
+        Also adds the destination route domain to the source field if it
+        does not proivde one (probably could just force it since they both
+        have to be in the same route domain).
+        '''
+
+        # Save the route domain info for use with the source field.
+        ip_ver = 4
+        dest_rd = default_rd
+        if self._data.get('destination') is not None:
+            # Add route domain if not supplied
+            path, bigip_addr, port = self.destination[1:]
+            bigip_addr, dest_ip, dest_rd = normalize_address_with_route_domain(
+                bigip_addr, default_rd)
+            ip_address = IPAddress(dest_ip)
+            ip_ver = ip_address.version
+            # force name to be defined as <ip>%<rd>:<port>
+            if ip_ver == 4:
+                dest_format = '/{}/{}:{}'
+            else:
+                dest_format = '/{}/{}.{}'
+            self._data['destination'] = dest_format.format(
+                path, bigip_addr, port)
+
+        source = self._data.get('source')
+        if source is None:
+            if ip_ver == 4:
+                source = '0.0.0.0%{}/0'.format(dest_rd)
+            else:
+                source = '::%{}/0'.format(dest_rd)
+        else:
+            match = self.source_pattern.match(source)
+            if match:
+                bigip_addr = match.group(1)
+                mask = match.group(2)
+                bigip_addr = normalize_address_with_route_domain(
+                    bigip_addr, dest_rd)[0]
+                source = '{}/{}'.format(bigip_addr, mask)
+        self._data['source'] = source
+
     @property
     def destination(self):
         """Return the destination of the virtual server.
@@ -90,7 +150,7 @@ class VirtualServer(Resource):
                 destination = match.group(0, 1, 2, 3)
                 break
         else:
-            print("unexpected destination address format")
+            LOGGER.error("unexpected destination address format")
             destination = (self._data['destination'], None, None, None)
 
         return destination
@@ -110,7 +170,7 @@ class VirtualServer(Resource):
 
 class ApiVirtualServer(VirtualServer):
     """Parse the CCCL input to create the canonical Virtual Server."""
-    def __init__(self, name, partition, **properties):
+    def __init__(self, name, partition, default_route_domain, **properties):
         """Handle the mutually exclusive properties."""
 
         enabled = properties.pop('enabled', True)
@@ -127,34 +187,19 @@ class ApiVirtualServer(VirtualServer):
         else:
             vlansDisabled = None
 
-        destination = properties.get('destination', None)
-        rd = None
-        if '%' in destination:
-            try:
-                rd = re.findall(r"%(\d+)(:|.)", destination)[0][0]
-            except IndexError:
-                LOGGER.error(
-                    "Could not extract route domain from destination '%s'",
-                    destination)
-
-        source = properties.pop('source', '0.0.0.0/0')
-        if rd and '%' not in source:
-            idx = source.index('/')
-            source = source[:idx] + '%{}'.format(rd) + source[idx:]
-
         super(ApiVirtualServer, self).__init__(name,
                                                partition,
+                                               default_route_domain,
                                                enabled=enabled,
                                                disabled=disabled,
                                                vlansEnabled=vlansEnabled,
                                                vlansDisabled=vlansDisabled,
-                                               source=source,
                                                **properties)
 
 
 class IcrVirtualServer(VirtualServer):
     """Parse the iControl REST input to create the canonical Virtual Server."""
-    def __init__(self, name, partition, **properties):
+    def __init__(self, name, partition, default_route_domain, **properties):
         """Remove some of the properties that are not required."""
         self._filter_virtual_properties(**properties)
 
@@ -163,6 +208,7 @@ class IcrVirtualServer(VirtualServer):
 
         super(IcrVirtualServer, self).__init__(name,
                                                partition,
+                                               default_route_domain,
                                                profiles=profiles,
                                                policies=policies,
                                                **properties)

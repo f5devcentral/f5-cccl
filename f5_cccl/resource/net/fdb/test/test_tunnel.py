@@ -23,6 +23,7 @@ import pytest
 cfg_test = {
     'name': 'test_tunnel',
     'partition': 'test_partition',
+    'default_route_domain': 3,
     'records': [
         {
             'name': '12:ab:34:cd:56:ef',
@@ -49,9 +50,9 @@ def test_create_tunnel():
     assert tunnel.name == 'test_tunnel'
     assert tunnel.partition == 'test_partition'
     assert data['records'][0]['name'] == '12:ab:34:cd:56:ef'
-    assert data['records'][0]['endpoint'] == '1.2.3.4'
+    assert data['records'][0]['endpoint'] == '1.2.3.4%3'
     assert data['records'][1]['name'] == '98:ab:76:cd:54:ef'
-    assert data['records'][1]['endpoint'] == '4.3.2.1'
+    assert data['records'][1]['endpoint'] == '4.3.2.1%3'
 
 
 def test_eq():

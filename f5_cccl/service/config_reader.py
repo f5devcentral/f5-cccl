@@ -51,7 +51,8 @@ class ServiceConfigReader(object):
         """Initializer."""
         self._partition = partition
 
-    def _create_config_item(self, resource_type, obj):
+    def _create_config_item(self, resource_type, obj,
+                            default_route_domain=None):
         """Create an API resource object and handle exceptions.
 
         This is a factory method to create resource objects in
@@ -66,9 +67,15 @@ class ServiceConfigReader(object):
         """
         config_resource = None
         try:
-            config_resource = resource_type(
-                partition=self._partition,
-                **obj)
+            if default_route_domain is not None:
+                config_resource = resource_type(
+                    partition=self._partition,
+                    default_route_domain=default_route_domain,
+                    **obj)
+            else:
+                config_resource = resource_type(
+                    partition=self._partition,
+                    **obj)
         except (ValueError, TypeError) as error:
             msg_format = \
                 "Failed to create resource {}, {} from config: error({})"
@@ -79,7 +86,7 @@ class ServiceConfigReader(object):
 
         return config_resource
 
-    def read_ltm_config(self, service_config):
+    def read_ltm_config(self, service_config, default_route_domain):
         """Read the LTM service configuration and save as resource object."""
         config_dict = dict()
         config_dict['http_monitors'] = dict()
@@ -92,20 +99,23 @@ class ServiceConfigReader(object):
 
         virtuals = service_config.get('virtualServers', list())
         config_dict['virtuals'] = {
-            v['name']: self._create_config_item(ApiVirtualServer, v)
+            v['name']: self._create_config_item(ApiVirtualServer, v,
+                                                default_route_domain)
             for v in virtuals
         }
 
         # Get the list of explicitly defined virtual addresses.
         virtual_addresses = service_config.get('virtualAddresses', list())
         config_dict['virtual_addresses'] = {
-            va['name']: self._create_config_item(ApiVirtualAddress, va)
+            va['name']: self._create_config_item(ApiVirtualAddress, va,
+                                                 default_route_domain)
             for va in virtual_addresses
         }
 
         pools = service_config.get('pools', list())
         config_dict['pools'] = {
-            p['name']: self._create_config_item(ApiPool, p)
+            p['name']: self._create_config_item(ApiPool, p,
+                                                default_route_domain)
             for p in pools
         }
 
@@ -154,13 +164,14 @@ class ServiceConfigReader(object):
 
         iapps = service_config.get('iapps', list())
         config_dict['iapps'] = {
-            i['name']: self._create_config_item(ApiApplicationService, i)
+            i['name']: self._create_config_item(ApiApplicationService, i,
+                                                default_route_domain)
             for i in iapps
         }
 
         return config_dict
 
-    def read_net_config(self, service_config):
+    def read_net_config(self, service_config, default_route_domain):
         """Read the NET service configuration and save as resource object."""
         config_dict = dict()
 
@@ -172,13 +183,15 @@ class ServiceConfigReader(object):
 
         tunnels = service_config.get('fdbTunnels', list())
         config_dict['fdbTunnels'] = {
-            t['name']: self._create_config_item(ApiFDBTunnel, t)
+            t['name']: self._create_config_item(ApiFDBTunnel, t,
+                                                default_route_domain)
             for t in tunnels
         }
 
         user_tunnels = service_config.get('userFdbTunnels', list())
         config_dict['userFdbTunnels'] = {
-            t['name']: self._create_config_item(ApiFDBTunnel, t)
+            t['name']: self._create_config_item(ApiFDBTunnel, t,
+                                                default_route_domain)
             for t in user_tunnels
         }
 

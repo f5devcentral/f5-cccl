@@ -17,7 +17,7 @@
 # LTM resources
 from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual import VirtualServer
-from f5_cccl.resource.ltm.node import Node
+from f5_cccl.resource.ltm.node import IcrNode
 from f5_cccl.resource.ltm.app_service import IcrApplicationService
 
 # NET resources
@@ -34,7 +34,8 @@ def test_bigip_refresh_ltm(bigip_proxy):
         if p['partition'] == 'test'
     ]
     test_virtuals = [
-        VirtualServer(**v) for v in big_ip.bigip_data['virtuals']
+        VirtualServer(default_route_domain=0, **v)
+        for v in big_ip.bigip_data['virtuals']
         if v['partition'] == 'test'
     ]
     test_iapps = [
@@ -42,7 +43,7 @@ def test_bigip_refresh_ltm(bigip_proxy):
         if i['partition'] == 'test'
     ]
     test_nodes = [
-        Node(**n) for n in big_ip.bigip_data['nodes']
+        IcrNode(default_route_domain=0, **n) for n in big_ip.bigip_data['nodes']
         if n['partition'] == 'test'
     ]
 
@@ -100,7 +101,7 @@ def test_bigip_refresh_net(bigip_proxy):
         if a['partition'] == 'test'
     ]
     test_tunnels = [
-        IcrFDBTunnel(**t) for t in bigip.bigip_net_data['fdbTunnels']
+        IcrFDBTunnel(default_route_domain=0, **t) for t in bigip.bigip_net_data['fdbTunnels']
         if t['partition'] == 'test'
     ]
 
@@ -128,7 +129,8 @@ def test_bigip_properties(bigip_proxy):
         if p['partition'] == 'test'
     ]
     test_virtuals = [
-        VirtualServer(**v) for v in big_ip.mgmt_root().bigip_data['virtuals']
+        VirtualServer(default_route_domain=0, **v)
+        for v in big_ip.mgmt_root().bigip_data['virtuals']
         if v['partition'] == 'test'
     ]
 

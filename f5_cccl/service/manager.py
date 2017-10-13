@@ -24,14 +24,22 @@ from time import time
 import f5_cccl.exceptions as exc
 from f5_cccl.service.config_reader import ServiceConfigReader
 from f5_cccl.service.validation import ServiceConfigValidator
-from f5_cccl.resource.ltm.node import Node
+from f5_cccl.resource.ltm.node import ApiNode
+from f5_cccl.utils.route_domain import (
+    encoded_normalize_address_with_route_domain)
+from f5_cccl.utils.route_domain import split_ip_with_route_domain
 
 
 LOGGER = logging.getLogger(__name__)
 
 
+# Check for upgrade issues on first pass only
+
+
 class ServiceConfigDeployer(object):
     """CCCL config deployer class."""
+
+    first_pass = True
 
     def __init__(self, bigip_proxy):
         """Initialize the config deployer."""
@@ -52,7 +60,6 @@ class ServiceConfigDeployer(object):
             existing[resource] for resource in
             set(existing) - set(desired)
         ]
-
         return (create_list, update_list, delete_list)
 
     def _create_resources(self, create_list):
@@ -162,7 +169,7 @@ class ServiceConfigDeployer(object):
 
         return update_list
 
-    def _desired_nodes(self):
+    def _desired_nodes(self, default_route_domain):
         """Desired nodes is inferred from the active pool members."""
         desired_nodes = dict()
 
@@ -170,21 +177,93 @@ class ServiceConfigDeployer(object):
         pools = self._bigip.get_pools(True)
         for pool in pools:
             for member in pools[pool].members:
-                addr = member.name.split('%3A')[0]
+                pool_addr = member.name.split('%3A')[0]
+                pool_addr_rd = encoded_normalize_address_with_route_domain(
+                    pool_addr, default_route_domain, True, False)
                 # make a copy to iterate over, then delete from 'nodes'
                 node_list = list(nodes.keys())
                 for key in node_list:
-                    if nodes[key].data['address'] == addr:
+                    node_addr = nodes[key].data['address']
+                    node_addr_rd = encoded_normalize_address_with_route_domain(
+                        node_addr, default_route_domain, False, False)
+                    if node_addr_rd == pool_addr_rd:
                         node = {'name': key,
                                 'partition': nodes[key].partition,
-                                'address': addr,
+                                'address': node_addr_rd,
+                                'default_route_domain': default_route_domain,
                                 'state': 'user-up',
                                 'session': 'user-enabled'}
-                        desired_nodes[key] = Node(**node)
+                        desired_node = ApiNode(**node)
+                        desired_nodes[desired_node.name] = desired_node
 
         return desired_nodes
 
-    def _post_deploy(self, desired_config):
+    # pylint: disable=too-many-locals
+    def _pre_deploy_legacy_ltm_cleanup(self):
+        """Remove legacy named resources (pre Route Domain support)
+
+           We now create node resources with  names that include the route
+           domain whether the end user specified them or not.  This prevents
+           inconsistent behavior when the default route domain is changed for
+           the managed partition.
+
+           This function can be removed when the cccl version >= 2.0
+        """
+
+        # Detect legacy names (nodes do not include the route domain)
+        self._bigip.refresh_ltm()
+        existing_nodes = self._bigip.get_nodes()
+        node_list = list(existing_nodes.keys())
+        for node_name in node_list:
+            route_domain = split_ip_with_route_domain(node_name)[1]
+            if route_domain is None:
+                break
+        else:
+            return
+
+        existing_iapps = self._bigip.get_app_svcs()
+        existing_virtuals = self._bigip.get_virtuals()
+        existing_policies = self._bigip.get_l7policies()
+        existing_irules = self._bigip.get_irules()
+        existing_internal_data_groups = self._bigip.get_internal_data_groups()
+        existing_pools = self._bigip.get_pools()
+
+        delete_iapps = self._get_resource_tasks(existing_iapps, {})[-1]
+        delete_virtuals = self._get_resource_tasks(existing_virtuals, {})[-1]
+        delete_policies = self._get_resource_tasks(existing_policies, {})[-1]
+        delete_irules = self._get_resource_tasks(existing_irules, {})[-1]
+        delete_internal_data_groups = self._get_resource_tasks(
+            existing_internal_data_groups, {})[-1]
+        delete_pools = self._get_resource_tasks(existing_pools, {})[-1]
+        delete_monitors = self._get_monitor_tasks({})[-1]
+
+        delete_nodes = self._get_resource_tasks(existing_nodes, {})[-1]
+
+        delete_tasks = delete_iapps + delete_virtuals + delete_policies + \
+            delete_irules + delete_internal_data_groups + delete_pools + \
+            delete_monitors + delete_nodes
+        taskq_len = len(delete_tasks)
+
+        finished = False
+        LOGGER.debug("Removing legacy resources...")
+        while not finished:
+            LOGGER.debug("Legacy cleanup service task queue length: %d",
+                         taskq_len)
+
+            # Must remove all resources that depend on nodes (vs, pools, ???)
+            delete_tasks = self._delete_resources(delete_tasks)
+
+            tasks_remaining = len(delete_tasks)
+
+            # Did the task queue shrink?
+            if tasks_remaining >= taskq_len or tasks_remaining == 0:
+                # No, we have stopped making progress.
+                finished = True
+
+            # Reset the taskq length.
+            taskq_len = tasks_remaining
+
+    def _post_deploy(self, desired_config, default_route_domain):
         """Perform post-deployment service tasks/cleanup.
 
         Remove superfluous resources that could not be inferred from the
@@ -196,7 +275,7 @@ class ServiceConfigDeployer(object):
         # Delete/update nodes (no creation)
         LOGGER.debug("Post-process nodes.")
         existing = self._bigip.get_nodes()
-        desired = self._desired_nodes()
+        desired = self._desired_nodes(default_route_domain)
         (update_nodes, delete_nodes) = \
             self._get_resource_tasks(existing, desired)[1:3]
         self._update_resources(update_nodes)
@@ -222,7 +301,8 @@ class ServiceConfigDeployer(object):
 
         self._update_resources(update_vaddrs)
 
-    def deploy_ltm(self, desired_config):  # pylint: disable=too-many-locals
+    def deploy_ltm(  # pylint: disable=too-many-locals,too-many-statements
+            self, desired_config, default_route_domain):
         """Deploy the managed partition with the desired LTM config.
 
         :param desired_config: A dictionary with the configuration
@@ -230,6 +310,13 @@ class ServiceConfigDeployer(object):
 
         :returns: The number of tasks that could not be completed.
         """
+
+        # Remove legacy resources (pre RD-named resources) before deploying
+        # new configuration
+        if ServiceConfigDeployer.first_pass:
+            ServiceConfigDeployer.first_pass = False
+            self._pre_deploy_legacy_ltm_cleanup()
+
         self._bigip.refresh_ltm()
 
         # Get the list of virtual address tasks
@@ -241,17 +328,17 @@ class ServiceConfigDeployer(object):
 
         # Get the list of virtual server tasks
         LOGGER.debug("Getting virtual server tasks...")
-        existing = self._bigip.get_virtuals()
+        existing_virtuals = self._bigip.get_virtuals()
         desired = desired_config.get('virtuals', dict())
         (create_virtuals, update_virtuals, delete_virtuals) = (
-            self._get_resource_tasks(existing, desired))
+            self._get_resource_tasks(existing_virtuals, desired))
 
         # Get the list of pool tasks
         LOGGER.debug("Getting pool tasks...")
-        existing = self._bigip.get_pools()
+        existing_pools = self._bigip.get_pools()
         desired = desired_config.get('pools', dict())
         (create_pools, update_pools, delete_pools) = (
-            self._get_resource_tasks(existing, desired))
+            self._get_resource_tasks(existing_pools, desired))
 
         # Get the list of irule tasks
         LOGGER.debug("Getting iRule tasks...")
@@ -277,10 +364,10 @@ class ServiceConfigDeployer(object):
 
         # Get the list of iapp tasks
         LOGGER.debug("Getting iApp tasks...")
-        existing = self._bigip.get_app_svcs()
+        existing_iapps = self._bigip.get_app_svcs()
         desired = desired_config.get('iapps', dict())
         (create_iapps, update_iapps, delete_iapps) = (
-            self._get_resource_tasks(existing, desired))
+            self._get_resource_tasks(existing_iapps, desired))
 
         # Get the list of monitor tasks
         LOGGER.debug("Getting monitor tasks...")
@@ -303,7 +390,7 @@ class ServiceConfigDeployer(object):
         taskq_len = self._run_tasks(
             taskq_len, create_tasks, update_tasks, delete_tasks)
 
-        self._post_deploy(desired_config)
+        self._post_deploy(desired_config, default_route_domain)
 
         return taskq_len
 
@@ -400,6 +487,7 @@ class ServiceManager(object):
             API schema.
         """
         self._partition = partition
+        self._bigip = bigip_proxy
         self._config_validator = ServiceConfigValidator(schema)
         self._service_deployer = ServiceConfigDeployer(bigip_proxy)
         self._config_reader = ServiceConfigReader(self._partition)
@@ -428,11 +516,16 @@ class ServiceManager(object):
         # Validate the service configuration.
         self._config_validator.validate(service_config)
 
+        # Determine the default route domain for the partition
+        default_route_domain = self._bigip.get_default_route_domain()
+
         # Read in the configuration
-        desired_config = self._config_reader.read_ltm_config(service_config)
+        desired_config = self._config_reader.read_ltm_config(
+            service_config, default_route_domain)
 
         # Deploy the service desired configuration.
-        retval = self._service_deployer.deploy_ltm(desired_config)
+        retval = self._service_deployer.deploy_ltm(
+            desired_config, default_route_domain)
 
         LOGGER.debug(
             "apply_ltm_config took %.5f seconds.", (time() - start_time))
@@ -459,8 +552,12 @@ class ServiceManager(object):
         # Validate the service configuration.
         self._config_validator.validate(service_config)
 
+        # Determine the default route domain for the partition
+        default_route_domain = self._bigip.get_default_route_domain()
+
         # Read in the configuration
-        desired_config = self._config_reader.read_net_config(service_config)
+        desired_config = self._config_reader.read_net_config(
+            service_config, default_route_domain)
 
         # Deploy the service desired configuration.
         retval = self._service_deployer.deploy_net(desired_config)

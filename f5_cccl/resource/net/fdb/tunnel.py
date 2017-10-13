@@ -31,12 +31,13 @@ class FDBTunnel(Resource):
                       partition=None,
                       records=list())
 
-    def __init__(self, name, partition, **data):
+    def __init__(self, name, partition, default_route_domain, **data):
         """Create a tunnel from CCCL fdbTunnelType."""
         super(FDBTunnel, self).__init__(name, partition)
 
         records = data.get('records', list())
-        self._data['records'] = self._create_records(records)
+        self._data['records'] = self._create_records(
+            default_route_domain, records)
 
     def __eq__(self, other):
         if not isinstance(other, FDBTunnel):
@@ -62,10 +63,11 @@ class FDBTunnel(Resource):
 
         return True
 
-    def _create_records(self, records):
+    def _create_records(self, default_route_domain, records):
         """Create a list of records for the tunnel."""
         new_records = list()
         for record in records:
+            record['default_route_domain'] = default_route_domain
             new_records.append(Record(**record).data)
         return new_records
 

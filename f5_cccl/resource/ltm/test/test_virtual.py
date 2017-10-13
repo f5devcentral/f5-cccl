@@ -28,8 +28,8 @@ import pytest
 cfg_test = {
     'name': 'Virtual-1',
     'partition': 'my_partition',
-    'destination': '/Test/1.2.3.4:80',
-    'source': '10.0.0.1/32',
+    'destination': '/Test/1.2.3.4%2:80',
+    'source': '10.0.0.1%2/32',
     'pool': '/my_partition/pool1',
     'ipProtocol': 'tcp',
     'profiles': [
@@ -60,6 +60,7 @@ def bigip():
 def test_create_virtual():
     """Test Virtual Server creation."""
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg_test
     )
     assert virtual
@@ -75,19 +76,23 @@ def test_create_virtual():
 def test_hash():
     """Test Virtual Server hash."""
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg_test
     )
     virtual1 = VirtualServer(
+        default_route_domain=2,
         **cfg_test
     )
     cfg_changed = copy(cfg_test)
     cfg_changed['name'] = 'test'
     virtual2 = VirtualServer(
+        default_route_domain=2,
         **cfg_changed
     )
     cfg_changed = copy(cfg_test)
     cfg_changed['partition'] = 'other'
     virtual3 = VirtualServer(
+        default_route_domain=2,
         **cfg_changed
     )
     assert virtual
@@ -106,9 +111,11 @@ def test_eq():
     name = 'virtual_1'
 
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg_test
     )
     virtual2 = VirtualServer(
+        default_route_domain=2,
         **cfg_test
     )
     pool = Pool(
@@ -130,6 +137,7 @@ def test_eq():
 def test_uri_path(bigip):
     """Test Virtual Server URI."""
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg_test
     )
     assert virtual
@@ -140,6 +148,7 @@ def test_uri_path(bigip):
 def test_ipv4_destination():
     """Test Virtual Server destination."""
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg_test
     )
     assert virtual
@@ -147,14 +156,15 @@ def test_ipv4_destination():
     destination = virtual.destination
     assert destination
 
-    assert destination[0] == "/Test/1.2.3.4:80"
+    assert destination[0] == "/Test/1.2.3.4%2:80"
     assert destination[1] == "Test"
-    assert destination[2] == "1.2.3.4"
+    assert destination[2] == "1.2.3.4%2"
     assert destination[3] == "80"
 
     cfg = copy(cfg_test)
     cfg['destination'] = "/Test/1.2.3.4%2:80"
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg
     )
 
@@ -167,6 +177,7 @@ def test_ipv4_destination():
     cfg = copy(cfg_test)
     cfg['destination'] = "/Test/my_virtual_addr%2:80"
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg
     )
 
@@ -179,6 +190,7 @@ def test_ipv4_destination():
     cfg = copy(cfg_test)
     cfg['destination'] = "/Test_1/my_virtual_addr%2:80"
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg
     )
 
@@ -191,6 +203,7 @@ def test_ipv4_destination():
     cfg = copy(cfg_test)
     cfg['destination'] = "/Test-1/my_virtual_addr%2:80"
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg
     )
 
@@ -203,6 +216,7 @@ def test_ipv4_destination():
     cfg = copy(cfg_test)
     cfg['destination'] = "/Test.1/my_virtual_addr%2:80"
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg
     )
 
@@ -217,6 +231,7 @@ def test_ipv6_destination():
     cfg = copy(cfg_test)
     cfg['destination'] = "/Test_1/2001::1%2.80"
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg
     )
 
@@ -229,31 +244,34 @@ def test_ipv6_destination():
     cfg = copy(cfg_test)
     cfg['destination'] = "/Test/2001:0db8:85a3:0000:0000:8a2e:0370:7334.80"
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg
     )
 
     destination = virtual.destination
-    assert destination[0] == "/Test/2001:0db8:85a3:0000:0000:8a2e:0370:7334.80"
+    assert destination[0] == "/Test/2001:0db8:85a3:0000:0000:8a2e:0370:7334%2.80"
     assert destination[1] == "Test"
-    assert destination[2] == "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+    assert destination[2] == "2001:0db8:85a3:0000:0000:8a2e:0370:7334%2"
     assert destination[3] == "80"
 
     cfg = copy(cfg_test)
     cfg['destination'] = "/Test/2001:0db8:85a3::8a2e:0370:7334.80"
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg
     )
 
     destination = virtual.destination
-    assert destination[0] == "/Test/2001:0db8:85a3::8a2e:0370:7334.80"
+    assert destination[0] == "/Test/2001:0db8:85a3::8a2e:0370:7334%2.80"
     assert destination[1] == "Test"
-    assert destination[2] == "2001:0db8:85a3::8a2e:0370:7334"
+    assert destination[2] == "2001:0db8:85a3::8a2e:0370:7334%2"
     assert destination[3] == "80"
 
     # Negative matches
     cfg = copy(cfg_test)
     cfg['destination'] = "Test/2001:0db8:85a3::8a2e:0370:7334.80"
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg
     )
 
@@ -268,6 +286,7 @@ def test_ipv6_destination():
     cfg = copy(cfg_test)
     cfg['destination'] = "/Test/2001:0db8:85a3::8a2e:0370:7334%3:80"
     virtual = VirtualServer(
+        default_route_domain=2,
         **cfg
     )
 
@@ -306,6 +325,7 @@ cfg_test_api_virtual = {
 def test_create_api_virtual():
     """Test Virtual Server creation."""
     virtual = ApiVirtualServer(
+        default_route_domain=2,
         **cfg_test_api_virtual
     )
     assert virtual
@@ -322,6 +342,7 @@ def test_create_api_virtual():
 
     cfg_test_api_virtual['enabled'] = False
     virtual = ApiVirtualServer(
+        default_route_domain=2,
         **cfg_test_api_virtual
     )
     assert virtual
@@ -331,6 +352,7 @@ def test_create_api_virtual():
     cfg_test_api_virtual['enabled'] = True
     cfg_test_api_virtual.pop('vlansEnabled', None)
     virtual = ApiVirtualServer(
+        default_route_domain=2,
         **cfg_test_api_virtual
     )
     assert virtual
@@ -417,6 +439,7 @@ cfg_test_icr_virtual = {
 def test_create_icr_virtual():
     """Test Virtual Server creation."""
     virtual = IcrVirtualServer(
+        default_route_domain=2,
         **cfg_test_icr_virtual
     )
     assert virtual

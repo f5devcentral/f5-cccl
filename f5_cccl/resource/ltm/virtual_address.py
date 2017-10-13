@@ -20,6 +20,7 @@ from copy import deepcopy
 import logging
 
 from f5_cccl.resource import Resource
+from f5_cccl.utils.route_domain import normalize_address_with_route_domain
 
 
 LOGGER = logging.getLogger(__name__)
@@ -34,12 +35,15 @@ class VirtualAddress(Resource):
                       description=None,
                       trafficGroup="/Common/traffic-group-1")
 
-    def __init__(self, name, partition, **properties):
+    def __init__(self, name, partition, default_route_domain, **properties):
         """Create a VirtualAddress instance."""
         super(VirtualAddress, self).__init__(name, partition)
 
         for key, value in self.properties.items():
             self._data[key] = properties.get(key, value)
+        if self._data['address'] is not None:
+            self._data['address'] = normalize_address_with_route_domain(
+                self._data['address'], default_route_domain)[0]
 
     def __eq__(self, other):
         if not isinstance(other, VirtualAddress):

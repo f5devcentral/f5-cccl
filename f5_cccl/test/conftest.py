@@ -358,6 +358,49 @@ class FDBTunnel():
         return FDBTunnel(name)
 
 
+class Partition():
+    """A mock BIG-IP Partition."""
+
+    def __init__(self, name, **kwargs):
+        """Initialize the object."""
+        self.name = name
+        if kwargs.get('default-route-domain') is not None:
+            self.defaultRouteDomain = kwargs.get('default-route-domain')
+        else:
+            self.defaultRouteDomain = 0
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        self.raw = self.__dict__
+
+    def modify(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def create(self, name=None, **kwargs):
+        """Create the partition object."""
+        pass
+
+    def delete(self):
+        """Delete the partition object."""
+        pass
+
+    def load(self, name=None):
+        """Load the partition object."""
+        return Partition(name)
+
+
+class MockPartitions():
+    """A mock Auth partitions object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.partition = Partition('test')
+
+    def get_collection(self):
+        """Get collection of partitions."""
+        pass
+
+
 class MockService():
     """A mock Services service object."""
 
@@ -773,6 +816,12 @@ class MockDataGroup():
         """Initialize the object."""
         self.internals = MockDataGroupInternals()
 
+class MockAuth():
+    """A mock BIG-IP auth object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.partitions = MockPartitions()
 
 class MockArps():
     """A mock net ARP object."""
@@ -834,6 +883,7 @@ class MockTm():
     def __init__(self):
         self.ltm = MockLtm()
         self.net = MockNet()
+        self.auth = MockAuth()
         self.sys = MockSys()
 
 
