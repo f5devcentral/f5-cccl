@@ -122,7 +122,7 @@ def delete_unused_ssl_profiles(mgmt, partition, config):
     try:
         client_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection(
             requests_params={'params': '$filter=partition+eq+%s' % partition})
-        incomplete += _delete_ssl_profiles(config, client_profiles)
+        incomplete += _delete_ssl_profiles(mgmt, config, client_profiles)
     except Exception as err:  # pylint: disable=broad-except
         LOGGER.error("Error reading client SSL profiles from BIG-IP: %s",
                      str(err))
@@ -132,7 +132,7 @@ def delete_unused_ssl_profiles(mgmt, partition, config):
     try:
         server_profiles = mgmt.tm.ltm.profile.server_ssls.get_collection(
             requests_params={'params': '$filter=partition+eq+%s' % partition})
-        incomplete += _delete_ssl_profiles(config, server_profiles)
+        incomplete += _delete_ssl_profiles(mgmt, config, server_profiles)
     except Exception as err:  # pylint: disable=broad-except
         LOGGER.error("Error reading server SSL profiles from BIG-IP: %s",
                      str(err))
@@ -141,14 +141,22 @@ def delete_unused_ssl_profiles(mgmt, partition, config):
     return incomplete
 
 
-def _delete_ssl_profiles(config, profiles):
+def _delete_ssl_profiles(mgmt, config, profiles):
     incomplete = 0
+
+    file_certs = mgmt.tm.sys.file.ssl_certs.get_collection(
+        requests_params={'params': '$filter=partition+eq+Common'})
+    file_keys = mgmt.tm.sys.file.ssl_keys.get_collection(
+        requests_params={'params': '$filter=partition+eq+Common'})
+    file_list = [file_certs, file_keys]
 
     if 'customProfiles' not in config:
         # delete any profiles in managed partition
         for prof in profiles:
             try:
+                prof_name = prof.name
                 prof.delete()
+                _delete_ssl_certificate_list(prof_name, file_list)
             except Exception as err:  # pylint: disable=broad-except
                 LOGGER.error("Error deleting SSL profile: %s", str(err))
                 incomplete += 1
@@ -158,12 +166,25 @@ def _delete_ssl_profiles(config, profiles):
             if not any(d['name'] == prof.name
                        for d in config['customProfiles']):
                 try:
+                    prof_name = prof.name
                     prof.delete()
+                    _delete_ssl_certificate_list(prof_name, file_list)
                 except Exception as err:  # pylint: disable=broad-except
                     LOGGER.error("Error deleting SSL profile: %s", str(err))
                     incomplete += 1
 
     return incomplete
+
+
+def _delete_ssl_certificate_list(prof_name, file_list):
+    for obj_list in file_list:
+        for item in obj_list:
+            if prof_name in item.name:
+                try:
+                    item.delete()
+                except Exception as err:  # pylint: disable=broad-except
+                    LOGGER.error(
+                        "Error deleting SSL certificate list: %s", str(err))
 
 
 def _upload_crypto_file(mgmt, file_data, file_name):
@@ -251,7 +272,7 @@ def _delete_unused_ssl_profiles(mgmt, partition, config):
     try:
         client_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection(
             requests_params={'params': '$filter=partition+eq+%s' % partition})
-        incomplete += _delete_ssl_profiles(config, client_profiles)
+        incomplete += _delete_ssl_profiles(mgmt, config, client_profiles)
     except Exception as err:  # pylint: disable=broad-except
         LOGGER.error("Error reading client SSL profiles from BIG-IP: %s",
                      str(err))
@@ -261,7 +282,7 @@ def _delete_unused_ssl_profiles(mgmt, partition, config):
     try:
         server_profiles = mgmt.tm.ltm.profile.server_ssls.get_collection(
             requests_params={'params': '$filter=partition+eq+%s' % partition})
-        incomplete += _delete_ssl_profiles(config, server_profiles)
+        incomplete += _delete_ssl_profiles(mgmt, config, server_profiles)
     except Exception as err:  # pylint: disable=broad-except
         LOGGER.error("Error reading server SSL profiles from BIG-IP: %s",
                      str(err))
