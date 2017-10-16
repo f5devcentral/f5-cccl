@@ -177,7 +177,7 @@ class BigIPProxy(object):
 
     def _policy_status_check(self, policy, virtuals):
         """Delete non-legacy policies because they can't be updated."""
-        if policy.status != 'legacy':
+        if getattr(policy, 'status', 'legacy') != 'legacy':
             for v in virtuals:
                 # First, remove non-legacy policies from virtuals
                 policies = []
