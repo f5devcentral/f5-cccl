@@ -60,9 +60,12 @@ class ServiceConfigReader(object):
         """
         config_resource = None
         try:
-            config_resource = resource_type(
-                partition=self._partition,
-                **obj)
+            if 'partition' not in obj:
+                obj['partition'] = self._partition
+            else:
+                if obj['partition'] != self._partition:
+                    raise ValueError("Partition names do not match")
+            config_resource = resource_type(**obj)
         except (ValueError, TypeError) as error:
             msg_format = \
                 "Failed to create resource {}, {} from config: error({})"
