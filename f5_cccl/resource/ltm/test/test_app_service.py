@@ -26,6 +26,7 @@ cfg_test = {
   "name": "MyAppService",
   "template": "/Common/f5.http",
   "partition": "test",
+  "default_route_domain": 0,
   "options": {"description": "This is a test iApp"},
   "poolMemberTable": {
     "name": "pool__members",
@@ -72,6 +73,7 @@ cfg_test2 = {
   "name": "appsvc",
   "template": "/Common/appsvcs_integration_v2.0.002",
   "partition": "test",
+  "default_route_domain": 22,
   "options": {"description": "This is a test iApp"},
   "poolMemberTable": {
     "name": "pool__Members",
@@ -140,11 +142,11 @@ cfg_test_expected = {
   "tables": [{
     "name": "pool__members",
     "columnNames": ["addr", "port", "connection_limit"],
-    "rows": [{"row": ["10.2.3.4", "30001", "0"]},
-             {"row": ["10.2.3.4", "30002", "0"]},
-             {"row": ["10.2.3.4", "30003", "0"]},
-             {"row": ["10.2.3.4", "30004", "0"]},
-             {"row": ["10.2.3.4", "30005", "0"]}]
+    "rows": [{"row": ["10.2.3.4%0", "30001", "0"]},
+             {"row": ["10.2.3.4%0", "30002", "0"]},
+             {"row": ["10.2.3.4%0", "30003", "0"]},
+             {"row": ["10.2.3.4%0", "30004", "0"]},
+             {"row": ["10.2.3.4%0", "30005", "0"]}]
     }
   ],
   "variables": [
@@ -182,11 +184,11 @@ cfg_test2_expected = {
     "name": "pool__Members",
     "columnNames": ["Index", "IPAddress", "Port", "ConnectionLimit", "Ratio",
                     "PriorityGroup", "State"],
-    "rows": [{"row": ["0", "10.2.3.5", "30001", "1000", "1", "0", "enabled"]},
-             {"row": ["0", "10.2.3.5", "30002", "1000", "1", "0", "enabled"]},
-             {"row": ["0", "10.2.3.5", "30003", "1000", "1", "0", "enabled"]},
-             {"row": ["0", "10.2.3.5", "30004", "1000", "1", "0", "enabled"]},
-             {"row": ["0", "10.2.3.5", "30005", "1000", "1", "0", "enabled"]}]
+    "rows": [{"row": ["0", "10.2.3.5%22", "30001", "1000", "1", "0", "enabled"]},
+             {"row": ["0", "10.2.3.5%22", "30002", "1000", "1", "0", "enabled"]},
+             {"row": ["0", "10.2.3.5%22", "30003", "1000", "1", "0", "enabled"]},
+             {"row": ["0", "10.2.3.5%22", "30004", "1000", "1", "0", "enabled"]},
+             {"row": ["0", "10.2.3.5%22", "30005", "1000", "1", "0", "enabled"]}]
   },
   {
     "name": "l7policy__rulesMatch",
