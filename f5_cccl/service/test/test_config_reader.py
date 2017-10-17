@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+import copy
 import json
 import pytest
 
@@ -31,7 +32,7 @@ from mock import patch
 class TestServiceConfigReader:
 
     def setup(self):
-        self.partition = "Test"
+        self.partition = "test"
 
         svcfile = 'f5_cccl/schemas/tests/service.json'
         with open(svcfile, 'r') as fp:
@@ -56,6 +57,15 @@ class TestServiceConfigReader:
         assert len(config.get('tcp_monitors')) == 1
         assert len(config.get('l7policies')) == 1
         assert len(config.get('iapps')) == 1
+
+    def test_get_config_bad_partition(self):
+        reader = ServiceConfigReader(self.partition)
+        # Copy the current config and update the partition to a wrong value
+        config = copy.deepcopy(self.service)
+        config['iRules'][0]['partition'] = 'wrong'
+        with pytest.raises(F5CcclConfigurationReadError) as e:
+            reader.read_config(config)
+        assert 'Partition names do not match' in e.value.msg
 
     def test_create_config_item_exception(self):
 

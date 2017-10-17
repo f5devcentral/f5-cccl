@@ -181,7 +181,8 @@
   "iRules": [
     {
       "name": "https_redirect",
-      "apiAnonymous": "when HTTP_REQUEST {HTTP::redirect https://[getfield [HTTP::host] ':' 1][HTTP::uri]}"
+      "apiAnonymous": "when HTTP_REQUEST {HTTP::redirect https://[getfield [HTTP::host] ':' 1][HTTP::uri]}",
+      "partition": "test"
     }
   ],
   "internalDataGroups": [
