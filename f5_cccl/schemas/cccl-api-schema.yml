@@ -785,8 +785,6 @@ definitions:
     properties:
       name:
         type: "string"
-      partition:
-        type: "string"
       apiAnonymous:
         type: "string"
     required:
@@ -797,8 +795,6 @@ definitions:
     type: "object"
     properties:
       name:
-        type: "string"
-      partition:
         type: "string"
       type:
         type: "string"
