@@ -20,6 +20,7 @@ from copy import deepcopy
 import logging
 
 from f5_cccl.resource import Resource
+from f5_cccl.utils.route_domain import normalize_address_with_route_domain
 
 
 LOGGER = logging.getLogger(__name__)
@@ -62,7 +63,6 @@ class Node(Resource):
         if other.data['state'] == 'up' or other.data['state'] == 'unchecked':
             if 'enabled' in other.data['session']:
                 return True
-
         return False
 
     def __hash__(self):  # pylint: disable=useless-super-delegation
@@ -76,3 +76,22 @@ class Node(Resource):
         tmp_data = deepcopy(data) if data is not None else deepcopy(self.data)
         tmp_data.pop('address', None)
         super(Node, self).update(bigip, data=tmp_data, modify=modify)
+
+
+class ApiNode(Node):
+    """Synthesize the CCCL input to create the canonical Node."""
+    def __init__(self, name, partition, default_route_domain, **properties):
+        # The expected node should have route domain as part of name
+        name = normalize_address_with_route_domain(
+            properties.get('address'), default_route_domain)[0]
+        super(ApiNode, self).__init__(name, partition, **properties)
+
+
+class IcrNode(Node):
+    """Node instantiated from iControl REST pool member object."""
+    def __init__(self, name, partition, default_route_domain, **properties):
+        # The address from the BigIP needs the route domain added if it
+        # happens to match the default for the partition
+        properties['address'] = normalize_address_with_route_domain(
+            properties.get('address'), default_route_domain)[0]
+        super(IcrNode, self).__init__(name, partition, **properties)

@@ -34,7 +34,7 @@ from f5_cccl.resource.ltm.policy import IcrPolicy
 from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual_address import IcrVirtualAddress
 from f5_cccl.resource.ltm.virtual import IcrVirtualServer
-from f5_cccl.resource.ltm.node import Node
+from f5_cccl.resource.ltm.node import IcrNode
 from f5_cccl.resource.ltm.irule import IcrIRule
 from f5_cccl.resource.ltm.internal_data_group import IcrInternalDataGroup
 
@@ -147,7 +147,8 @@ class BigIPProxy(object):
             raise cccl_exc.F5CcclCacheRefreshError(
                 "BigIPProxy: failed to refresh internal BIG-IP state.")
 
-    def _create_resource(self, resource_type, resource_obj):
+    def _create_resource(self, resource_type, resource_obj,
+                         default_route_domain=None):
         """Create an iControl REST resource and handle exceptions on init.
 
         If some error occurs during the creation of a resource object,
@@ -159,7 +160,13 @@ class BigIPProxy(object):
         """
         icr_resource = None
         try:
-            icr_resource = resource_type(**resource_obj.raw)
+            if default_route_domain is not None:
+                icr_resource = resource_type(
+                    default_route_domain=default_route_domain,
+                    **resource_obj.raw)
+            else:
+                icr_resource = resource_type(**resource_obj.raw)
+
         except (ValueError, TypeError) as error:
             LOGGER.error(
                 "Failed to create iControl REST resource %s, %s: error(%s)",
@@ -208,6 +215,9 @@ class BigIPProxy(object):
 
         #  Retrieve the list of virtual servers in managed partition.
         query = partition_filter
+
+        #  Determine the current route domain default for the partition
+        default_route_domain = self.get_default_route_domain()
 
         #  Retrieve the lists of health monitors
         LOGGER.debug("Retrieving http_monitors from BIG-IP /%s...",
@@ -333,7 +343,7 @@ class BigIPProxy(object):
 
         #  Refresh the node cache
         self._nodes = {
-            n.name: self._create_resource(Node, n)
+            n.name: self._create_resource(IcrNode, n, default_route_domain)
             for n in nodes
         }
 
@@ -357,6 +367,14 @@ class BigIPProxy(object):
 
         LOGGER.debug(
             "BIG-IP refresh took %.5f seconds.", (time() - start_time))
+
+    def get_default_route_domain(self):
+        """Return the configured default route domain for the partition"""
+        partition = self._bigip.tm.auth.partitions.partition.load(
+            name=self._partition)
+        # Note: This information is needed when processing the request config
+        #       which occurs before self.refresh() is called
+        return partition.defaultRouteDomain
 
     def get_virtuals(self, all_virtuals=False):
         """Return the index of virtual servers."""
