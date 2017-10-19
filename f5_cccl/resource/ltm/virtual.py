@@ -44,6 +44,7 @@ class VirtualServer(Resource):
 
     properties = dict(description=None,
                       destination=None,
+                      source=None,
                       ipProtocol=None,
                       enabled=None,
                       disabled=None,
