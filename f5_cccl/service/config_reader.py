@@ -151,8 +151,7 @@ class ServiceConfigReader(object):
 
         iapps = service_config.get('iapps', list())
         config_dict['iapps'] = {
-            i['name']: self._create_config_item(ApiApplicationService, i,
-                                                default_route_domain)
+            i['name']: self._create_config_item(ApiApplicationService, i)
             for i in iapps
         }
 
