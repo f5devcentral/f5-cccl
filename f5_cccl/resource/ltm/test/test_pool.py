@@ -33,14 +33,14 @@ bigip_pools_cfg = [
          'isSubcollection': True,
          'items': [
              {'ratio': 1,
-              'name': '172.16.0.100%0:8080',
+              'name': '172.16.0.100:8080',
               'partition': 'Common',
               'session': 'monitor-enabled',
               'priorityGroup': 0,
               'connectionLimit': 0,
               'description': None},
              {'ratio': 1,
-              'name': '172.16.0.101%0:8080',
+              'name': '172.16.0.101:8080',
               'partition': 'Common',
               'session': 'monitor-enabled',
               'priorityGroup': 0,
@@ -62,15 +62,15 @@ cccl_pools_cfg = [
     { "name": "pool0" },
     { "name": "pool1",
       "members": [
-          {"address": "172.16.0.100%0", "port": 8080},
-          {"address": "172.16.0.101%0", "port": 8080}
+          {"address": "172.16.0.100", "port": 8080, "routeDomain": {"id": 0}},
+          {"address": "172.16.0.101", "port": 8080, "routeDomain": {"id": 0}}
       ],
       "monitors": ["/Common/http"]
     },
     { "name": "pool2",
       "members": [
-          {"address": "192.168.0.100", "port": 80},
-          {"address": "192.168.0.101", "port": 80}
+          {"address": "192.168.0.100", "port": 80, "routeDomain": {"id": 2}},
+          {"address": "192.168.0.101", "port": 80, "routeDomain": {"id": 2}}
       ],
       "monitors": []
     },
@@ -86,8 +86,8 @@ cccl_pools_cfg = [
     },
     { "name": "pool1",
       "members": [
-          {"address": "172.16.0.100", "port": 8080},
-          {"address": "172.16.0.102", "port": 8080}
+          {"address": "172.16.0.100", "port": 8080, "routeDomain": {"id": 0}},
+          {"address": "172.16.0.102", "port": 8080, "routeDomain": {"id": 0}}
       ],
       "monitors": ["/Common/http"]
     }
@@ -150,7 +150,7 @@ def bigip_members():
 
 
 def test_create_pool_minconfig(cccl_pool0):
-    pool = ApiPool(partition="Common", default_route_domain=0, **cccl_pool0)
+    pool = ApiPool(partition="Common", **cccl_pool0)
 
     assert pool.name == "pool0"
     assert pool.partition == "Common"
@@ -160,7 +160,7 @@ def test_create_pool_minconfig(cccl_pool0):
     assert pool.data['monitor'] == "default"
 
 def test_create_pool(cccl_pool1):
-    pool = ApiPool(partition="Common", default_route_domain=0, **cccl_pool1)
+    pool = ApiPool(partition="Common", **cccl_pool1)
 
     assert pool.name == "pool1"
     assert pool.partition == "Common"
@@ -172,7 +172,7 @@ def test_create_pool(cccl_pool1):
 
 
 def test_create_pool_empty_lists(cccl_pool3):
-    pool = ApiPool(partition="Common", default_route_domain=0, **cccl_pool3)
+    pool = ApiPool(partition="Common", **cccl_pool3)
 
     assert pool.name == "pool3"
     assert pool.partition == "Common"
@@ -183,34 +183,34 @@ def test_create_pool_empty_lists(cccl_pool3):
 
 
 def test_compare_equal_pools(cccl_pool0):
-    p1 = ApiPool(partition="Common", default_route_domain=0, **cccl_pool0)
-    p2 = ApiPool(partition="Common", default_route_domain=0, **cccl_pool0)
+    p1 = ApiPool(partition="Common", **cccl_pool0)
+    p2 = ApiPool(partition="Common", **cccl_pool0)
 
     assert id(p1) != id(p2)
     assert p1 == p2
 
 
 def test_compare_pool_and_dict(cccl_pool0):
-    pool = ApiPool(partition="Common", default_route_domain=0, **cccl_pool0)
+    pool = ApiPool(partition="Common", **cccl_pool0)
 
     assert not pool == cccl_pool0
 
 
 def test_get_uri_path(bigip, cccl_pool0):
-    pool = ApiPool(partition="Common", default_route_domain=0, **cccl_pool0)
+    pool = ApiPool(partition="Common", **cccl_pool0)
 
     assert pool._uri_path(bigip) == bigip.tm.ltm.pools.pool
 
 
 def test_pool_hash(bigip, cccl_pool0):
-    pool = ApiPool(partition="Common", default_route_domain=0, **cccl_pool0)
+    pool = ApiPool(partition="Common", **cccl_pool0)
 
     assert hash(pool) == hash((pool.name, pool.partition))
 
 
 def test_compare_bigip_cccl_pools(cccl_pool1, bigip_pool0):
     bigip_pool = IcrPool(**bigip_pool0)
-    cccl_pool = ApiPool(partition="Common", default_route_domain=0, **cccl_pool1)
+    cccl_pool = ApiPool(partition="Common", **cccl_pool1)
 
     assert bigip_pool == cccl_pool
 
@@ -224,28 +224,29 @@ def test_create_bigip_pool_no_members(bigip_pool1):
 
 
 def test_compare_pools_unequal_members(bigip, cccl_pool1, cccl_pool2, cccl_pool5):
-    pool1 = ApiPool(partition="Common", default_route_domain=0, **cccl_pool1)
-    pool2 = ApiPool(partition="Common", default_route_domain=0, **cccl_pool2)
-    pool5 = ApiPool(partition="Common", default_route_domain=0, **cccl_pool5)
+    pool1 = ApiPool(partition="Common", **cccl_pool1)
+    pool2 = ApiPool(partition="Common", **cccl_pool2)
+    pool5 = ApiPool(partition="Common", **cccl_pool5)
 
     pool1_one_member_cfg = { "name": "pool1",
       "members": [
-          {"address": "172.16.0.100", "port": 8080},
+          {"address": "172.16.0.100", "port": 8080, "routeDomain": {"id": 0}},
       ],
       "monitors": ["/Common/http"]
     }
     pool1_one_member = ApiPool(partition="Common",
-                               default_route_domain=0, **pool1_one_member_cfg)
+                                  **pool1_one_member_cfg)
 
 
     pool2_with_monitor = { "name": "pool2",
       "members": [
-          {"address": "192.168.0.100%2", "port": 80},
-          {"address": "192.168.0.101%2", "port": 80}
+          {"address": "192.168.0.100", "port": 80, "routeDomain": {"id": 2}},
+          {"address": "192.168.0.101", "port": 80, "routeDomain": {"id": 2}}
       ],
       "monitors": ["/Common/http"]
     }
-    pool2_with_monitor = ApiPool(partition="Common", default_route_domain=0, **pool2_with_monitor)
+    pool2_with_monitor = ApiPool(partition="Common",
+                                 **pool2_with_monitor)
 
     assert not pool1 == pool2
     assert pool1 != pool2
@@ -259,7 +260,7 @@ def test_compare_pools_unequal_members(bigip, cccl_pool1, cccl_pool2, cccl_pool5
 
 
 def test_get_monitors(bigip):
-    pool = ApiPool(name="pool1", default_route_domain=0, partition="Common")
+    pool = ApiPool(name="pool1", partition="Common")
 
     assert pool._get_monitors(None) == "default"
     assert pool._get_monitors([]) == "default"    

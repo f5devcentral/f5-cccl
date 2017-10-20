@@ -87,8 +87,8 @@
   "pools": [
     { "name": "pool2",
       "members": [
-        {"address": "172.16.0.100%1", "port": 8080},
-        {"address": "172.16.0.101", "port": 8080}
+        {"address": "172.16.0.100", "port": 8080, "routeDomain": {"id": 0}},
+        {"address": "172.16.0.101", "port": 8080, "routeDomain": {"id": 0}}
       ],
       "monitors": ["/test/myhttp"]
     }
