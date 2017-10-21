@@ -65,7 +65,7 @@ def _make_svc_config(partition, num_virtuals=0, num_members=0):
         "monitors": ["/Common/http"]
     },
     base_member ={
-        "address": "172.16.0.100%0", "port": 8080
+        "address": "172.16.0.100", "port": 8080, "routeDomain": {"id": 0}
     }
 
 

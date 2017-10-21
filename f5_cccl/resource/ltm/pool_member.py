@@ -20,7 +20,6 @@ import logging
 import re
 
 from f5_cccl.resource import Resource
-from f5_cccl.utils.route_domain import normalize_address_with_route_domain
 from netaddr import IPAddress
 from requests.utils import quote as urlquote
 
@@ -47,6 +46,7 @@ class PoolMember(Resource):
 
     def __init__(self, name, partition, pool=None, **properties):
         """Initialize the PoolMember object."""
+        name = self._strip_route_domain_zero(name)
         super(PoolMember, self).__init__(name, partition)
 
         self._pool = pool
@@ -85,6 +85,19 @@ class PoolMember(Resource):
         return ("monitor" in self.data['session'] or
                 "monitor" in other_session)
 
+    def _strip_route_domain_zero(self, name):
+        """Remove the route domain from the address, if 0."""
+        match = self.member_name_re.match(name)
+        if match and match.group(2) == "0":
+            ip_address = IPAddress(match.group(1))
+            if ip_address.version == 4:
+                name = "{}:{}".format(
+                    match.group(1), match.group(3))
+            else:
+                name = "{}.{}".format(
+                    match.group(1), match.group(3))
+        return name
+
     def _uri_path(self, bigip):
         if not self._pool:
             LOGGER.error(
@@ -110,29 +123,35 @@ class IcrPoolMember(PoolMember):
 
 class ApiPoolMember(PoolMember):
     """PoolMember instantiated from F5 CCCL schema input."""
-
-    def __init__(self, partition, default_route_domain, pool, **properties):
+    def __init__(self, name, partition, pool=None, **properties):
         u"""Create a PoolMember instance from CCCL PoolMemberType.
 
         Args:
+            name (string): The name of the member <address>:<port>
             If this is defined as None, the name will be computed
             from the address and port.
             partition (string): Pool member partition
-            default_route_domain (string): For managed partition
             pool (Pool): Parent pool object
 
         Properties:
             address (string): Member IP address
             port (int): Member service port
+            routeDomain (dict): Route domain id and name
             ratio (int): Member weight for ratio-member lb algorithm
             connectionLimit (int): Max number of connections
             priorityGroup (int): Member priority group
             state (string): Member admin state, user-up or user-down
             description (string): User specified description
         """
-        address = properties.get('address', None)
-        port = properties.get('port', None)
-        name = self._init_member(address, port, default_route_domain)
+        if not name:
+            address = properties.get('address', None)
+            port = properties.get('port', None)
+            route_domain = properties.get('routeDomain', {})
+
+            name = self._init_member_name(
+                address,
+                port,
+                route_domain)
 
         super(ApiPoolMember, self).__init__(name=name,
                                             partition=partition,
@@ -140,11 +159,11 @@ class ApiPoolMember(PoolMember):
                                             **properties)
 
     @staticmethod
-    def _init_member(address, port, default_route_domain):
-        u"""Initialize the pool member name and address.
+    def _init_member_name(address, port, route_domain):
+        u"""Initialize the pool member address.
 
         An address is of the form:
-        <ip_address>[%<route_domain_id>]
+        <ip_address>%<route_domain_id>
         """
         if not address or not port:
             LOGGER.error(
@@ -152,17 +171,19 @@ class ApiPoolMember(PoolMember):
             raise TypeError(
                 "F5CCCL poolMember definition must contain address and port")
 
-        # force address to include route domain
-        address, ip, _ = normalize_address_with_route_domain(
-            address, default_route_domain)
-
-        ip_address = IPAddress(ip)
-
-        # force name to be defined as <ip>%<rd>:<port>
-        if ip_address.version == 4:
-            name_format = "{}:{}"
+        ip_address = IPAddress(address)
+        rd_id = route_domain.get('id', 0)
+        if rd_id:
+            if ip_address.version == 4:
+                name_format = "{}%{}:{}"
+            else:
+                name_format = "{}%{}.{}"
+            name = name_format.format(address, rd_id, port)
         else:
-            name_format = "{}.{}"
-        name = name_format.format(address, port)
+            if ip_address.version == 4:
+                name_format = "{}:{}"
+            else:
+                name_format = "{}.{}"
+            name = name_format.format(address, port)
 
         return name

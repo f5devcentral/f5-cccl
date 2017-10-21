@@ -32,26 +32,36 @@ def members():
             'port': 80
         },
         'member_w_route_domain': {
-            'address': "172.16.200.101%0",
+            'address': "172.16.200.101",
             'port': 80,
+            'routeDomain': {'id': 0}
         },
         'member_no_port': {
             'address': "172.16.200.102",
+            'routeDomain': {'id': 0}
         },
         'member_no_address': {
             'port': 80,
+            'routeDomain': {'id': 0}
         },
         'member_w_nonzero_route_domain': {
-            'address': "172.16.200.103%2",
+            'address': "172.16.200.103",
             'port': 80,
+            'routeDomain': {'id': 2}
         },
         'member_min_ipv6_config': {
             'address': "2001:0db8:3c4d:0015:0000:0000:abcd:ef12",
             'port': 80
         },
         'member_min_ipv6_rd_config': {
-            'address': "2001:0db8:3c4d:0015:0000:0000:abcd:ef12%2",
+            'address': "2001:0db8:3c4d:0015:0000:0000:abcd:ef12",
             'port': 80,
+            'routeDomain': {'id': 2}
+        },
+        'member_min_config_w_name': {
+            'address': "172.16.200.100",
+            'port': 80,
+            'name': "192.168.200.100:80"
         }
     }
     return members
@@ -80,8 +90,8 @@ def test_create_cccl_member_min_config(pool, members):
 
     # pdb.set_trace()
     member = ApiPoolMember(
+        name=None,
         partition=partition,
-        default_route_domain=0,
         pool=pool,
         **members[cfg_name]
     )
@@ -93,7 +103,7 @@ def test_create_cccl_member_min_config(pool, members):
     pool_data = copy.copy(member.data)
     for k, _ in POOL_PROPERTIES.items():
         if k == 'name':
-            assert pool_data['name'] == "172.16.200.100%0:80"
+            assert pool_data['name'] == "172.16.200.100:80"
         elif k == 'partition':
             assert pool_data['partition'] == "Common"
         elif k == 'ratio':
@@ -117,8 +127,8 @@ def test_create_cccl_member_w_route_domain(pool, members):
     partition = "Common"
 
     member = ApiPoolMember(
+        name=None,
         partition=partition,
-        default_route_domain=0,
         pool=pool,
         **members[cfg_name]
     )
@@ -130,7 +140,7 @@ def test_create_cccl_member_w_route_domain(pool, members):
     pool_data = copy.copy(member.data)
     for k, _ in POOL_PROPERTIES.items():
         if k == 'name':
-            assert pool_data['name'] == "172.16.200.101%0:80"
+            assert pool_data['name'] == "172.16.200.101:80"
         elif k == 'partition':
             assert pool_data['partition'] == "Common"
         elif k == 'ratio':
@@ -155,8 +165,8 @@ def test_create_cccl_member_no_port(pool, members):
 
     with pytest.raises(TypeError):
         member = ApiPoolMember(
+            name=None,
             partition=partition,
-            default_route_domain=0,
             pool=pool,
             **members[cfg_name]
         )
@@ -170,8 +180,8 @@ def test_create_cccl_member_no_address(pool, members):
 
     with pytest.raises(TypeError):
         member = ApiPoolMember(
+            name=None,
             partition=partition,
-            default_route_domain=0,
             pool=pool,
             **members[cfg_name]
         )
@@ -184,8 +194,8 @@ def test_create_cccl_member_w_nonzero_route_domain(pool, members):
     partition = "Common"
 
     member = ApiPoolMember(
+        name=None,
         partition=partition,
-        default_route_domain=0,
         pool=pool,
         **members[cfg_name]
     )
@@ -222,8 +232,8 @@ def test_create_cccl_member_min_ipv6_config(pool, members):
 
     # pdb.set_trace()
     member = ApiPoolMember(
+        name=None,
         partition=partition,
-        default_route_domain=0,
         pool=pool,
         **members[cfg_name]
     )
@@ -236,7 +246,7 @@ def test_create_cccl_member_min_ipv6_config(pool, members):
     for k, _ in POOL_PROPERTIES.items():
         if k == 'name':
             assert (pool_data['name'] ==
-                    "2001:0db8:3c4d:0015:0000:0000:abcd:ef12%0.80")
+                    "2001:0db8:3c4d:0015:0000:0000:abcd:ef12.80")
         elif k == 'partition':
             assert pool_data['partition'] == "Common"
         elif k == 'ratio':
@@ -261,8 +271,8 @@ def test_create_cccl_member_min_ipv6_rd_config(pool, members):
 
     # pdb.set_trace()
     member = ApiPoolMember(
+        name=None,
         partition=partition,
-        default_route_domain=0,
         pool=pool,
         **members[cfg_name]
     )
@@ -276,6 +286,43 @@ def test_create_cccl_member_min_ipv6_rd_config(pool, members):
         if k == 'name':
             assert (pool_data['name'] ==
                     "2001:0db8:3c4d:0015:0000:0000:abcd:ef12%2.80")
+        elif k == 'partition':
+            assert pool_data['partition'] == "Common"
+        elif k == 'ratio':
+            assert pool_data['ratio'] == 1
+        elif k == 'connectionLimit':
+            assert pool_data['connectionLimit'] == 0
+        elif k == 'priorityGroup':
+            assert pool_data['priorityGroup'] == 0
+        elif k == 'session':
+            assert pool_data['session'] == "user-enabled"
+        elif k == 'description':
+            assert not pool_data['description']
+        pool_data.pop(k)
+
+    assert not pool_data, "unexpected keys found in data"
+
+
+def test_create_cccl_member_min_config_w_name(pool, members):
+    """Test of ApiPoolMember create with a name."""
+    cfg_name = "member_min_config_w_name"
+    partition = "Common"
+
+    # pdb.set_trace()
+    member = ApiPoolMember(
+        partition=partition,
+        pool=pool,
+        **members[cfg_name]
+    )
+
+    assert member
+
+    # Test data
+    assert member.data
+    pool_data = copy.copy(member.data)
+    for k, _ in POOL_PROPERTIES.items():
+        if k == 'name':
+            assert pool_data['name'] == "192.168.200.100:80"
         elif k == 'partition':
             assert pool_data['partition'] == "Common"
         elif k == 'ratio':
