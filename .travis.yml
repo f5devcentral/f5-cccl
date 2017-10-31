@@ -7,8 +7,8 @@ env:
   global:
     - REPO="f5-cccl"
     - PKG_VERSION=$(python -c "import f5_cccl; print f5_cccl.__version__")
-    - MARATHON_BIGIP_CTLR_COMMIT_ISH=a7b291ec13099b51da02f414cff3a7d5632d56a3
-    - K8S_BIGIP_CTLR_COMMIT_ISH=dc8b4d608ec37226ce3c25fc804eacb4441c75eb
+    - MARATHON_BIGIP_CTLR_COMMIT_ISH=246bd813e6261f18f68a28139f9168da97ed0268
+    - K8S_BIGIP_CTLR_COMMIT_ISH=fcef6115740dd5f4d30c706545b0c4ff6080948e
 services:
    - docker
 before_install:
