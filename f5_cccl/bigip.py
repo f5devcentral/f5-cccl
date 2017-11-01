@@ -274,7 +274,8 @@ class BigIPProxy(object):
         #  Delete non-legacy policies
         policies = [
             p for p in all_policies
-            if self._policy_status_check(p, virtuals)
+            if self._manageable_resource(p)
+            and self._policy_status_check(p, virtuals)
         ]
 
         #  Refresh the virtuals cache.
