@@ -27,6 +27,7 @@ from f5_cccl.resource.ltm.monitor.http_monitor import ApiHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import ApiHTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import ApiICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import ApiTCPMonitor
+from f5_cccl.resource.ltm.monitor.udp_monitor import ApiUDPMonitor
 from f5_cccl.resource.ltm.irule import ApiIRule
 from f5_cccl.resource.ltm.policy import ApiPolicy
 from f5_cccl.resource.ltm.pool import ApiPool
@@ -85,6 +86,7 @@ class ServiceConfigReader(object):
         config_dict['https_monitors'] = dict()
         config_dict['icmp_monitors'] = dict()
         config_dict['tcp_monitors'] = dict()
+        config_dict['udp_monitors'] = dict()
 
         LOGGER.debug("Loading desired service configuration...")
 
@@ -145,6 +147,10 @@ class ServiceConfigReader(object):
                 config_dict['tcp_monitors'].update(
                     {monitor_name: self._create_config_item(
                         ApiTCPMonitor, monitor)})
+            if monitor_type == "udp":
+                config_dict['udp_monitors'].update(
+                    {monitor_name: self._create_config_item(
+                        ApiUDPMonitor, monitor)})
 
         iapps = service_config.get('iapps', list())
         config_dict['iapps'] = {

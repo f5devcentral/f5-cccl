@@ -32,6 +32,7 @@ from f5_cccl.resource.ltm.monitor.http_monitor import IcrHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import IcrHTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import IcrICMPMonitor
 from f5_cccl.resource.ltm.monitor.tcp_monitor import IcrTCPMonitor
+from f5_cccl.resource.ltm.monitor.udp_monitor import IcrUDPMonitor
 from f5_cccl.resource.ltm.policy import IcrPolicy
 from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual_address import IcrVirtualAddress
@@ -223,6 +224,10 @@ class BigIPProxy(object):
                      self._partition)
         tcp_monitors = self._bigip.tm.ltm.monitor.tcps.get_collection(
             requests_params={"params": query})
+        LOGGER.debug("Retrieving udp_monitors from BIG-IP /%s...",
+                     self._partition)
+        udp_monitors = self._bigip.tm.ltm.monitor.udps.get_collection(
+            requests_params={"params": query})
         LOGGER.debug("Retrieving gateway icmp_monitors from BIG-IP /%s...",
                      self._partition)
         icmp_monitors = (
@@ -356,6 +361,10 @@ class BigIPProxy(object):
             m.name: self._create_resource(IcrICMPMonitor, m)
             for m in icmp_monitors if self._manageable_resource(m)
         }
+        self._monitors['udp'] = {
+            m.name: self._create_resource(IcrUDPMonitor, m)
+            for m in udp_monitors if self._manageable_resource(m)
+        }
 
         LOGGER.debug(
             "BIG-IP ltm refresh took %.5f seconds.", (time() - start_time))
@@ -425,6 +434,10 @@ class BigIPProxy(object):
     def get_tcp_monitors(self):
         """Return the index of TCP monitors."""
         return self.get_monitors('tcp')
+
+    def get_udp_monitors(self):
+        """Return the index of UDP monitors."""
+        return self.get_monitors('udp')
 
     def get_https_monitors(self):
         """Return the index of HTTPS monitors."""

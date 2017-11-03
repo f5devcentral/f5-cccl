@@ -146,4 +146,5 @@ def test_bigip_properties(bigip_proxy):
     http_hc = big_ip.get_http_monitors()
     https_hc = big_ip.get_https_monitors()
     tcp_hc = big_ip.get_tcp_monitors()
+    udp_hc = big_ip.get_udp_monitors()
     icmp_hc = big_ip.get_icmp_monitors()
