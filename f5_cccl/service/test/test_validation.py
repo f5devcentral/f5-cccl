@@ -42,18 +42,30 @@ class TestConfigValidator(object):
     """Test Class for testing validator.ServiceConfigValidator"""
 
     @pytest.fixture(autouse=True)
-    def default_schema(self):
-        with open('f5_cccl/schemas/cccl-api-schema.yml', 'r') as fp:
+    def ltm_schema(self):
+        with open('f5_cccl/schemas/cccl-ltm-api-schema.yml', 'r') as fp:
             yaml_data = yaml.load(fp)
         return yaml_data
 
     @pytest.fixture()
-    def valid_config(self):
-        with open('f5_cccl/schemas/tests/service.json', 'r') as fp:
+    def net_schema(self):
+        with open('f5_cccl/schemas/cccl-net-api-schema.yml', 'r') as fp:
+            yaml_data = yaml.load(fp)
+        return yaml_data
+
+    @pytest.fixture()
+    def valid_ltm_config(self):
+        with open('f5_cccl/schemas/tests/ltm_service.json', 'r') as fp:
             service_data = json.load(fp)
         return service_data
 
-    def test__init__(self, default_schema):
+    @pytest.fixture()
+    def valid_net_config(self):
+        with open('f5_cccl/schemas/tests/net_service.json', 'r') as fp:
+            service_data = json.load(fp)
+        return service_data
+
+    def test__init__(self, ltm_schema, net_schema):
         """Test the creation of the CCCL service config validator."""
 
         # Test a schema that does not exist.
@@ -77,26 +89,43 @@ class TestConfigValidator(object):
         validator = ServiceConfigValidator()
         assert validator.validator
         assert validator.validator.META_SCHEMA == Draft4Validator.META_SCHEMA
-        assert validator.validator.schema == default_schema
+        assert validator.validator.schema == ltm_schema
 
-    def test_validate(self, valid_config):
+        validator = ServiceConfigValidator(
+            schema="f5_cccl/schemas/cccl-net-api-schema.yml")
+        assert validator.validator
+        assert validator.validator.META_SCHEMA == Draft4Validator.META_SCHEMA
+        assert validator.validator.schema == net_schema
+
+    def test_validate(self, valid_ltm_config, valid_net_config):
         """Test the validation method."""
-        validator = ServiceConfigValidator()
+        ltm_validator = ServiceConfigValidator()
+        net_validator = ServiceConfigValidator(
+            schema="f5_cccl/schemas/cccl-net-api-schema.yml")
 
         try:
-            validator.validate(valid_config)
+            ltm_validator.validate(valid_ltm_config)
+            net_validator.validate(valid_net_config)
         except F5CcclValidationError as e:
             assert False, "ValidationError raised for valid config"
 
         # Modify the configuration to make invalid.
-        invalid_config = copy.deepcopy(valid_config)
+        invalid_config = copy.deepcopy(valid_ltm_config)
         virtuals = invalid_config['virtualServers']
         for virtual in virtuals:
             virtual.pop('destination', None)
             virtual.pop('name', None)
 
         with pytest.raises(F5CcclValidationError):
-            validator.validate(invalid_config)
+            ltm_validator.validate(invalid_config)
+
+        invalid_config = copy.deepcopy(valid_net_config)
+        arps = invalid_config['arps']
+        for arp in arps:
+            arp.pop('ipAddress', None)
+
+        with pytest.raises(F5CcclValidationError):
+            net_validator.validate(invalid_config)
 
 
 @pytest.fixture()

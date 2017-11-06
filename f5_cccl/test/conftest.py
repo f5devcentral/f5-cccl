@@ -298,20 +298,60 @@ class HealthCheck():
         pass
 
 
-class VxLANTunnel():
-    """A mock BIG-IP VxLAN tunnel."""
+class Arp():
+    """A mock BIG-IP Arp entry."""
 
-    def __init__(self, partition, name, initial_records):
+    def __init__(self, name, **kwargs):
         """Initialize the object."""
-        self.partition = partition
         self.name = name
-        self.records = initial_records
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
 
-    def update(self, **kwargs):
-        """Update list of vxlan records."""
-        self.records = []
-        if 'records' in kwargs:
-            self.records = kwargs['records']
+        self.raw = self.__dict__
+
+    def modify(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def create(self, name=None, partition=None, **kwargs):
+        """Create the ARP object."""
+        pass
+
+    def delete(self):
+        """Delete the ARP object."""
+        pass
+
+    def load(self, name=None, partition=None):
+        """Load the ARP object."""
+        return Arp(name)
+
+
+class FDBTunnel():
+    """A mock BIG-IP FDB tunnel entry."""
+
+    def __init__(self, name, **kwargs):
+        """Initialize the object."""
+        self.name = name
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+
+        self.raw = self.__dict__
+
+    def modify(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
+    def create(self, name=None, partition=None, **kwargs):
+        """Create the FDB tunnel object."""
+        pass
+
+    def delete(self):
+        """Delete the FDB tunnel object."""
+        pass
+
+    def load(self, name=None, partition=None):
+        """Load the FDB tunnel object."""
+        return FDBTunnel(name)
 
 
 class MockService():
@@ -697,6 +737,38 @@ class MockDataGroup():
         self.internals = MockDataGroupInternals()
 
 
+class MockArps():
+    """A mock net ARP object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.arp = Arp('test')
+
+    def get_collection(self):
+        """Get collection of ARPS."""
+        pass
+
+
+class MockFDB():
+    """A Mock net FDB object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.tunnels = MockFDBTunnels()
+
+
+class MockFDBTunnels():
+    """A mock net FDB tunnel object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.tunnel = FDBTunnel('test')
+
+    def get_collection(self):
+        """Get collection of FDB tunnels."""
+        pass
+
+
 class MockLtm():
     """A mock BIG-IP ltm object."""
 
@@ -711,9 +783,20 @@ class MockLtm():
         self.virtual_address_s = MockVirtualAddresses()
         self.data_group = MockDataGroup()
 
+
+class MockNet():
+    """A mock BIG-IP net object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.arps = MockArps()
+        self.fdb = MockFDB()
+
+
 class MockTm():
     def __init__(self):
         self.ltm = MockLtm()
+        self.net = MockNet()
         self.sys = MockSys()
 
 
@@ -839,11 +922,33 @@ class MockBigIP(ManagementRoot):
         ]
         return int_dgs
 
-    def read_test_data(self, bigip_state):
+    def mock_arps_get_collection(self, requests_params=None):
+        """Mock: Return a mocked collection of arps."""
+        partition = self.partition_from_params(requests_params['params'])
+        resources = self.bigip_net_data['arps']
+        arps = [
+            Arp(**r)
+            for r in resources if partition == r['partition']
+        ]
+        return arps
+
+    def mock_fdb_tunnels_get_collection(self, requests_params=None):
+        """Mock: Return a mocked collection of arps."""
+        partition = self.partition_from_params(requests_params['params'])
+        resources = self.bigip_net_data['fdbTunnels']
+        tunnels = [
+            FDBTunnel(**r)
+            for r in resources if partition == r['partition']
+        ]
+        return tunnels
+
+    def read_test_data(self, bigip_ltm_state, bigip_net_state):
         """Read test data for the Big-IP state."""
         # Read the BIG-IP state
-        with open(bigip_state) as json_data:
+        with open(bigip_ltm_state) as json_data:
             self.bigip_data = json.load(json_data)
+        with open(bigip_net_state) as json_data:
+            self.bigip_net_data = json.load(json_data)
 
 
 @pytest.fixture
@@ -879,8 +984,14 @@ def bigip_proxy():
     mgmt_root.tm.ltm.data_group.internals.get_collection = \
         Mock(side_effect=mgmt_root.mock_data_group_internals_get_collection)
 
-    bigip_state='f5_cccl/test/bigip_data.json'
-    mgmt_root.read_test_data(bigip_state)
+    mgmt_root.tm.net.arps.get_collection = \
+        Mock(side_effect=mgmt_root.mock_arps_get_collection)
+    mgmt_root.tm.net.fdb.tunnels.get_collection = \
+        Mock(side_effect=mgmt_root.mock_fdb_tunnels_get_collection)
+
+    bigip_ltm_state='f5_cccl/test/bigip_data.json'
+    bigip_net_state='f5_cccl/test/bigip_net_data.json'
+    mgmt_root.read_test_data(bigip_ltm_state, bigip_net_state)
 
     bigip_proxy = bigip.BigIPProxy(mgmt_root, 'test')
 

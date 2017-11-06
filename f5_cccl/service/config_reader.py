@@ -22,6 +22,7 @@ from __future__ import print_function
 import logging
 
 import f5_cccl.exceptions as cccl_error
+# LTM resources
 from f5_cccl.resource.ltm.monitor.http_monitor import ApiHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import ApiHTTPSMonitor
 from f5_cccl.resource.ltm.monitor.icmp_monitor import ApiICMPMonitor
@@ -33,6 +34,10 @@ from f5_cccl.resource.ltm.virtual import ApiVirtualServer
 from f5_cccl.resource.ltm.virtual_address import ApiVirtualAddress
 from f5_cccl.resource.ltm.app_service import ApiApplicationService
 from f5_cccl.resource.ltm.internal_data_group import ApiInternalDataGroup
+
+# NET resources
+from f5_cccl.resource.net.arp import ApiArp
+from f5_cccl.resource.net.fdb.tunnel import ApiFDBTunnel
 
 
 LOGGER = logging.getLogger(__name__)
@@ -73,8 +78,8 @@ class ServiceConfigReader(object):
 
         return config_resource
 
-    def read_config(self, service_config):
-        """Read the service configuration and save as resource object."""
+    def read_ltm_config(self, service_config):
+        """Read the LTM service configuration and save as resource object."""
         config_dict = dict()
         config_dict['http_monitors'] = dict()
         config_dict['https_monitors'] = dict()
@@ -145,6 +150,24 @@ class ServiceConfigReader(object):
         config_dict['iapps'] = {
             i['name']: self._create_config_item(ApiApplicationService, i)
             for i in iapps
+        }
+
+        return config_dict
+
+    def read_net_config(self, service_config):
+        """Read the NET service configuration and save as resource object."""
+        config_dict = dict()
+
+        arps = service_config.get('arps', list())
+        config_dict['arps'] = {
+            a['name']: self._create_config_item(ApiArp, a)
+            for a in arps
+        }
+
+        tunnels = service_config.get('fdbTunnels', list())
+        config_dict['fdbTunnels'] = {
+            t['name']: self._create_config_item(ApiFDBTunnel, t)
+            for t in tunnels
         }
 
         return config_dict

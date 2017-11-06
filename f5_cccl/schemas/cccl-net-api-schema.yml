@@ -1,0 +1,90 @@
+# Copyright 2017 F5 Networks Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# This is the schema definition of the cccl-api that
+# represents the list of service definitions to apply
+# to a partition.
+
+# What should this be?
+$schema: "http://json-schema.org/draft-04/schema#"
+id: "http://github.com/f5devcentral/f5-cccl/schemas/cccl-net-api-schema.yml"
+type: "object"
+description: |
+  The CCCL "Cecil" library allows clients to define services that describe
+  NET resources on a managed partition of the BIG-IP.  The managed resources
+  are defined in this schema definitions section.
+  The structure of the service definition is a collection of lists of
+  supported resources.  Initially this is ARPs and FDB tunnel records.
+  Where appropriate some basic constraints are defined by the schema; however,
+  not all actual constraints can be enforced by the schema.  It is the
+  responsibility of the client application to ensure that all dependencies
+  among the specified resources are met; otherwise, the service will be deployed
+  in a degraded state.
+definitions:
+
+  arpType:
+    type: "object"
+    description: "Defines an ARP entry."
+    properties:
+      name:
+        type: "string"
+      ipAddress:
+        type: "string"
+      macAddress:
+        type: "string"
+    required:
+    - "name"
+    - "ipAddress"
+    - "macAddress"
+
+  fdbTunnelType:
+    type: "object"
+    description: "Defines an FDB tunnel."
+    properties:
+      name:
+        type: "string"
+      records:
+        items:
+          type: "array"
+          description: >
+            "List of records associated with this tunnel."
+          $ref: "#definitions/recordType"
+    required:
+    - "name"
+    - "records"
+
+  recordType:
+    type: "object"
+    properties:
+      name:
+        description: "Name of the record (MAC address)."
+        type: "string"
+      endpoint:
+        type: "string"
+    required:
+    - "name"
+    - "endpoint"
+
+properties:
+  arps:
+    description: "List of all ARP resources that should exist"
+    items:
+      $ref: "#/definitions/arpType"
+    type: "array"
+  fdbTunnels:
+    description: "List of all FDB tunnel resources that should exist"
+    items:
+      $ref: "#/definitions/fdbTunnelType"
+    type: "array"

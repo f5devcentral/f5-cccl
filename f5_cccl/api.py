@@ -23,7 +23,8 @@ from f5_cccl.bigip import BigIPProxy
 from f5_cccl.service.manager import ServiceManager
 
 resource_package = __name__
-api_schema = "schemas/cccl-api-schema.yml"
+ltm_api_schema = "schemas/cccl-ltm-api-schema.yml"
+net_api_schema = "schemas/cccl-net-api-schema.yml"
 
 LOGGER = logging.getLogger("f5_cccl")
 
@@ -58,20 +59,30 @@ class F5CloudServiceManager(object):
 
         if schema_path is None:
             schema_path = pkg_resources.resource_filename(resource_package,
-                                                          api_schema)
+                                                          ltm_api_schema)
         self._service_manager = ServiceManager(self._bigip_proxy,
                                                partition,
                                                schema_path)
 
-    def apply_config(self, services):
-        """Apply service configurations to the BIG-IP partition.
+    def apply_ltm_config(self, services):
+        """Apply LTM service configurations to the BIG-IP partition.
 
         :param services: A serializable object that defines one or more
-        services. Its schema is defined by cccl-api-schema.json.
+        services. Its schema is defined by cccl-ltm-api-schema.json.
 
         :return: True if successful, otherwise an exception is thrown.
         """
-        return self._service_manager.apply_config(services)
+        return self._service_manager.apply_ltm_config(services)
+
+    def apply_net_config(self, services):
+        """Apply NET service configurations to the BIG-IP partition.
+
+        :param services: A serializable object that defines one or more
+        services. Its schema is defined by cccl-net-api-schema.json.
+
+        :return: True if successful, otherwise an exception is thrown.
+        """
+        return self._service_manager.apply_net_config(services)
 
     def get_partition(self):
         """Get the name of the managed partition.
