@@ -88,3 +88,11 @@ properties:
     items:
       $ref: "#/definitions/fdbTunnelType"
     type: "array"
+  userFdbTunnels:
+    description: >
+      List of user-created FDB tunnel resources to be updated. These are expected to be
+      administratively created beforehand. CCCL will perform updates only on these tunnels,
+      no deletion or creation.
+    items:
+      $ref: "#/definitions/fdbTunnelType"
+    type: "array"

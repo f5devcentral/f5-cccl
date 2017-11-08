@@ -33,12 +33,12 @@ class F5CloudServiceManager(object):
     """F5 Common Controller Cloud Service Management.
 
     The F5 Common Controller Core Library (CCCL) is an orchestration package
-    that provides a declarative API for defining BIG-IP LTM services in
-    diverse environments (e.g. Marathon, Kubernetes, OpenStack).  The
+    that provides a declarative API for defining BIG-IP LTM and NET services
+    in diverse environments (e.g. Marathon, Kubernetes, OpenStack). The
     API will allow a user to create proxy services by specifying the:
-    virtual servers, pools, L7 policy and rules, and monitors  as a service
-    description object.  Each instance of the CCCL is initialized with
-    namespace qualifiers to allow it to uniquely identify the resources
+    virtual servers, pools, L7 policy and rules, monitors, arps, or fdbTunnels
+    as a service description object.  Each instance of the CCCL is initialized
+    with namespace qualifiers to allow it to uniquely identify the resources
     under its control.
     """
 

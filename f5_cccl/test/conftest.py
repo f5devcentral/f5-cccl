@@ -341,6 +341,10 @@ class FDBTunnel():
         """Placeholder: This will be mocked."""
         pass
 
+    def update(self, **kwargs):
+        """Placeholder: This will be mocked."""
+        pass
+
     def create(self, name=None, partition=None, **kwargs):
         """Create the FDB tunnel object."""
         pass
@@ -965,13 +969,12 @@ class MockBigIP(ManagementRoot):
         ]
         return arps
 
-    def mock_fdb_tunnels_get_collection(self, requests_params=None):
+    def mock_fdb_tunnels_get_collection(self):
         """Mock: Return a mocked collection of arps."""
-        partition = self.partition_from_params(requests_params['params'])
         resources = self.bigip_net_data['fdbTunnels']
         tunnels = [
             FDBTunnel(**r)
-            for r in resources if partition == r['partition']
+            for r in resources
         ]
         return tunnels
 

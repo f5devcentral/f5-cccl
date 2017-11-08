@@ -4,21 +4,11 @@
             "kind": "tm:net:arp:arpstate",
             "name": "arp1",
             "partition": "test",
-            "fullPath": "/test/arp2",
+            "fullPath": "/test/arp1",
             "generation": 0,
             "selfLink": "https://localhost/mgmt/tm/net/arp/~test~arp1?ver=12.1.0",
             "ipAddress": "1.2.3.4",
             "macAddress": "12:ab:34:cd:56:ef"
-        },
-        {
-            "kind": "tm:net:arp:arpstate",
-            "name": "arp2",
-            "partition": "test",
-            "fullPath": "/test/arp2",
-            "generation": 0,
-            "selfLink": "https://localhost/mgmt/tm/net/arp/~test~arp2?ver=12.1.0",
-            "ipAddress": "4.3.2.1",
-            "macAddress": "98:ab:76:cd:54:ef"
         }
     ],
     "fdbTunnels": [
