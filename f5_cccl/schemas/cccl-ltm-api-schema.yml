@@ -17,7 +17,7 @@
 # represents the list of service definitions to apply
 # to a partition.
 $schema: "http://json-schema.org/draft-04/schema#"
-id: "http://github.com/f5devcentral/f5-cccl/schemas/cccl-api-schema.yml"
+id: "http://github.com/f5devcentral/f5-cccl/schemas/cccl-ltm-api-schema.yml"
 type: "object"
 description: |
   The CCCL "Cecil" library allows clients to define services that describe

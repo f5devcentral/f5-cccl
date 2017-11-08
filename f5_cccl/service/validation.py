@@ -30,7 +30,8 @@ import yaml
 import f5_cccl.exceptions as cccl_exc
 
 LOGGER = logging.getLogger(__name__)
-DEFAULT_SCHEMA = "./f5_cccl/schemas/cccl-api-schema.yml"
+DEFAULT_LTM_SCHEMA = "./f5_cccl/schemas/cccl-ltm-api-schema.yml"
+DEFAULT_NET_SCHEMA = "./f5_cccl/schemas/cccl-net-api-schema.yml"
 
 
 def read_yaml(target):
@@ -67,7 +68,7 @@ class ServiceConfigValidator(object):
     Optionally accepts an alternate json or yaml schema to validate against.
 
     """
-    def __init__(self, schema=DEFAULT_SCHEMA):
+    def __init__(self, schema=DEFAULT_LTM_SCHEMA):
         """Choose schema and initialize extended Draft4Validator.
 
         Raises:

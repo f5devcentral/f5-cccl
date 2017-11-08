@@ -160,27 +160,42 @@ def validate_types(validator, schema, services, rsc_type, rscs):
 
 def test_resources():
     """Load a service description and validate it with the schema."""
-    svcfile = 'f5_cccl/schemas/tests/service.json'
-    services = json.loads(open(svcfile, 'r').read())
-
-    validator = validation.ServiceConfigValidator()
-    result = validate(validator, services)
-    assert result == 'Schema Valid'
-
-    # validate these properties from the schema
-    resources = {'virtualServerType': 'virtualServers',
-                 'poolType': 'pools',
-                 'l7PolicyType': 'l7Policies',
-                 'healthMonitorType': 'monitors',
-                 'iAppType': 'iapps'}
-
-    schema = validation.read_yaml_or_json(validation.DEFAULT_SCHEMA)
-
-    # Test the validator and verify that it:
-    # - catches missing required fields
-    # - supplies correct defaults
-    # - catches invalid parameter values and types
-    for key, value in resources.items():
-        validate_required(validator, schema, services, key, value)
-        validate_defaults(validator, schema, services, key, value)
-        validate_types(validator, schema, services, key, value)
+    resourceTypes = [
+        {
+            'file': 'f5_cccl/schemas/tests/ltm_service.json',
+            'schema': validation.DEFAULT_LTM_SCHEMA,
+            'resources': {
+                'virtualServerType': 'virtualServers',
+                'poolType': 'pools',
+                'l7PolicyType': 'l7Policies',
+                'healthMonitorType': 'monitors',
+                'iAppType': 'iapps'
+            }
+        },
+        {
+            'file': 'f5_cccl/schemas/tests/net_service.json',
+            'schema': validation.DEFAULT_NET_SCHEMA,
+            'resources': {
+                'arpType': 'arps',
+                'fdbTunnelType': 'fdbTunnels'
+            }
+        }
+    ]
+    for rType in resourceTypes:
+        svcfile = rType['file']
+        services = json.loads(open(svcfile, 'r').read())
+    
+        validator = validation.ServiceConfigValidator(rType['schema'])
+        result = validate(validator, services)
+        assert result == 'Schema Valid'
+    
+        schema = validation.read_yaml_or_json(rType['schema'])
+    
+        # Test the validator and verify that it:
+        # - catches missing required fields
+        # - supplies correct defaults
+        # - catches invalid parameter values and types
+        for key, value in rType['resources'].items():
+            validate_required(validator, schema, services, key, value)
+            validate_defaults(validator, schema, services, key, value)
+            validate_types(validator, schema, services, key, value)

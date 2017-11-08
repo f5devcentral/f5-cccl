@@ -25,6 +25,8 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from f5.sdk_exception import F5SDKError
 
 import f5_cccl.exceptions as cccl_exc
+
+# LTM resources
 from f5_cccl.resource.ltm.app_service import IcrApplicationService
 from f5_cccl.resource.ltm.monitor.http_monitor import IcrHTTPMonitor
 from f5_cccl.resource.ltm.monitor.https_monitor import IcrHTTPSMonitor
@@ -37,6 +39,10 @@ from f5_cccl.resource.ltm.virtual import IcrVirtualServer
 from f5_cccl.resource.ltm.node import Node
 from f5_cccl.resource.ltm.irule import IcrIRule
 from f5_cccl.resource.ltm.internal_data_group import IcrInternalDataGroup
+
+# NET resources
+from f5_cccl.resource.net.arp import IcrArp
+from f5_cccl.resource.net.fdb.tunnel import IcrFDBTunnel
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -55,11 +61,10 @@ class BigIPProxy(object):
     Args:
         bigip: Management Root of the BIG-IP
         partitions: List of BIG-IP partitions to manage
-        prefix: Opetional string to prepend to resource names
-        manage_types: A list of types managed by this proxy object.
+        prefix: Optional string to prepend to resource names
     """
 
-    def __init__(self, bigip, partition, prefix=None, manage_types=None):
+    def __init__(self, bigip, partition, prefix=None):
         """Initialize the BigIPProxy object."""
         LOGGER.debug("BigIPProxy.__init__()")
 
@@ -70,25 +75,7 @@ class BigIPProxy(object):
         if prefix:
             self._prefix = prefix
 
-        # This currently hard codes what resources we care about until we
-        # enable policy management.
-        if manage_types is None:
-            manage_types = ['/tm/ltm/virtual', '/tm/ltm/pool',
-                            '/tm/ltm/monitor', '/tm/sys/application/service']
-
-        LOGGER.info("BigIPProxy managed types: %s",
-                    ",".join(manage_types))
-
-        self._manage_virtual = '/tm/ltm/virtual' in manage_types
-        self._manage_pool = '/tm/ltm/pool' in manage_types
-        self._manage_monitor = '/tm/ltm/monitor' in manage_types
-        self._manage_policy = '/tm/ltm/policy' in manage_types
-        self._manage_iapp = '/tm/sys/application/service' in manage_types
-        self._manage_irule = '/tm/ltm/rule' in manage_types
-        self._manage_internal_data_group = \
-            '/tm/ltm/data-group/internal' in manage_types
-
-        # BIG-IP resources
+        # BIG-IP LTM resources
         self._virtuals = dict()
         self._pools = dict()
         self._all_pools = dict()
@@ -98,6 +85,10 @@ class BigIPProxy(object):
         self._nodes = dict()
         self._irules = dict()
         self._internal_data_groups = dict()
+
+        # BIG-IP NET resources
+        self._arps = dict()
+        self._fdb_tunnels = dict()
 
     def mgmt_root(self):
         """Return a reference to the proxied BIG-IP."""
@@ -137,15 +128,25 @@ class BigIPProxy(object):
 
         return (referenced, unreferenced)
 
-    def refresh(self):
-        """Refresh the internal cache with the BIG-IP state."""
-        LOGGER.debug("Refreshing the BIG-IP cached state...")
+    def refresh_ltm(self):
+        """Refresh the internal ltm cache with the BIG-IP state."""
+        LOGGER.debug("Refreshing the BIG-IP ltm cached state...")
         try:
-            self._refresh()
+            self._refresh_ltm()
         except F5SDKError as error:
             LOGGER.error("F5 SDK Error: %s", error)
             raise cccl_exc.F5CcclCacheRefreshError(
-                "BigIPProxy: failed to refresh internal BIG-IP state.")
+                "BigIPProxy: failed to refresh internal BIG-IP ltm state.")
+
+    def refresh_net(self):
+        """Refresh the internal net cache with the BIG-IP state."""
+        LOGGER.debug("Refreshing the BIG-IP net cached state...")
+        try:
+            self._refresh_net()
+        except F5SDKError as error:
+            LOGGER.error("F5 SDK Error: %s", error)
+            raise cccl_exc.F5CcclCacheRefreshError(
+                "BigIPProxy: failed to refresh internal BIG-IP net state.")
 
     def _create_resource(self, resource_type, resource_obj):
         """Create an iControl REST resource and handle exceptions on init.
@@ -200,8 +201,8 @@ class BigIPProxy(object):
 
         return True
 
-    def _refresh(self):  # pylint: disable=too-many-locals
-        """Refresh the internal cache with the BIG-IP state."""
+    def _refresh_ltm(self):  # pylint: disable=too-many-locals
+        """Refresh the internal ltm cache with the BIG-IP state."""
         start_time = time()
 
         partition_filter = "$filter=partition+eq+{}".format(self._partition)
@@ -357,7 +358,38 @@ class BigIPProxy(object):
         }
 
         LOGGER.debug(
-            "BIG-IP refresh took %.5f seconds.", (time() - start_time))
+            "BIG-IP ltm refresh took %.5f seconds.", (time() - start_time))
+
+    def _refresh_net(self):
+        """Refresh the internal net cache with the BIG-IP state."""
+        start_time = time()
+        query = "$filter=partition+eq+{}".format(self._partition)
+
+        # Retrieve the list of arps
+        LOGGER.debug("Retrieving arps from BIG-IP /%s...", self._partition)
+        arps = self._bigip.tm.net.arps.get_collection(
+            requests_params={"params": query})
+
+        # Retrieve the list of tunnels
+        LOGGER.debug(
+            "Retrieving fdb tunnels from BIG-IP /%s...", self._partition)
+        tunnels = self._bigip.tm.net.fdb.tunnels.get_collection(
+            requests_params={"params": query})
+
+        # Refresh the arp cache
+        self._arps = {
+            a.name: self._create_resource(IcrArp, a)
+            for a in arps if self._manageable_resource(a)
+        }
+
+        # Refresh the tunnel cache
+        self._fdb_tunnels = {
+            t.name: self._create_resource(IcrFDBTunnel, t)
+            for t in tunnels if self._manageable_resource(t)
+        }
+
+        LOGGER.debug(
+            "BIG-IP net refresh took %.5f seconds.", (time() - start_time))
 
     def get_virtuals(self, all_virtuals=False):
         """Return the index of virtual servers."""
@@ -425,3 +457,11 @@ class BigIPProxy(object):
     def get_internal_data_groups(self):
         """Return the index of internal data_groups."""
         return self._internal_data_groups
+
+    def get_arps(self):
+        """Return the index of arps."""
+        return self._arps
+
+    def get_fdb_tunnels(self):
+        """Return the index of tunnels."""
+        return self._fdb_tunnels

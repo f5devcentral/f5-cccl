@@ -13,14 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# LTM resources
 from f5_cccl.resource.ltm.pool import IcrPool
 from f5_cccl.resource.ltm.virtual import VirtualServer
 from f5_cccl.resource.ltm.node import Node
 from f5_cccl.resource.ltm.app_service import IcrApplicationService
 
+# NET resources
+from f5_cccl.resource.net.arp import IcrArp
+from f5_cccl.resource.net.fdb.tunnel import IcrFDBTunnel
 
-def test_bigip_refresh(bigip_proxy):
-    """Test BIG-IP refresh function."""
+
+def test_bigip_refresh_ltm(bigip_proxy):
+    """Test BIG-IP refresh_ltm function."""
     big_ip = bigip_proxy.mgmt_root()
 
     test_pools = [
@@ -41,7 +47,7 @@ def test_bigip_refresh(bigip_proxy):
     ]
 
     # refresh the BIG-IP state
-    bigip_proxy.refresh()
+    bigip_proxy.refresh_ltm()
 
     # verify pools and pool members
     assert big_ip.tm.ltm.pools.get_collection.called
@@ -85,6 +91,34 @@ def test_bigip_refresh(bigip_proxy):
         assert bigip_proxy._nodes[n.name] == n
 
 
+def test_bigip_refresh_net(bigip_proxy):
+    """Test BIG-IP refresh_net function."""
+    bigip = bigip_proxy.mgmt_root()
+
+    test_arps = [
+        IcrArp(**a) for a in bigip.bigip_net_data['arps']
+        if a['partition'] == 'test'
+    ]
+    test_tunnels = [
+        IcrFDBTunnel(**t) for t in bigip.bigip_net_data['fdbTunnels']
+        if t['partition'] == 'test'
+    ]
+
+    # refresh the BIG-IP state
+    bigip_proxy.refresh_net()
+
+    # verify arps
+    assert bigip.tm.net.arps.get_collection.called
+    assert len(bigip_proxy._arps) == len(test_arps)
+    for a in test_arps:
+        assert bigip_proxy._arps[a.name] == a
+
+    # verify fdb tunnels
+    assert bigip.tm.net.fdb.tunnels.get_collection.called
+    assert len(bigip_proxy._fdb_tunnels) == len(test_tunnels)
+    for t in test_tunnels:
+        assert bigip_proxy._fdb_tunnels[t.name] == t
+
 def test_bigip_properties(bigip_proxy):
     """Test BIG-IP properties function."""
     big_ip = bigip_proxy
@@ -99,7 +133,7 @@ def test_bigip_properties(bigip_proxy):
     ]
 
     # refresh the BIG-IP state
-    big_ip.refresh()
+    big_ip.refresh_ltm()
 
     assert len(big_ip.get_pools()) == len(test_pools)
     for p in test_pools:

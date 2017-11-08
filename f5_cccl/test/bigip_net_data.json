@@ -1,0 +1,57 @@
+{
+    "arps": [
+        {
+            "kind": "tm:net:arp:arpstate",
+            "name": "arp1",
+            "partition": "test",
+            "fullPath": "/test/arp2",
+            "generation": 0,
+            "selfLink": "https://localhost/mgmt/tm/net/arp/~test~arp1?ver=12.1.0",
+            "ipAddress": "1.2.3.4",
+            "macAddress": "12:ab:34:cd:56:ef"
+        },
+        {
+            "kind": "tm:net:arp:arpstate",
+            "name": "arp2",
+            "partition": "test",
+            "fullPath": "/test/arp2",
+            "generation": 0,
+            "selfLink": "https://localhost/mgmt/tm/net/arp/~test~arp2?ver=12.1.0",
+            "ipAddress": "4.3.2.1",
+            "macAddress": "98:ab:76:cd:54:ef"
+        }
+    ],
+    "fdbTunnels": [
+        {
+            "kind": "tm:net:fdb:tunnel:tunnelstate",
+            "name": "tunnel1",
+            "partition": "test",
+            "fullPath": "/test/tunnel1",
+            "generation": 80760,
+            "selfLink": "https://localhost/mgmt/tm/net/fdb/tunnel/~test~tunnel1?ver=12.1.0",
+            "recordsReference": {
+                "kind": "tm:net:fdb:tunnel:records:recordscollectionstate",
+                "selfLink": "https://localhost/mgmt/tm/net/fdb/tunnel/~test~tunnel1/records?ver=12.1.0",
+                "isSubcollection": true,
+                "items": [
+                    {
+                        "kind": "tm:net:fdb:tunnel:records:recordsstate",
+                        "name": "12:ab:34:cd:56:ef",
+                        "fullPath": "12:ab:34:cd:56:ef",
+                        "generation": 80760,
+                        "selfLink": "https://localhost/mgmt/tm/net/fdb/tunnel/~test~tunnel1/records/12:ab:34:cd:56:ef?ver=12.1.0",
+                        "endpoint": "10.1.2.3"
+                    },
+                    {
+                        "kind": "tm:net:fdb:tunnel:records:recordsstate",
+                        "name": "98:ab:76:cd:54:ef",
+                        "fullPath": "98:ab:76:cd:54:ef",
+                        "generation": 80760,
+                        "selfLink": "https://localhost/mgmt/tm/net/fdb/tunnel/~test~tunnel1/records/98:ab:76:cd:54:ef?ver=12.1.0",
+                        "endpoint": "10.2.3.4"
+                    }
+                ]
+            }
+        }
+    ]
+}

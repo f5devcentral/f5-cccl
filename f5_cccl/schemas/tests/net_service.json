@@ -1,0 +1,30 @@
+{
+    "name": "test",
+    "arps": [
+        {
+            "name": "arp1",
+            "ipAddress": "1.2.3.4",
+            "macAddress": "12:ab:34:cd:56:ef"
+         },
+         {
+            "name": "arp2",
+            "ipAddress": "4.3.2.1",
+            "macAddress": "98:ab:76:cd:54:ef"
+         }
+    ],
+    "fdbTunnels": [
+         {
+            "name": "tunnel1",
+            "records": [
+                    {
+                         "name": "12:ab:34:cd:56:ef",
+                         "endpoint": "10.1.2.3"
+                    },
+                    {
+                         "name": "98:ab:76:cd:54:ef",
+                         "endpoint": "10.2.3.4"
+                    }
+            ]
+        }
+    ]
+}

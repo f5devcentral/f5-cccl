@@ -179,7 +179,7 @@ class ServiceConfigDeployer(object):
         desired config.
         """
         LOGGER.debug("Perform post-deploy service tasks...")
-        self._bigip.refresh()
+        self._bigip.refresh_ltm()
 
         # Delete/update nodes (no creation)
         LOGGER.debug("Post-process nodes.")
@@ -218,7 +218,7 @@ class ServiceConfigDeployer(object):
 
         :returns: The number of tasks that could not be completed.
         """
-        self._bigip.refresh()
+        self._bigip.refresh_ltm()
 
         # Get the list of virtual address tasks
         LOGGER.debug("Getting virtual address tasks...")
@@ -349,10 +349,10 @@ class ServiceManager(object):
         """Get the name of the managed partition."""
         return self._partition
 
-    def apply_config(self, service_config):
-        """Apply the desired service configuration.
+    def apply_ltm_config(self, service_config):
+        """Apply the desired LTM service configuration.
         Args:
-            service_config: The desired configuration state of the mananged
+            service_config: The desired configuration state of the managed
             partition.
 
         Returns:
@@ -363,14 +363,14 @@ class ServiceManager(object):
             does not conform to the API schema.
         """
 
-        LOGGER.debug("apply_config start")
+        LOGGER.debug("apply_ltm_config start")
         start_time = time()
 
         # Validate the service configuration.
         self._config_validator.validate(service_config)
 
         # Read in the configuration
-        desired_config = self._config_reader.read_config(service_config)
+        desired_config = self._config_reader.read_ltm_config(service_config)
 
         # Deploy the service desired configuratio.
         retval = self._service_deployer.deploy(desired_config)
@@ -379,3 +379,24 @@ class ServiceManager(object):
             "apply_config took %.5f seconds.", (time() - start_time))
 
         return retval
+
+    def apply_net_config(self, service_config):
+        """Apply the desired NET service configuration.
+        Args:
+            service_config: The desired configuration state of the managed
+            partition.
+
+        Returns:
+            The number of resources that were not successfully deployed.
+
+        Raises:
+            F5CcclValidationError: Indicates that the service_configuration
+            does not conform to the API schema.
+        """
+
+        LOGGER.debug("apply_net_config start")
+
+        # Validate the service configuration.
+        self._config_validator.validate(service_config)
+        # The rest will be implemented in the next iteration
+        return 0

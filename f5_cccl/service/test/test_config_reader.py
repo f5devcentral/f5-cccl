@@ -33,9 +33,12 @@ class TestServiceConfigReader:
     def setup(self):
         self.partition = "Test"
 
-        svcfile = 'f5_cccl/schemas/tests/service.json'
-        with open(svcfile, 'r') as fp:
-            self.service = json.loads(fp.read())
+        svcfile_ltm = 'f5_cccl/schemas/tests/ltm_service.json'
+        with open(svcfile_ltm, 'r') as fp:
+            self.ltm_service = json.loads(fp.read())
+        svcfile_net = 'f5_cccl/schemas/tests/net_service.json'
+        with open(svcfile_net, 'r') as fp:
+            self.net_service = json.loads(fp.read())
 
     def test_create_reader(self):
         reader = ServiceConfigReader(
@@ -46,7 +49,7 @@ class TestServiceConfigReader:
 
     def test_get_config(self):
         reader = ServiceConfigReader(self.partition)
-        config = reader.read_config(self.service)
+        config = reader.read_ltm_config(self.ltm_service)
 
         assert len(config.get('virtuals')) == 1
         assert len(config.get('pools')) == 1
@@ -57,9 +60,13 @@ class TestServiceConfigReader:
         assert len(config.get('l7policies')) == 1
         assert len(config.get('iapps')) == 1
 
+        config = reader.read_net_config(self.net_service)
+        assert len(config.get('arps')) == 2
+        assert len(config.get('fdbTunnels')) == 1
+
     def test_create_config_item_exception(self):
 
         with patch.object(ApiVirtualServer, '__init__', side_effect=ValueError("test exception")):
             reader = ServiceConfigReader(self.partition)
             with pytest.raises(F5CcclConfigurationReadError) as e:
-                reader.read_config(self.service)
+                reader.read_ltm_config(self.ltm_service)
