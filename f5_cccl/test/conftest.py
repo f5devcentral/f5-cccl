@@ -546,6 +546,38 @@ class MockTcps():
         return []
 
 
+class MockUdp():
+    """A mock Udps udp object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        pass
+
+    def create(self, partition=None, **kwargs):
+        """Create a udp healthcheck object."""
+        pass
+
+    def delete(self):
+        """Delete the monitor object."""
+        pass
+
+    def load(self, name=None, partition=None):
+        """Load a udp healthcheck object."""
+        return MockUdp()
+
+
+class MockUdps():
+    """A mock Monitor udps object."""
+
+    def __init__(self):
+        """Initialize the object."""
+        self.udp = MockUdp()
+
+    def get_collection(self):
+        """Get collection of udp healthchecks."""
+        return []
+
+
 class MockIcmp():
     """A mock Icmps tcp object."""
 
@@ -617,6 +649,7 @@ class MockMonitor():
         """Initialize the object."""
         self.https = MockHttps()
         self.tcps = MockTcps()
+        self.udps = MockUdps()
         self.https_s = MockHttpSs()
         self.gateway_icmps = MockIcmps()
 
@@ -972,6 +1005,8 @@ def bigip_proxy():
     mgmt_root.tm.ltm.monitor.https_s.get_collection = \
         Mock(side_effect=mgmt_root.mock_monitors_get_collection)
     mgmt_root.tm.ltm.monitor.tcps.get_collection = \
+        Mock(side_effect=mgmt_root.mock_monitors_get_collection)
+    mgmt_root.tm.ltm.monitor.udps.get_collection = \
         Mock(side_effect=mgmt_root.mock_monitors_get_collection)
     mgmt_root.tm.ltm.monitor.gateway_icmps.get_collection = \
         Mock(side_effect=mgmt_root.mock_monitors_get_collection)

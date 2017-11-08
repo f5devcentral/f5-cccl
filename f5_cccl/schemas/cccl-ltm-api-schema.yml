@@ -410,6 +410,7 @@ definitions:
           - "tcp"
           - "https"
           - "icmp"
+          - "udp"
       name: 
         type: "string"
         description: "Specifies the name of the monitor."
