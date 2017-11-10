@@ -102,7 +102,6 @@ def create_server_ssl_profile(mgmt, partition, profile):
         serverName = profile.get('serverName', None)
         sniDefault = profile.get('sniDefault', False)
         peerCertMode = profile.get('peerCertMode', 'ignore')
-        caFile = profile.get('caFile', '')
         kwargs = {}
         if cert != "":
             kwargs = {'chain': cert_name}
