@@ -92,11 +92,17 @@ def create_server_ssl_profile(mgmt, partition, profile):
         # Unable to install cert
         return incomplete
 
+    caFile = profile.get('caFile', '')
+    if caFile == 'self':
+        # Do not create a SSL profile, just install the certificate.
+        return 0
+
     try:
         # create ssl-server profile
         serverName = profile.get('serverName', None)
         sniDefault = profile.get('sniDefault', False)
         peerCertMode = profile.get('peerCertMode', 'ignore')
+        caFile = profile.get('caFile', '')
         kwargs = {}
         if cert != "":
             kwargs = {'chain': cert_name}
@@ -106,6 +112,7 @@ def create_server_ssl_profile(mgmt, partition, profile):
                                   serverName=serverName,
                                   sniDefault=sniDefault,
                                   peerCertMode=peerCertMode,
+                                  caFile=caFile,
                                   **kwargs)
     except Exception as err:  # pylint: disable=broad-except
         incomplete += 1
