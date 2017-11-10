@@ -136,7 +136,7 @@ class ServiceConfigDeployer(object):
         delete_monitors = list()
         update_monitors = list()
 
-        for hm_type in ['http', 'https', 'tcp', 'icmp']:
+        for hm_type in ['http', 'https', 'tcp', 'icmp', 'udp']:
             existing = self._bigip.get_monitors(hm_type)
             config_key = "{}_monitors".format(hm_type)
             desired = desired_config.get(config_key, dict())
