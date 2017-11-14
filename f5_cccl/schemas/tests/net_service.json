@@ -2,27 +2,33 @@
     "name": "test",
     "arps": [
         {
-            "name": "arp1",
-            "ipAddress": "1.2.3.4",
-            "macAddress": "12:ab:34:cd:56:ef"
-         },
-         {
-            "name": "arp2",
+            "name": "test-arp1",
             "ipAddress": "4.3.2.1",
-            "macAddress": "98:ab:76:cd:54:ef"
+            "macAddress": "12:ab:34:cd:56:ef"
          }
     ],
     "fdbTunnels": [
          {
-            "name": "tunnel1",
+            "name": "test-tunnel1",
             "records": [
                     {
                          "name": "12:ab:34:cd:56:ef",
-                         "endpoint": "10.1.2.3"
+                         "endpoint": "1.2.3.4"
                     },
                     {
                          "name": "98:ab:76:cd:54:ef",
                          "endpoint": "10.2.3.4"
+                    }
+            ]
+        }
+    ],
+    "userFdbTunnels": [
+         {
+            "name": "pre-existing-tunnel",
+            "records": [
+                    {
+                         "name": "13:ab:57:cd:90:ef",
+                         "endpoint": "5.6.7.8"
                     }
             ]
         }

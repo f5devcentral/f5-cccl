@@ -176,4 +176,10 @@ class ServiceConfigReader(object):
             for t in tunnels
         }
 
+        user_tunnels = service_config.get('userFdbTunnels', list())
+        config_dict['userFdbTunnels'] = {
+            t['name']: self._create_config_item(ApiFDBTunnel, t)
+            for t in user_tunnels
+        }
+
         return config_dict

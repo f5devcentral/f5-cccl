@@ -61,8 +61,9 @@ class TestServiceConfigReader:
         assert len(config.get('iapps')) == 1
 
         config = reader.read_net_config(self.net_service)
-        assert len(config.get('arps')) == 2
+        assert len(config.get('arps')) == 1
         assert len(config.get('fdbTunnels')) == 1
+        assert len(config.get('userFdbTunnels')) == 1
 
     def test_create_config_item_exception(self):
 

@@ -380,10 +380,14 @@ class BigIPProxy(object):
             requests_params={"params": query})
 
         # Retrieve the list of tunnels
+        # WORKAROUND: We don't pass the request_params in the fdb tunnel case,
+        # due to an issue with the f5-sdk expecting an object param, rather
+        # than the usual string param used as the query above. For now, we get
+        # all tunnels and then filter by partition when we create
+        # our local list.
         LOGGER.debug(
             "Retrieving fdb tunnels from BIG-IP /%s...", self._partition)
-        tunnels = self._bigip.tm.net.fdb.tunnels.get_collection(
-            requests_params={"params": query})
+        tunnels = self._bigip.tm.net.fdb.tunnels.get_collection()
 
         # Refresh the arp cache
         self._arps = {
@@ -394,7 +398,12 @@ class BigIPProxy(object):
         # Refresh the tunnel cache
         self._fdb_tunnels = {
             t.name: self._create_resource(IcrFDBTunnel, t)
-            for t in tunnels if self._manageable_resource(t)
+            for t in tunnels if (self._manageable_resource(t) and
+                                 t.partition == self._partition)
+        }
+        self._all_fdb_tunnels = {
+            t.name: self._create_resource(IcrFDBTunnel, t)
+            for t in tunnels if t.partition == self._partition
         }
 
         LOGGER.debug(
@@ -475,6 +484,9 @@ class BigIPProxy(object):
         """Return the index of arps."""
         return self._arps
 
-    def get_fdb_tunnels(self):
+    def get_fdb_tunnels(self, all_tunnels=False):
         """Return the index of tunnels."""
+        if all_tunnels:
+            return self._all_fdb_tunnels
+
         return self._fdb_tunnels

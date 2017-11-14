@@ -150,6 +150,18 @@ class ServiceConfigDeployer(object):
 
         return (create_monitors, update_monitors, delete_monitors)
 
+    def _get_user_tunnel_tasks(self, desired):
+        """Get the update tasks for user-created fdb tunnels."""
+        all_tunnels = self._bigip.get_fdb_tunnels(all_tunnels=True)
+        # Get only the tunnels we desire
+        update_list = set(desired) & set(all_tunnels)
+        update_list = [
+            desired[resource] for resource in update_list
+            if desired[resource] != all_tunnels[resource]
+        ]
+
+        return update_list
+
     def _desired_nodes(self):
         """Desired nodes is inferred from the active pool members."""
         desired_nodes = dict()
@@ -210,8 +222,8 @@ class ServiceConfigDeployer(object):
 
         self._update_resources(update_vaddrs)
 
-    def deploy(self, desired_config):  # pylint: disable=too-many-locals
-        """Deploy the managed partition with the desired config.
+    def deploy_ltm(self, desired_config):  # pylint: disable=too-many-locals
+        """Deploy the managed partition with the desired LTM config.
 
         :param desired_config: A dictionary with the configuration
         to be applied to the bigip managed partition.
@@ -288,6 +300,55 @@ class ServiceConfigDeployer(object):
 
         taskq_len = len(create_tasks) + len(update_tasks) + len(delete_tasks)
 
+        taskq_len = self._run_tasks(
+            taskq_len, create_tasks, update_tasks, delete_tasks)
+
+        self._post_deploy(desired_config)
+
+        return taskq_len
+
+    def deploy_net(self, desired_config):  # pylint: disable=too-many-locals
+        """Deploy the managed partition with the desired NET config.
+
+        :param desired_config: A dictionary with the configuration
+        to be applied to the bigip managed partition.
+
+        :returns: The number of tasks that could not be completed.
+        """
+        self._bigip.refresh_net()
+
+        # Get the list of arp tasks
+        LOGGER.debug("Getting arp tasks...")
+        existing = self._bigip.get_arps()
+        desired = desired_config.get('arps', dict())
+        (create_arps, update_arps, delete_arps) = (
+            self._get_resource_tasks(existing, desired))
+
+        # Get the list of tunnel tasks
+        LOGGER.debug("Getting tunnel tasks...")
+        existing = self._bigip.get_fdb_tunnels()
+        desired = desired_config.get('fdbTunnels', dict())
+        (create_tunnels, update_tunnels, delete_tunnels) = (
+            self._get_resource_tasks(existing, desired))
+
+        # If there are pre-existing (user-created) tunnels that we are
+        # managing, we want to only update these tunnels.
+        LOGGER.debug("Getting pre-existing tunnel update tasks...")
+        desired = desired_config.get('userFdbTunnels', dict())
+        update_existing_tunnels = self._get_user_tunnel_tasks(desired)
+
+        LOGGER.debug("Building task lists...")
+        create_tasks = create_arps + create_tunnels
+        update_tasks = update_arps + update_tunnels + update_existing_tunnels
+        delete_tasks = delete_arps + delete_tunnels
+
+        taskq_len = len(create_tasks) + len(update_tasks) + len(delete_tasks)
+
+        return self._run_tasks(
+            taskq_len, create_tasks, update_tasks, delete_tasks)
+
+    def _run_tasks(self, taskq_len, create_tasks, update_tasks, delete_tasks):
+        """Create, update, and delete the necessary resources."""
         # 'finished' indicates that the task queue is empty, or there is
         # no way to continue to make progress.  If there are errors in
         # deploying any resource, it is saved in the queue until another
@@ -318,8 +379,6 @@ class ServiceConfigDeployer(object):
 
             # Reset the taskq length.
             taskq_len = tasks_remaining
-
-        self._post_deploy(desired_config)
 
         return taskq_len
 
@@ -372,11 +431,11 @@ class ServiceManager(object):
         # Read in the configuration
         desired_config = self._config_reader.read_ltm_config(service_config)
 
-        # Deploy the service desired configuratio.
-        retval = self._service_deployer.deploy(desired_config)
+        # Deploy the service desired configuration.
+        retval = self._service_deployer.deploy_ltm(desired_config)
 
         LOGGER.debug(
-            "apply_config took %.5f seconds.", (time() - start_time))
+            "apply_ltm_config took %.5f seconds.", (time() - start_time))
 
         return retval
 
@@ -395,8 +454,18 @@ class ServiceManager(object):
         """
 
         LOGGER.debug("apply_net_config start")
+        start_time = time()
 
         # Validate the service configuration.
         self._config_validator.validate(service_config)
-        # The rest will be implemented in the next iteration
-        return 0
+
+        # Read in the configuration
+        desired_config = self._config_reader.read_net_config(service_config)
+
+        # Deploy the service desired configuration.
+        retval = self._service_deployer.deploy_net(desired_config)
+
+        LOGGER.debug(
+            "apply_net_config took %.5f seconds.", (time() - start_time))
+
+        return retval

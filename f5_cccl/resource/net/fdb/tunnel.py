@@ -63,6 +63,7 @@ class FDBTunnel(Resource):
         new_records = list()
         for record in records:
             new_records.append(Record(**record).data)
+        new_records = sorted(new_records, key=lambda x: sorted(x.keys()))
         return new_records
 
     def __hash__(self):  # pylint: disable=useless-super-delegation
@@ -74,34 +75,7 @@ class FDBTunnel(Resource):
 
 class IcrFDBTunnel(FDBTunnel):
     """FDBTunnel object created from the iControl REST object."""
-    def __init__(self, name, partition, **data):
-        tunnel_data = self._flatten_tunnel(data)
-        super(IcrFDBTunnel, self).__init__(name, partition, **tunnel_data)
-
-    def _flatten_tunnel(self, data):
-        """Flatten the tunnel data."""
-        tunnel = dict()
-        for key in FDBTunnel.properties:
-            if key == 'records':
-                recordsReference = data['recordsReference']
-                if 'items' in recordsReference:
-                    tunnel['records'] = self._flatten_records(
-                        recordsReference['items'])
-            elif key == 'name' or key == 'partition':
-                pass
-            else:
-                tunnel[key] = data.get(key)
-        return tunnel
-
-    def _flatten_records(self, record_list):
-        """Flatten the records data within the FDB tunnel."""
-        records = list()
-        for record in record_list:
-            flat_record = dict()
-            for key in Record.properties:
-                flat_record['name'] = record.get(key)
-            records.append(flat_record)
-        return records
+    pass
 
 
 class ApiFDBTunnel(FDBTunnel):
