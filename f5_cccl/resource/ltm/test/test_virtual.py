@@ -29,6 +29,7 @@ cfg_test = {
     'name': 'Virtual-1',
     'partition': 'my_partition',
     'destination': '/Test/1.2.3.4:80',
+    'source': '10.0.0.1/32',
     'pool': '/my_partition/pool1',
     'ipProtocol': 'tcp',
     'profiles': [
@@ -281,6 +282,7 @@ cfg_test_api_virtual = {
     'name': 'Virtual-1',
     'partition': 'my_partition',
     'destination': '/Test/1.2.3.4:80',
+    'source': '10.0.0.1/32',
     'pool': '/my_partition/pool1',
     'ipProtocol': 'tcp',
     'profiles': [

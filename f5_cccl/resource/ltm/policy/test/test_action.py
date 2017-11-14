@@ -27,20 +27,27 @@ def bigip():
 
 actions = {
     'redirect': {
-	"request": True,
-	"redirect": True,
-	"location": "http://boulder-dev.f5.com",
-	"httpReply": True
+        "request": True,
+        "redirect": True,
+        "location": "http://boulder-dev.f5.com",
+        "httpReply": True
     },
     'pool_forward': {
-	"request": True,
-	"forward": True,
-	"pool": "/Test/my_pool"
+        "request": True,
+        "forward": True,
+        "pool": "/Test/my_pool"
     },
     'reset': {
-	"request": True,
-	"forward": True,
-	"reset": True
+        "request": True,
+        "forward": True,
+        "reset": True
+    },
+    'setVariable': {
+        'request': True,
+        'expression': 'hello',
+        'tmName': 'say',
+        'tcl': True,
+        'setVariable': True
     },
     'virtual_forward': {
         "request": True,
@@ -101,6 +108,25 @@ def test_create_reset_action():
     assert not data.get('redirect')
     assert not data.get('location')
     assert data.get('reset')
+
+
+def test_create_set_variable_action():
+    name = "0"
+    action = Action(name, actions['setVariable'])
+    data = action.data
+
+    assert action.name == "0"
+    assert not action.partition
+    assert data.get('request')
+    assert data.get('expression')
+    assert data.get('tmName')
+    assert data.get('tcl')
+    assert data.get('setVariable')
+    assert not data.get('pool')
+    assert not data.get('redirect')
+    assert not data.get('location')
+    assert not data.get('reset')
+    assert not data.get('forward')
 
 
 def test_create_invalid_action():
