@@ -49,9 +49,13 @@ class FDBTunnel(Resource):
             if key == 'records':
                 if len(self._data[key]) != len(other.data[key]):
                     return False
-                for index, record in enumerate(self._data[key]):
-                    if record != other.data[key][index]:
+                for record in self._data[key]:
+                    if record not in other.data[key]:
                         return False
+                    else:
+                        idx = other.data[key].index(record)
+                        if record != other.data[key][idx]:
+                            return False
                 continue
             if self._data[key] != other.data.get(key):
                 return False
@@ -63,7 +67,6 @@ class FDBTunnel(Resource):
         new_records = list()
         for record in records:
             new_records.append(Record(**record).data)
-        new_records = sorted(new_records, key=lambda x: sorted(x.keys()))
         return new_records
 
     def __hash__(self):  # pylint: disable=useless-super-delegation
