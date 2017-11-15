@@ -31,12 +31,16 @@ class Action(Resource):
     # The property names class attribute defines the names of the
     # properties that we wish to compare.
     properties = dict(
-        request=True,
-        pool=None,
-        location=None,
+        expression=None,
         forward=False,
+        location=None,
+        pool=None,
+        redirect=False,
+        request=True,
         reset=False,
-        redirect=False
+        setVariable=False,
+        tcl=False,
+        tmName=None,
     )
 
     def __init__(self, name, data):
@@ -75,10 +79,18 @@ class Action(Resource):
             # Yes, set the location and httpReply attribute
             self._data['location'] = data.get('location', None)
             self._data['httpReply'] = data.get('httpReply', True)
+        # Is this a setVariable action?
+        elif data.get('setVariable', False):
+            self._data['setVariable'] = True
+
+            # Set the variable name and the value
+            self._data['tmName'] = data.get('tmName', None)
+            self._data['expression'] = data.get('expression', None)
+            self._data['tcl'] = True
         else:
-            # Only forward and redirect are supported.
+            # Only forward, redirect and setVariable are supported.
             raise ValueError("Unsupported action, must be one of forward, "
-                             "redirect, or reset.")
+                             "redirect, setVariable or reset.")
 
     def __eq__(self, other):
         """Check the equality of the two objects.

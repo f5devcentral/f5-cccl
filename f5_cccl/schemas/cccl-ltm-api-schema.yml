@@ -36,7 +36,7 @@ description: |
   in a degraded state.
 definitions:
 
-  portType: 
+  portType:
     definition: "Defines the network port for the virtual-server or member"
     type: "integer"
     minimum: 0
@@ -85,16 +85,16 @@ definitions:
     required:
       - "name"
 
-  routeDomainType: 
+  routeDomainType:
     type: "object"
     description: "Defines the route domain name and id pair."
     properties:
-      id: 
+      id:
         type: "integer"
-      name: 
+      name:
         type: "string"
         default: ""
-    required: 
+    required:
       - "id"
 
   snatConfigType:
@@ -159,7 +159,7 @@ definitions:
         description: >
           Ordered list of actions to perform on successful match.
           The order of the action in the list indicates the name of the action.
-        items: 
+        items:
           $ref: "#definitions/l7RuleActionType"
           type: "array"
       conditions:
@@ -167,7 +167,7 @@ definitions:
           Ordered list of conditions to evaluate.  The order of the condition
           in the list indicates the name and the order in which the condition
           is evaluated.
-        items: 
+        items:
           $ref: "#definitions/l7ConditionType"
           type: "array"
       description:
@@ -176,7 +176,7 @@ definitions:
     required:
       - "name"
 
-  l7RuleActionType: 
+  l7RuleActionType:
     type: "object"
     description: |
       Defines an L7 Policy action. The only supported actions are forward and redirect.
@@ -192,7 +192,7 @@ definitions:
 
       For redirect actions, the 'location' attribute must point to a valid URI path.
       (e.g. http://www.myredirect-target.com)
-    properties: 
+    properties:
       forward:
         type: "boolean"
         description: "This action will affect forwarding."
@@ -215,6 +215,18 @@ definitions:
       httpReply:
         type: "boolean"
         description: "This action will affect a reply to a given HTTP request."
+      expression:
+        type: "string"
+        description: "Tcl expression to be evaluated"
+      tmName:
+        type: "string"
+        description: "Name of a value used in an action."
+      tcl:
+        type: "boolean"
+        description: "Set a Tcl variable in runtime environment"
+      setVariable:
+        type: "boolean"
+        description: "Sets specified variable to value of expression in runtime environment"
 
     oneOf:
       - required:
@@ -230,6 +242,12 @@ definitions:
         - "redirect"
         - "location"
         - "httpReply"
+      - required:
+        - "request"
+        - "expression"
+        - "tmName"
+        - "tcl"
+        - "setVariable"
 
   l7ConditionType:
     type: "object"
@@ -255,11 +273,11 @@ definitions:
 
     properties:
       # Match modifiers
-      caseSensitive: 
+      caseSensitive:
         default: false
         description: "The match string is case-sensive"
         type: "boolean"
-      missing: 
+      missing:
         default: false
         description: "Skip this condition if it is missing from the request."
         type: "boolean"
@@ -349,15 +367,15 @@ definitions:
           - "values"
           - "tmName"
 
-  l7PolicyType: 
+  l7PolicyType:
     id: "#/definitions/l7PolicyType"
     type: "object"
     description: >
       A policy comprises a prioritized list of rules that match defined conditions and run
       specific actions, which you can assign to a virtual server that directs traffic accordingly.
       The priority of each rule is implied by its order in the list.
-    properties: 
-      name: 
+    properties:
+      name:
         type: "string"
         description: "Name of the policy object"
       strategy:
@@ -370,7 +388,7 @@ definitions:
           - "/Common/best-match"
           - "/Common/all-match"
         default: "/Common/first-match"
-      rules: 
+      rules:
         items:
           type: "array"
           description: >
@@ -380,12 +398,12 @@ definitions:
       - "name"
       - "rules"
 
-  healthMonitorType: 
+  healthMonitorType:
     type: "object"
     description: >
       Defines a health monitor, supported types are http, https, tcp, and gateway-icmp
-    properties: 
-      interval: 
+    properties:
+      interval:
         type: "integer"
         definition: >
           Specifies, in seconds, the frequency at which the system issues the monitor
@@ -394,7 +412,7 @@ definitions:
         minimum: 1
         maximum: 86400
         default: 5
-      timeout: 
+      timeout:
         type: "integer"
         definition: >
           Specifies the number of seconds to wait after a resource first responds
@@ -402,38 +420,38 @@ definitions:
         minimum: 1
         maximum: 86400
         default: 16
-      type: 
+      type:
         type: "string"
         description: "Specifies the type of the monitor."
-        enum: 
+        enum:
           - "http"
           - "tcp"
           - "https"
           - "icmp"
           - "udp"
-      name: 
+      name:
         type: "string"
         description: "Specifies the name of the monitor."
         minLength: 1
-      send: 
+      send:
         type: "string"
         description: >
           Specifies the text string that the monitor sends to the target object.
           You must include \r\n at the end of a non-empty Send String.
         minLength: 1
-      recv: 
+      recv:
         type: "string"
         description: >
-          Specifies the regular expression representing the text string that the 
-          monitor looks for in the returned resource. The most common receive 
+          Specifies the regular expression representing the text string that the
+          monitor looks for in the returned resource. The most common receive
           expressions contain a text string that is included in an HTML file on
           your site. The text string can be regular text, HTML tags, or image names.
         minLength: 1
-    required: 
+    required:
       - "name"
       - "type"
 
-  poolMemberType: 
+  poolMemberType:
     id: "#/definitions/poolMemberType"
     type: "object"
     description: >
@@ -447,8 +465,8 @@ definitions:
       connectionLimit:
         type: "integer"
         definition: >
-          Specifies a maximum established connection limit for a pool member or node. When 
-          the current connections count reaches this number, the system does not send additional 
+          Specifies a maximum established connection limit for a pool member or node. When
+          the current connections count reaches this number, the system does not send additional
           connections to that pool member or node. The default is 0, meaning that there is no
           limit to the number of connections.
         default: 0
@@ -466,13 +484,13 @@ definitions:
       address:
         type: "string"
         definition: "Specifies the IP address for the pool member."
-      port: 
+      port:
         definition: "Specifies the service port for the pool member."
         $ref: "#/definitions/portType"
       routeDomain:
         definition: "Specifies the member IP address namespace."
         $ref: "#/definitions/routeDomainType"
-      priorityGroup: 
+      priorityGroup:
         type: "integer"
         definition: >
           Specifies a number representing the priority group for the pool member.
@@ -491,26 +509,26 @@ definitions:
           Specifies the maximum number of connections per second allowed for a pool member.
         default: 0
         type: "integer"
-    required: 
+    required:
       - "address"
       - "port"
 
-  poolType: 
+  poolType:
     id: "#/definitions/poolType"
     type: "object"
-    properties: 
-      name: 
+    properties:
+      name:
         description: "Name of the pool object."
         type: "string"
         minLength: 1
-      description: 
+      description:
         description: "Specifies descriptive text that identifies the virtual server."
         maxLength: 512
         type: "string"
-      loadBalancingMode: 
+      loadBalancingMode:
         default: "round-robin"
         description: "Loadbalancing algorithm to use on pool."
-        enum: 
+        enum:
           - "dynamic-ratio-member"
           - "dynamic-ratio-node"
           - "fastest-app-response"
@@ -542,7 +560,7 @@ definitions:
         items:
           type: "string"
         type: "array"
-    required: 
+    required:
       - "name"
 
   iappTableType:
@@ -686,11 +704,11 @@ definitions:
     - "template"
     - "variables"
 
-  virtualServerType: 
+  virtualServerType:
     id: "#/definitions/virtualServerType"
     type: object
-    properties: 
-      name: 
+    properties:
+      name:
         description: "Specifies the virtual server name"
         type: "string"
         minLength: 1
@@ -701,30 +719,36 @@ definitions:
         type: "string"
         maxLength: 512
 
-      destination: 
+      destination:
         description: >
-          Specifies destination IP address information to which 
-          the virtual server sends traffic.  This can be an IP address 
+          Specifies destination IP address information to which
+          the virtual server sends traffic.  This can be an IP address
           or a previously created virtual-address.  This is of the
           form /<partition>/<ip_address>%<route_domain>:<service_port>
         type: "string"
 
-      pool: 
+      source:
+        description: >
+          Specifies an IP address or network from which the virtual server
+          accepts traffic.
+        type: "string"
+
+      pool:
         description: >
           Specifies the full path of a default pool to which you want the virtual
           server to automatically direct traffic.
         type: "string"
 
-      ipProtocol: 
+      ipProtocol:
         description: "Specifies the network protocol name you want the system to use."
         type: "string"
-        enum: 
+        enum:
           - "tcp"
           - "udp"
           - "any"
         default: "tcp"
 
-      connectionLimit: 
+      connectionLimit:
         type: "integer"
         description: >
           Specifies the maximum number of concurrent connections allowed for
@@ -758,7 +782,7 @@ definitions:
         description: >
           Enables/disables the virtual server.
 
-      sourceAddressTranslation: 
+      sourceAddressTranslation:
         type: "string"
         description: |
           Specifies the type of address translation pool, used for implementing
@@ -770,7 +794,7 @@ definitions:
           If snatpool is set, then the snatpool configuration item must be defined.
         $ref: "#/definitions/snatConfigType"
 
-      vlansEnabled: 
+      vlansEnabled:
         description: >
           Enables/disables the virtual server on the list of VLANS and
           tunnels listed in the list of vlans.  The default is the virtual server is
@@ -778,18 +802,18 @@ definitions:
           with an emptly vlans list.
         type: "boolean"
 
-      vlans: 
+      vlans:
         type: "array"
         description: >
           The virtual server is enabled/disabled on this set of VLANs.
           See vlans-disabled and vlans-enabled.
-        items: 
+        items:
           type: "string"
           description: "VLANs and tunnels that you have specifically enabled."
           minLength: 1
           maxLength: 64
 
-    required: 
+    required:
       - "destination"
       - "name"
 
@@ -860,12 +884,12 @@ properties:
     type: "array"
   monitors:
     description: "List of all monitor resources that should exist"
-    items: 
+    items:
       $ref: "#/definitions/healthMonitorType"
     type: "array"
-  iapps: 
+  iapps:
     description: "List of all iApp resources that should exist"
-    items: 
+    items:
       $ref: "#/definitions/iAppType"
     type: "array"
   iRules:
