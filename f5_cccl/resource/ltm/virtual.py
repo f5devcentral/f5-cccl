@@ -127,12 +127,15 @@ class ApiVirtualServer(VirtualServer):
         else:
             vlansDisabled = None
 
+        source = properties.pop('source', '0.0.0.0/0')
+
         super(ApiVirtualServer, self).__init__(name,
                                                partition,
                                                enabled=enabled,
                                                disabled=disabled,
                                                vlansEnabled=vlansEnabled,
                                                vlansDisabled=vlansDisabled,
+                                               source=source,
                                                **properties)
 
 
