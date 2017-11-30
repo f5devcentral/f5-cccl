@@ -127,7 +127,20 @@ class ApiVirtualServer(VirtualServer):
         else:
             vlansDisabled = None
 
+        destination = properties.get('destination', None)
+        rd = None
+        if '%' in destination:
+            try:
+                rd = re.findall(r"%(\d+)(:|.)", destination)[0][0]
+            except IndexError:
+                LOGGER.error(
+                    "Could not extract route domain from destination '%s'",
+                    destination)
+
         source = properties.pop('source', '0.0.0.0/0')
+        if rd and '%' not in source:
+            idx = source.index('/')
+            source = source[:idx] + '%{}'.format(rd) + source[idx:]
 
         super(ApiVirtualServer, self).__init__(name,
                                                partition,
