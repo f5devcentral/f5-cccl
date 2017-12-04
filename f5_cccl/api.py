@@ -42,17 +42,25 @@ class F5CloudServiceManager(object):
     under its control.
     """
 
-    def __init__(self, bigip, partition, prefix=None, schema_path=None):
+    def __init__(self, bigip, partition, user_agent=None, prefix=None,
+                 schema_path=None):
         """Initialize an instance of the F5 CCCL service manager.
 
         :param bigip: BIG-IP management root.
         :param partition: Name of BIG-IP partition to manage.
+        :param user_agent: String to append to the User-Agent header for
+        iControl REST requests (default: None)
         :param prefix:  The prefix assigned to resources that should be
         managed by this CCCL instance.  This is prepended to the
         resource name (default: None)
         :param schema_path: User defined schema (default: from package)
         """
         LOGGER.debug("F5CloudServiceManager initialize")
+
+        # Set user-agent for ICR session
+        if user_agent is not None:
+            bigip.icrs.append_user_agent(user_agent)
+
         self._bigip_proxy = BigIPProxy(bigip,
                                        partition,
                                        prefix=prefix)
