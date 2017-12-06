@@ -42,6 +42,9 @@ class IRule(Resource):
             'apiAnonymous',
             self.properties.get('apiAnonymous')
         )
+        # Strip any leading/trailing whitespace
+        if self._data['apiAnonymous'] is not None:
+            self._data['apiAnonymous'] = self._data['apiAnonymous'].strip()
 
     def __eq__(self, other):
         """Check the equality of the two objects.

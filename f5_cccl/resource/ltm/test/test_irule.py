@@ -50,7 +50,7 @@ def test_create_irule():
 
     # verify all cfg items
     for k,v in cfg_test.items():
-        assert irule.data[k] == v
+        assert irule.data[k] == v.strip()
 
 
 def test_hash():
@@ -131,3 +131,22 @@ def test_uri_path(bigip):
     assert irule
 
     assert irule._uri_path(bigip) == bigip.tm.ltm.rules.rule
+
+
+def test_whitespace():
+    """Verify that leading/trailing whitespace is removed from iRule."""
+    whitespace = '\n\t   '
+    ssl_redirect_irule_ws = whitespace + ssl_redirect_irule_1 + whitespace
+
+    cfg_ws = {
+        'name': 'ssl_redirect',
+        'partition': 'my_partition',
+        'apiAnonymous': ssl_redirect_irule_ws
+    }
+
+    irule = IRule(
+        **cfg_ws
+    )
+
+    assert irule
+    assert irule.data['apiAnonymous'] == ssl_redirect_irule_1.strip()
