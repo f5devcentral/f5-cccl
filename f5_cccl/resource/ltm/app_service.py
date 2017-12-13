@@ -19,6 +19,7 @@
 import logging
 
 from f5_cccl.resource import Resource
+from f5_cccl.utils.route_domain import normalize_address_with_route_domain
 
 
 LOGGER = logging.getLogger(__name__)
@@ -111,7 +112,8 @@ class IcrApplicationService(ApplicationService):
 
 class ApiApplicationService(ApplicationService):
     """Parse the CCCL input to create the canonical Application Service."""
-    def __init__(self, name, partition, **properties):
+    def __init__(self, name, partition, default_route_domain, **properties):
+        self._default_route_domain = default_route_domain
         super(ApiApplicationService, self).__init__(name,
                                                     partition,
                                                     **properties)
@@ -127,6 +129,9 @@ class ApiApplicationService(ApplicationService):
         variables = []
         for key, value in config['variables'].items():
             var = {'name': key, 'value': value}
+            if var['name'] == "pool__addr":
+                var['value'] = normalize_address_with_route_domain(
+                    var['value'], self._default_route_domain)[0]
             variables.append(var)
 
         return variables
@@ -155,7 +160,9 @@ class ApiApplicationService(ApplicationService):
                         row.append(col['value'])
                     elif 'kind' in col:
                         if col['kind'] == 'IPAddress':
-                            row.append(str(node['address']))
+                            address = normalize_address_with_route_domain(
+                                node['address'], self._default_route_domain)[0]
+                            row.append(address)
                         elif col['kind'] == 'Port':
                             row.append(str(node['port']))
 

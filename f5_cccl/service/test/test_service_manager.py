@@ -89,8 +89,11 @@ class TestServiceConfigDeployer:
             self.net_service = json.loads(fp.read())
 
         config_reader = ServiceConfigReader(self.partition)
-        self.desired_ltm_config = config_reader.read_ltm_config(self.ltm_service)
-        self.desired_net_config = config_reader.read_net_config(self.net_service)
+        self.default_route_domain = self.bigip.get_default_route_domain()
+        self.desired_ltm_config = config_reader.read_ltm_config(
+            self.ltm_service, self.default_route_domain)
+        self.desired_net_config = config_reader.read_net_config(
+            self.net_service, self.default_route_domain)
 
     def get_objects(self, objs, obj_type):
         """Extract objects of obj_type from the list."""
@@ -163,7 +166,8 @@ class TestServiceConfigDeployer:
 
     def test_deploy_ltm(self):
         deployer = ServiceConfigDeployer(self.bigip)
-        tasks_remaining = deployer.deploy_ltm(self.desired_ltm_config)
+        tasks_remaining = deployer.deploy_ltm(self.desired_ltm_config,
+            self.default_route_domain)
         assert 0 == tasks_remaining
 
     def test_deploy_net(self):

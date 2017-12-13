@@ -24,6 +24,7 @@ from f5_cccl.resource.ltm.virtual_address import VirtualAddress
 va_cfg = {
     "name": "192.168.100.100",
     "partition": "Test",
+    "default_route_domain": 0,
     "address": "192.168.100.100",
     "autoDelete": "true",
     "enabled": "yes",
@@ -46,7 +47,7 @@ def test_create_virtual_address():
     assert va.partition == "Test"
 
     data = va.data
-    assert data['address'] == "192.168.100.100"
+    assert data['address'] == "192.168.100.100%0"
     assert data['autoDelete'] == "true"
     assert data['enabled'] == "yes"
     assert data['description'] == "Test virutal address resource"
@@ -54,7 +55,7 @@ def test_create_virtual_address():
 
 
 def test_create_virtual_address_defaults():
-    va = VirtualAddress(name="test_va", partition="Test")
+    va = VirtualAddress(name="test_va", partition="Test", default_route_domain=1)
 
     assert va
 

@@ -27,12 +27,6 @@ from mock import MagicMock
 import pytest
 
 
-ccclMemberA = {
-    "address": "172.16.0.100", "port": 8080, "routeDomain": {"id": 0}}
-ccclMemberB = {
-    "address": "172.16.0.101", "port": 8080, "routeDomain": {"id": 0}}
-
-
 @pytest.fixture
 def pool_member_ipv6():
     pass
@@ -134,7 +128,7 @@ def test_create_pool_member_with_rd(pool, pool_member_with_rd):
 
     # Test data
     assert member.data
-    assert member.data['name'] == "192.168.100.101:80"
+    assert member.data['name'] == "192.168.100.101%0:80"
 
 
 def test_create_pool_member_with_rd_ipv6(pool, pool_member_with_rd_ipv6):
@@ -150,4 +144,4 @@ def test_create_pool_member_with_rd_ipv6(pool, pool_member_with_rd_ipv6):
 
     # Test data
     assert member.data
-    assert member.data['name'] == "2001:0db8:3c4d:0015:0000:0000:abcd:ef12.80"
+    assert member.data['name'] == "2001:0db8:3c4d:0015:0000:0000:abcd:ef12%0.80"

@@ -23,9 +23,9 @@ import pytest
 
 
 cfg_test = {
-    'name': '1.2.3.4%0',
+    'name': '1.2.3.4%2',
     'partition': 'my_partition',
-    'address': '1.2.3.4'
+    'address': '1.2.3.4%2'
 }
 
 
@@ -38,17 +38,21 @@ def bigip():
 def test_create_node():
     """Test Node creation."""
     node = Node(
+        default_route_domain=2,
         **cfg_test
     )
     assert node
 
     # verify all cfg items
     for k,v in cfg_test.items():
-        assert node.data[k] == v
+        assert node._data[k] == v
 
 
 def test_update_node():
-    node = Node(**cfg_test)
+    node = Node(
+        default_route_domain=2,
+        **cfg_test
+    )
 
     assert 'address' in node.data
 
@@ -62,19 +66,23 @@ def test_update_node():
 def test_hash():
     """Test Node Server hash."""
     node = Node(
+        default_route_domain=2,
         **cfg_test
     )
     node1 = Node(
+        default_route_domain=2,
         **cfg_test
     )
     cfg_changed = copy(cfg_test)
     cfg_changed['name'] = 'test'
     node2 = Node(
+        default_route_domain=2,
         **cfg_changed
     )
     cfg_changed = copy(cfg_test)
     cfg_changed['partition'] = 'other'
     node3 = Node(
+        default_route_domain=2,
         **cfg_changed
     )
     assert node
@@ -93,9 +101,11 @@ def test_eq():
     name = 'node_1'
 
     node = Node(
+        default_route_domain=2,
         **cfg_test
     )
     node2 = Node(
+        default_route_domain=2,
         **cfg_test
     )
     pool = Pool(
@@ -129,12 +139,13 @@ def test_eq():
     assert node != node2
 
     # different objects
-    assert node != pool 
+    assert node != pool
 
 
 def test_uri_path(bigip):
     """Test Node URI."""
     node = Node(
+        default_route_domain=2,
         **cfg_test
     )
     assert node

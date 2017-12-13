@@ -22,6 +22,7 @@ import pytest
 
 cfg_test = {
     'name':'12:ab:34:cd:56:ef', 
+    'default_route_domain': 2,
     'endpoint':'1.2.3.4'
 }
 
@@ -36,7 +37,7 @@ def test_create_record():
     record = Record(**cfg_test)
     assert Record
     assert record.name == '12:ab:34:cd:56:ef'
-    assert record.data['endpoint'] == '1.2.3.4' 
+    assert record.data['endpoint'] == '1.2.3.4%2' 
 
 
 def test_eq():
