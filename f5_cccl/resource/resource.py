@@ -20,12 +20,11 @@ u"""This module provides class for managing resource configuration."""
 import copy
 import logging
 
-import f5_cccl.exceptions as cccl_exc
-
 from f5.sdk_exception import F5SDKError
 from icontrol.exceptions import iControlUnexpectedHTTPError
 from requests.utils import quote as urlquote
 
+import f5_cccl.exceptions as cccl_exc
 
 LOGGER = logging.getLogger(__name__)
 

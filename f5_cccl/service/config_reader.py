@@ -86,6 +86,7 @@ class ServiceConfigReader(object):
 
         return config_resource
 
+    # pylint: disable=too-many-locals
     def read_ltm_config(self, service_config, default_route_domain):
         """Read the LTM service configuration and save as resource object."""
         config_dict = dict()
