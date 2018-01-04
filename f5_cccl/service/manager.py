@@ -169,6 +169,7 @@ class ServiceConfigDeployer(object):
 
         return update_list
 
+    # pylint: disable=too-many-locals
     def _desired_nodes(self, default_route_domain):
         """Desired nodes is inferred from the active pool members."""
         desired_nodes = dict()

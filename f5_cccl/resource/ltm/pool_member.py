@@ -19,10 +19,10 @@ u"""This module provides class for managing member configuration."""
 import logging
 import re
 
-from f5_cccl.resource import Resource
-from f5_cccl.utils.route_domain import normalize_address_with_route_domain
 from netaddr import IPAddress
 from requests.utils import quote as urlquote
+from f5_cccl.resource import Resource
+from f5_cccl.utils.route_domain import normalize_address_with_route_domain
 
 
 LOGGER = logging.getLogger(__name__)
