@@ -33,12 +33,12 @@ deploy:
     skip_cleanup: true
     script: ./build-tools/system-test-img.sh F5Networks/marathon-bigip-ctlr $MARATHON_BIGIP_CTLR_COMMIT_ISH ./build-tools/build-runtime-images.sh $DOCKER_NAMESPACE
     on:
-      python: "3.5"
+      python: "2.7"
       all_branches: true
   # push k8s dev-image for nightly regression tests
   - provider: script
     skip_cleanup: true
     script: ./build-tools/system-test-img.sh F5Networks/k8s-bigip-ctlr $K8S_BIGIP_CTLR_COMMIT_ISH "make prod" $DOCKER_NAMESPACE
     on:
-      python: "3.5"
+      python: "2.7"
       all_branches: true
