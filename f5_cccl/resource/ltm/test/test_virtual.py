@@ -32,6 +32,7 @@ cfg_test = {
     'source': '10.0.0.1%2/32',
     'pool': '/my_partition/pool1',
     'ipProtocol': 'tcp',
+    'rules': ['Test/rule1', 'Test/rule2'],
     'profiles': [
         {'name': "tcp",
          'partition': "Common",
@@ -67,7 +68,7 @@ def test_create_virtual():
 
     # verify all cfg items
     for k,v in cfg_test.items():
-        if k == "vlans":
+        if k == "vlans" or k == "policies" or k == "rules":
             assert virtual.data[k] == sorted(v)
         else:
             assert virtual.data[k] == v
@@ -112,11 +113,15 @@ def test_eq():
 
     virtual = VirtualServer(
         default_route_domain=2,
-        **cfg_test
+        **deepcopy(cfg_test)
     )
     virtual2 = VirtualServer(
         default_route_domain=2,
-        **cfg_test
+        **deepcopy(cfg_test)
+    )
+    virtual3 = VirtualServer(
+        default_route_domain=2,
+        **deepcopy(cfg_test)
     )
     pool = Pool(
         name=name,
@@ -124,11 +129,22 @@ def test_eq():
     )
     assert virtual
     assert virtual2
+    assert virtual3
     assert virtual == virtual2
 
+    # remove profile context from Virtual2, should still be equal (because
+    # context is optional)
+    del virtual.data['profiles'][0]['context']
+    assert virtual == virtual2
+
+    # remove profile, now unequal
+    del virtual.data['profiles'][0]
+    assert virtual != virtual2
+
+    assert virtual3 == virtual2
     # not equal
     virtual2.data['destination'] = '/Test/1.2.3.4:8080'
-    assert virtual != virtual2
+    assert virtual3 != virtual2
 
     # different objects
     assert virtual != pool
@@ -304,6 +320,7 @@ cfg_test_api_virtual = {
     'source': '10.0.0.1/32',
     'pool': '/my_partition/pool1',
     'ipProtocol': 'tcp',
+    'rules': ['Test/rule1', 'Test/rule2'],
     'profiles': [
         {'name': "tcp",
          'partition': "Common",
@@ -332,7 +349,7 @@ def test_create_api_virtual():
 
     # verify all cfg items
     for k,v in cfg_test.items():
-        if k == "vlans":
+        if k == "vlans" or k == 'policies' or k == "rules":
             assert virtual.data[k] == sorted(v)
         else:
             assert virtual.data[k] == v

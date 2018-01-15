@@ -136,6 +136,22 @@ class VirtualServer(Resource):
                 source = '{}/{}'.format(bigip_addr, mask)
         self._data['source'] = source
 
+    def find_profile(self, profile, other_profiles):
+        """Find a profile in a list, accounting for the optional context."""
+        for other in other_profiles:
+            if profile.get('context', None) is not None:
+                # if context exists, compare
+                if profile == other:
+                    return True
+            else:
+                # otherwise, remove context from comparison
+                o = copy(other)
+                o.pop('context', None)
+                if profile == o:
+                    return True
+
+        return False
+
     @property
     def destination(self):
         """Return the destination of the virtual server.
@@ -159,7 +175,30 @@ class VirtualServer(Resource):
         if not isinstance(other, VirtualServer):
             return False
 
-        return super(VirtualServer, self).__eq__(other)
+        for key in self._data:
+            # compare list lengths
+            if isinstance(self._data[key], list) and \
+                    len(self._data[key]) != len(other.data.get(key, None)):
+                return False
+
+            if key == 'vlans' or key == 'policies' or key == 'rules':
+                if sorted(self._data[key]) != \
+                        sorted(other.data.get(key, None)):
+                    return False
+                continue
+
+            if key == 'profiles':
+                for profile in self._data[key]:
+                    if not self.find_profile(profile,
+                                             other.data.get(key, None)):
+                        return False
+                continue
+
+            # All other types
+            if self._data[key] != other.data.get(key, None):
+                return False
+
+        return True
 
     def __hash__(self):  # pylint: disable=useless-super-delegation
         return super(VirtualServer, self).__hash__()
