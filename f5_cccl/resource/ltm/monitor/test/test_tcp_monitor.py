@@ -82,3 +82,15 @@ def test_create_api_monitor(tcp_config):
     monitor = target.ApiTCPMonitor(**tcp_config)
 
     assert isinstance(monitor, target.TCPMonitor)
+
+
+def test_create_monitors_invalid(tcp_config):
+    # Set interval to be larger than timeout,
+    # ICR Monitor will be created, API Monitor will not
+    tcp_config['interval'] = 30
+    monitor = target.IcrTCPMonitor(**tcp_config)
+
+    assert isinstance(monitor, target.IcrTCPMonitor)
+
+    with pytest.raises(ValueError):
+        monitor = target.ApiTCPMonitor(**tcp_config)

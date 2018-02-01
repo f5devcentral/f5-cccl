@@ -50,4 +50,10 @@ class ApiICMPMonitor(ICMPMonitor):
 
 class IcrICMPMonitor(ICMPMonitor):
     """Create the canonical ICMP monitor from the iControl REST response."""
-    pass
+    def __init__(self, name, partition, **kwargs):
+        try:
+            super(IcrICMPMonitor, self).__init__(name, partition, **kwargs)
+        except ValueError:
+            # Need to allow for misconfigured legacy monitors from BIG-IP,
+            # so let this through
+            pass

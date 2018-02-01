@@ -77,3 +77,15 @@ def test_create_api_monitor(icmp_config):
     monitor = target.ApiICMPMonitor(**icmp_config)
 
     assert isinstance(monitor, target.ICMPMonitor)
+
+
+def test_create_monitors_invalid(icmp_config):
+    # Set interval to be larger than timeout,
+    # ICR Monitor will be created, API Monitor will not
+    icmp_config['interval'] = 30
+    monitor = target.IcrICMPMonitor(**icmp_config)
+
+    assert isinstance(monitor, target.IcrICMPMonitor)
+
+    with pytest.raises(ValueError):
+        monitor = target.ApiICMPMonitor(**icmp_config)

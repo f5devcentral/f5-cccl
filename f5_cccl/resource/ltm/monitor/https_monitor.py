@@ -60,4 +60,10 @@ class ApiHTTPSMonitor(HTTPSMonitor):
 
 class IcrHTTPSMonitor(HTTPSMonitor):
     """Create the canonical HTTPS monitor from iControl REST response."""
-    pass
+    def __init__(self, name, partition, **kwargs):
+        try:
+            super(IcrHTTPSMonitor, self).__init__(name, partition, **kwargs)
+        except ValueError:
+            # Need to allow for misconfigured legacy monitors from BIG-IP,
+            # so let this through
+            pass

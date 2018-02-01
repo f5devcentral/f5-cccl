@@ -82,3 +82,15 @@ def test_create_api_monitor(udp_config):
     monitor = target.ApiUDPMonitor(**udp_config)
 
     assert isinstance(monitor, target.UDPMonitor)
+
+
+def test_create_monitors_invalid(udp_config):
+    # Set interval to be larger than timeout,
+    # ICR Monitor will be created, API Monitor will not
+    udp_config['interval'] = 30
+    monitor = target.IcrUDPMonitor(**udp_config)
+
+    assert isinstance(monitor, target.IcrUDPMonitor)
+
+    with pytest.raises(ValueError):
+        monitor = target.ApiUDPMonitor(**udp_config)

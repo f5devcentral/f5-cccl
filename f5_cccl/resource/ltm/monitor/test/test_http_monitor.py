@@ -81,3 +81,15 @@ def test_create_api_monitor(http_config):
     monitor = target.ApiHTTPMonitor(**http_config)
 
     assert isinstance(monitor, target.HTTPMonitor)
+
+
+def test_create_monitors_invalid(http_config):
+    # Set interval to be larger than timeout,
+    # ICR Monitor will be created, API Monitor will not
+    http_config['interval'] = 30
+    monitor = target.IcrHTTPMonitor(**http_config)
+
+    assert isinstance(monitor, target.IcrHTTPMonitor)
+
+    with pytest.raises(ValueError):
+        monitor = target.ApiHTTPMonitor(**http_config)
