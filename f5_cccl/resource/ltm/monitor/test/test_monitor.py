@@ -112,3 +112,12 @@ def test_uri_path():
                              partition=partition)
     with pytest.raises(NotImplementedError):
         monitor._uri_path(MagicMock())
+
+
+def test_invalid_interval_and_timeout():
+    monitors = list(api_monitors_cfg)
+    for mon in monitors:
+        mon['interval'] = 10
+        mon['timeout'] = 5
+        with pytest.raises(ValueError):
+            monitor = target.Monitor(partition=partition, **mon)

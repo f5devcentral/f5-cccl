@@ -58,4 +58,10 @@ class ApiUDPMonitor(UDPMonitor):
 
 class IcrUDPMonitor(UDPMonitor):
     """Create the canonical UDP monitor from API input."""
-    pass
+    def __init__(self, name, partition, **kwargs):
+        try:
+            super(IcrUDPMonitor, self).__init__(name, partition, **kwargs)
+        except ValueError:
+            # Need to allow for misconfigured legacy monitors from BIG-IP,
+            # so let this through
+            pass

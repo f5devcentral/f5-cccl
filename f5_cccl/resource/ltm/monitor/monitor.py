@@ -49,6 +49,13 @@ class Monitor(Resource):
         for key, value in self.properties.items():
             self._data[key] = kwargs.get(key, value)
 
+        # Check for invalid interval/timeout values
+        if self._data['interval'] >= self._data['timeout']:
+            raise ValueError(
+                "Health Monitor interval ({}) must be less than "
+                "timeout ({})".format(self._data['interval'],
+                                      self._data['timeout']))
+
     def __str__(self):
         return("Monitor(partition: {}, name: {}, type: {})".format(
             self._data['partition'], self._data['name'], type(self)))
