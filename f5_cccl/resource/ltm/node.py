@@ -37,7 +37,7 @@ class Node(Resource):
 
     def __init__(self, name, partition, **properties):
         """Create a Node instance."""
-        super(Node, self).__init__(name, partition)
+        super(Node, self).__init__(name, partition, **properties)
 
         for key, value in self.properties.items():
             if key == "name" or key == "partition":

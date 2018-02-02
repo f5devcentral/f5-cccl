@@ -7,4 +7,6 @@ PyJWT==1.4.0
 PyYAML==3.12
 requests==2.9.1
 simplejson==3.10.0
+jsonpatch==1.16
+jsonpointer==2.0
 jsonschema

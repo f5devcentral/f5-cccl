@@ -203,6 +203,8 @@ class TestServiceConfigDeployer:
     def test_virtual_servers(self, ltm_service_manager):
         """Test create/update/delete of Virtual Servers."""
         # Should create one Virtual Server 
+        #  and ignore Big-IP virtuals not in the partition (/Common/virtual1)
+        # or have the cccl-whitelist metadata set (test/virtual3)
         objs = self.get_created_ltm_objects(ltm_service_manager, VirtualServer)
         assert 1 == len(objs)
         assert objs[0].name == 'vs1'

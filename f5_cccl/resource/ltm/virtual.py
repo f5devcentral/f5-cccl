@@ -63,12 +63,11 @@ class VirtualServer(Resource):
                       pool=None,
                       policies=list(),
                       profiles=list(),
-                      rules=list(),
-                      metadata=list())
+                      rules=list())
 
     def __init__(self, name, partition, default_route_domain, **properties):
         """Create a Virtual server instance."""
-        super(VirtualServer, self).__init__(name, partition)
+        super(VirtualServer, self).__init__(name, partition, **properties)
 
         for key, default in self.properties.items():
             if key in ["profiles", "policies"]:
@@ -171,6 +170,16 @@ class VirtualServer(Resource):
             destination = (self._data['destination'], None, None, None)
 
         return destination
+
+    def post_merge_adjustments(self):
+        """Re-sort order of resource properties after merge"""
+
+        for prop in ["profiles", "policies", "vlans"]:
+            if prop in self._data:
+                key = 'vlans' if prop == 'vlans' else 'name'
+                self._data[prop] = sorted(self._data[prop],
+                                          key=itemgetter(key))
+        super(VirtualServer, self).post_merge_adjustments()
 
     def __eq__(self, other):
         if not isinstance(other, VirtualServer):

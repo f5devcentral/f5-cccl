@@ -31,13 +31,12 @@ class IRule(Resource):
     properties = dict(
         name=None,
         partition=None,
-        apiAnonymous=None,
-        metadata=list()
+        apiAnonymous=None
     )
 
     def __init__(self, name, partition, **data):
         """Create the iRule"""
-        super(IRule, self).__init__(name, partition)
+        super(IRule, self).__init__(name, partition, **data)
 
         self._data['metadata'] = data.get(
             'metadata',

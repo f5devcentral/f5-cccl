@@ -18,5 +18,6 @@ q
 PyYAML==3.12
 simplejson
 jsonschema
+jsonpatch==1.16
 python-coveralls==2.7.0
 requests==2.9.1

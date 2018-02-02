@@ -17,14 +17,22 @@ u"""This module provides class for managing resource configuration."""
 # limitations under the License.
 #
 
+import base64
 import copy
 import logging
+import zlib
+
+from operator import itemgetter
+import jsonpatch
 
 from f5.sdk_exception import F5SDKError
 from icontrol.exceptions import iControlUnexpectedHTTPError
 from requests.utils import quote as urlquote
 
 import f5_cccl.exceptions as cccl_exc
+import f5_cccl.utils.json_pos_patch as pospatch
+from f5_cccl.utils.resource_merge import merge
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -53,12 +61,14 @@ class Resource(object):
 
     """
 
+    common_properties = dict(metadata=None)
+
     @classmethod
     def classname(cls):
         """Return the class name of the resource."""
         return cls.__name__
 
-    def __init__(self, name, partition):
+    def __init__(self, name, partition, **properties):
         u"""Initialize a BIG-IP resource object from a CCCL schema object.
 
         Args:
@@ -73,6 +83,19 @@ class Resource(object):
         self._data = dict()
         self._data['name'] = name
         self._data['partition'] = partition
+        # user defined objects that must not be removed, even if not referenced
+        self._whitelist = False
+        # previously applied updates by CCCL to the resource
+        self._whitelist_updates = None
+
+        if properties:
+            for key, default in self.common_properties.items():
+                value = properties.get(key, default)
+                if value is not None:
+                    self._data[key] = value
+                    if key == 'metadata':
+                        # set resource flags
+                        self._process_metadata_flags(name, value)
 
     def __eq__(self, resource):
         u"""Compare two resources for equality.
@@ -96,6 +119,57 @@ class Resource(object):
 
     def __str__(self):
         return str(self._data)
+
+    def merge(self, desired_data):
+        u"""Merge in properties from controller instead of replacing"""
+        # 1. stop processing if no merging is needed
+        prev_updates = self._retrieve_whitelist_updates()
+        if desired_data == {} and prev_updates is None:
+            # nothing needs to be done (cccl has not and will not make changes
+            # to this resource)
+            return False
+
+        prev_data = copy.deepcopy(self._data)
+
+        # 2. remove old CCCL updates
+        pospatch.convert_to_positional_patch(self._data, prev_updates)
+
+        try:
+            # This actually backs out the previous updates
+            # to get back to the original F5 resource state.
+            if prev_updates:
+                self._data = prev_updates.apply(self._data)
+        except Exception as e:  # pylint: disable=broad-except
+            LOGGER.warning("Failed removing updates to resource %s: %s",
+                           self.name, e)
+
+        # 3. perform new merge with latest CCCL specific config
+        original_resource = copy.deepcopy(self)
+        self._data = merge(self._data, desired_data)
+        self.post_merge_adjustments()
+
+        # 4. compute the new updates so we can back out next go-around
+        cur_updates = jsonpatch.make_patch(self._data, original_resource.data)
+
+        # 5. remove move / adjust indexes per resource specific
+        pospatch.convert_from_positional_patch(self._data, cur_updates)
+
+        changed = self._data != prev_data
+
+        # 6. update metadata with new CCCL updates
+        self._save_whitelist_updates(cur_updates)
+
+        # 7. determine if there was a needed change
+        return changed
+
+    def post_merge_adjustments(self):
+        """Make any resource adjustment after merge
+
+           Inherited classes can override this to perform custom adjustments.
+        """
+        # Big-IP returns this metadata list in sorted order (by name)
+        self._data['metadata'] = sorted(self._data['metadata'],
+                                        key=itemgetter('name'))
 
     def create(self, bigip):
         u"""Create resource on a BIG-IP system.
@@ -240,6 +314,45 @@ class Resource(object):
         u"""Get the internal data model for this resource."""
         return self._data
 
+    @property
+    def whitelist(self):
+        u"""Flag to indicate if user-created resource should be ignored"""
+        return self._whitelist
+
+    def _save_whitelist_updates(self, updates):
+        u"""Saves the updates applied to this whitelisted object"""
+        if not self._whitelist:
+            LOGGER.error('Cannot apply updates to the non-whitelisted '
+                         'object %s', self.full_path())
+        elif updates:
+            b_content = bytes(updates.to_string().encode('ascii'))
+            self._whitelist_updates = base64.b64encode(
+                zlib.compress(b_content)).decode('ascii')
+            metadata = {
+                'name': 'cccl-whitelist-updates',
+                'persist': 'true',
+                'value': self._whitelist_updates
+            }
+            self._data['metadata'].append(metadata)
+
+    def _retrieve_whitelist_updates(self):
+        u"""Retrieves the updates and ret to this whitelisted object"""
+
+        updates = None
+        if not self._whitelist:
+            LOGGER.error('Cannot retrieve updates to the non-whitelisted '
+                         'object %s', self.full_path())
+        else:
+            if self._whitelist_updates is not None:
+                try:
+                    update_str = zlib.decompress(base64.b64decode(
+                        self._whitelist_updates)).decode('ascii')
+                    updates = jsonpatch.JsonPatch.from_string(update_str)
+                except Exception:  # pylint: disable=broad-except
+                    LOGGER.error('Cannot process previous updates for the '
+                                 'whitelisted resource %s', self.full_path())
+        return updates
+
     def full_path(self):
         u"""Concatenate the partition and name to form fullPath."""
         return "/{}/{}".format(self.partition, self.name)
@@ -269,3 +382,21 @@ class Resource(object):
             raise cccl_exc.F5CcclResourceRequestError(str(error))
         else:
             raise cccl_exc.F5CcclError(str(error))
+
+    def _process_metadata_flags(self, name, metadata_list):
+        # look for supported flags
+        metadata_update_idx = None
+        for idx, metadata in enumerate(metadata_list):
+            if metadata['name'] == 'cccl-whitelist':
+                self._whitelist = metadata['value'] in [
+                    'true', 'True', 'TRUE', '1', 1]
+                LOGGER.debug('Resource %s cccl-whitelist: %s',
+                             name, self._whitelist)
+            if metadata['name'] == 'cccl-whitelist-updates':
+                self._whitelist_updates = metadata['value']
+                LOGGER.debug('Resource %s cccl-whitelist-updates: %s',
+                             name, self._whitelist_updates)
+                metadata_update_idx = idx
+
+        if metadata_update_idx is not None:
+            del metadata_list[metadata_update_idx]

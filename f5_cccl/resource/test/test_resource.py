@@ -242,6 +242,69 @@ def test_set_data():
         res.data = {}
 
 
+def test_ignore_unknown_properties():
+    u"""Test Resource unknown base properties."""
+    data = resource_data()
+    data['prop1'] = 'property1'
+    data['prop2'] = 'property2'
+    assert len(data) == 4
+
+    res = Resource(**data)
+
+    assert len(res.data) == 2
+    assert res.whitelist is False
+
+    with pytest.raises(KeyError):
+        _ = res.data['prop1']
+    with pytest.raises(KeyError):
+        _ = res.data['prop2']
+    assert res.data['name'] == 'test_resource'
+    assert res.data['partition'] == 'Common'
+
+
+def test_metedata_not_set():
+    u"""Test Resource data update."""
+    data = resource_data()
+
+    res = Resource(**data)
+
+    assert res.whitelist is False
+
+
+def test_unsupported_metedata_property():
+    u"""Test Resource data update."""
+    data = resource_data()
+    data['metadata'] = [{'name': 'unsupported', 'value': '0'}]
+
+    res = Resource(**data)
+
+    # unsupported metadata is ignored
+    assert len(res.data) == 3
+    assert res.whitelist is False
+
+
+def test_whitelist_true_metedata_property():
+    u"""Test Resource data update."""
+    data = resource_data()
+    data['metadata'] = [{'name': 'cccl-whitelist', 'value': 'true'}]
+
+    res = Resource(**data)
+
+    assert len(res.data) == 3
+    assert res.whitelist is True
+
+
+def test_whitelist_false_metedata_property():
+    u"""Test Resource data update."""
+    data = resource_data()
+    data['metadata'] = [{'name': 'cccl-whitelist', 'value': 'false'}]
+
+    res = Resource(**data)
+
+    assert len(res.data) == 3
+    assert res.whitelist is False
+
+
 def test_create_subresource(bigip):
     u"""Test that a subclass of Resource will execute 'create'."""
     data = resource_data()
