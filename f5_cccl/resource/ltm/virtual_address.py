@@ -33,7 +33,8 @@ class VirtualAddress(Resource):
                       autoDelete="false",
                       enabled=None,
                       description=None,
-                      trafficGroup="/Common/traffic-group-1")
+                      trafficGroup="/Common/traffic-group-1",
+                      metadata=list())
 
     def __init__(self, name, partition, default_route_domain, **properties):
         """Create a VirtualAddress instance."""

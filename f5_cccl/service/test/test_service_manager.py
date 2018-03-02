@@ -66,7 +66,8 @@ def net_service_manager():
 
 def test_apply_ltm_config(ltm_service_manager):
     services = {}
-    assert ltm_service_manager.apply_ltm_config(services) == 0
+    assert ltm_service_manager.apply_ltm_config(services,
+        'k8s-bigip-ctlr-v1.4.0') == 0
 
 
 def test_apply_net_config(net_service_manager):
@@ -88,10 +89,12 @@ class TestServiceConfigDeployer:
         with open(net_svcfile, 'r') as fp:
             self.net_service = json.loads(fp.read())
 
+        user_agent='k8s-bigip-ctlr-v1.4.0'
+
         config_reader = ServiceConfigReader(self.partition)
         self.default_route_domain = self.bigip.get_default_route_domain()
         self.desired_ltm_config = config_reader.read_ltm_config(
-            self.ltm_service, self.default_route_domain)
+            self.ltm_service, self.default_route_domain, user_agent)
         self.desired_net_config = config_reader.read_net_config(
             self.net_service, self.default_route_domain)
 
@@ -105,7 +108,8 @@ class TestServiceConfigDeployer:
         deployer = ltm_service_manager._service_deployer
         deployer._create_resources = Mock(return_value=[])
 
-        ltm_service_manager.apply_ltm_config(self.ltm_service)
+        ltm_service_manager.apply_ltm_config(self.ltm_service,
+                                             'k8s-bigip-ctlr-v1.4.0')
         assert deployer._create_resources.called
         args, kwargs = deployer._create_resources.call_args_list[0]
         return self.get_objects(args[0], obj_type)
@@ -115,7 +119,7 @@ class TestServiceConfigDeployer:
         deployer = ltm_service_manager._service_deployer
         deployer._update_resources = Mock(return_value=[])
 
-        ltm_service_manager.apply_ltm_config(self.ltm_service)
+        ltm_service_manager.apply_ltm_config(self.ltm_service, 'k8s-bigip-ctlr-v1.4.0')
         assert deployer._update_resources.called
         args, kwargs = deployer._update_resources.call_args_list[0]
         return self.get_objects(args[0], obj_type)
@@ -125,7 +129,8 @@ class TestServiceConfigDeployer:
         deployer = ltm_service_manager._service_deployer
         deployer._delete_resources = Mock(return_value=[])
 
-        ltm_service_manager.apply_ltm_config(self.ltm_service)
+        ltm_service_manager.apply_ltm_config(self.ltm_service,
+                                             'k8s-bigip-ctlr-v1.4.0')
         assert deployer._delete_resources.called
         args, kwargs = deployer._delete_resources.call_args_list[0]
         return self.get_objects(args[0], obj_type)

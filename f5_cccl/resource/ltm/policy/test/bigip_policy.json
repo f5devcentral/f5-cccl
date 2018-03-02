@@ -1,6 +1,7 @@
 {
   "status": "legacy",
   "generation": 2600,
+  "metadata": [],
   "rulesReference": {
     "isSubcollection": true,
     "link": "https://localhost/mgmt/tm/ltm/policy/~Test~wrapper_policy/rules?ver=12.1.1",

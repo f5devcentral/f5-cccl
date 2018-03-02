@@ -49,7 +49,8 @@ class TestServiceConfigReader:
 
     def test_get_config(self):
         reader = ServiceConfigReader(self.partition)
-        config = reader.read_ltm_config(self.ltm_service, 0)
+        config = reader.read_ltm_config(self.ltm_service, 0,
+                                        'marathon-bigip-ctlr-v1.2.1')
 
         assert len(config.get('virtuals')) == 1
         assert len(config.get('pools')) == 1
@@ -70,4 +71,5 @@ class TestServiceConfigReader:
         with patch.object(ApiVirtualServer, '__init__', side_effect=ValueError("test exception")):
             reader = ServiceConfigReader(self.partition)
             with pytest.raises(F5CcclConfigurationReadError) as e:
-                reader.read_ltm_config(self.ltm_service, 0)
+                reader.read_ltm_config(self.ltm_service, 0,
+                                       'marathon-bigip-ctlr-v1.2.1')

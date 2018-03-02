@@ -497,7 +497,7 @@ class ServiceManager(object):
         """Get the name of the managed partition."""
         return self._partition
 
-    def apply_ltm_config(self, service_config):
+    def apply_ltm_config(self, service_config, user_agent):
         """Apply the desired LTM service configuration.
         Args:
             service_config: The desired configuration state of the managed
@@ -522,7 +522,7 @@ class ServiceManager(object):
 
         # Read in the configuration
         desired_config = self._config_reader.read_ltm_config(
-            service_config, default_route_domain)
+            service_config, default_route_domain, user_agent)
 
         # Deploy the service desired configuration.
         retval = self._service_deployer.deploy_ltm(

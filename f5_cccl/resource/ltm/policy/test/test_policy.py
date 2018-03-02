@@ -77,7 +77,8 @@ def policy_0():
         'name': "my_policy",
         'partition': "Test",
         'strategy': "/Common/first-match",
-        'rules': []
+        'rules': [],
+        'metadata': []
     }
     return Policy(**data)
 
@@ -87,7 +88,8 @@ def test_create_policy():
         'name': "my_policy",
         'partition': "Test",
         'strategy': "/Common/first-match",
-        'rules': []
+        'rules': [],
+        'metadata': []
     }
     policy = Policy(**data)
 

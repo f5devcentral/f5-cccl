@@ -52,7 +52,7 @@ class ServiceConfigReader(object):
         self._partition = partition
 
     def _create_config_item(self, resource_type, obj,
-                            default_route_domain=None):
+                            default_route_domain=None, user_agent=None):
         """Create an API resource object and handle exceptions.
 
         This is a factory method to create resource objects in
@@ -66,6 +66,18 @@ class ServiceConfigReader(object):
         :raises:  f5_cccl.exceptions.F5CcclConfigurationReadError
         """
         config_resource = None
+
+        # Update the object with metadata
+        if user_agent is not None:
+            metadata = {
+                'metadata': [{
+                    'name': 'user_agent',
+                    'persist': 'true',
+                    'value': user_agent
+                }]
+            }
+            obj.update(metadata)
+
         try:
             if default_route_domain is not None:
                 config_resource = resource_type(
@@ -87,7 +99,8 @@ class ServiceConfigReader(object):
         return config_resource
 
     # pylint: disable=too-many-locals
-    def read_ltm_config(self, service_config, default_route_domain):
+    def read_ltm_config(self, service_config, default_route_domain,
+                        user_agent):
         """Read the LTM service configuration and save as resource object."""
         config_dict = dict()
         config_dict['http_monitors'] = dict()
@@ -101,7 +114,8 @@ class ServiceConfigReader(object):
         virtuals = service_config.get('virtualServers', list())
         config_dict['virtuals'] = {
             v['name']: self._create_config_item(ApiVirtualServer, v,
-                                                default_route_domain)
+                                                default_route_domain,
+                                                user_agent=user_agent)
             for v in virtuals
         }
 
@@ -109,20 +123,23 @@ class ServiceConfigReader(object):
         virtual_addresses = service_config.get('virtualAddresses', list())
         config_dict['virtual_addresses'] = {
             va['name']: self._create_config_item(ApiVirtualAddress, va,
-                                                 default_route_domain)
+                                                 default_route_domain,
+                                                 user_agent=user_agent)
             for va in virtual_addresses
         }
 
         pools = service_config.get('pools', list())
         config_dict['pools'] = {
             p['name']: self._create_config_item(ApiPool, p,
-                                                default_route_domain)
+                                                default_route_domain,
+                                                user_agent=user_agent)
             for p in pools
         }
 
         irules = service_config.get('iRules', list())
         config_dict['irules'] = {
-            p['name']: self._create_config_item(ApiIRule, p)
+            p['name']: self._create_config_item(ApiIRule, p,
+                                                user_agent=user_agent)
             for p in irules
         }
 
