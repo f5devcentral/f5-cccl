@@ -94,6 +94,7 @@ definitions:
         enum:
           - "snat"
           - "automap"
+          - "none"
       pool:
         type: "string"
         desctiption: >
@@ -474,7 +475,7 @@ definitions:
         definition: >
           Specifies the IP address for the pool member. This is of the
           form <ip_address>[%<route_domain>]
-      port: 
+      port:
         definition: "Specifies the service port for the pool member."
         $ref: "#/definitions/portType"
       priorityGroup:
@@ -776,9 +777,9 @@ definitions:
           selective and intelligent source address translation. The default is automap.
           Supported values are:
             automap
-            snatpool
-            None
-          If snatpool is set, then the snatpool configuration item must be defined.
+            snat
+            none
+          If snat is set, then the pool configuration item must be defined.
         $ref: "#/definitions/snatConfigType"
 
       vlansEnabled:
