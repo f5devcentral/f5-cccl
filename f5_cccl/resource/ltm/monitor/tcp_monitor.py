@@ -5,7 +5,7 @@ BIG-IP for purposes of abstracting the F5-SDK library.
 """
 # coding=utf-8
 #
-# Copyright 2017 F5 Networks Inc.
+# Copyright (c) 2017,2018, F5 Networks, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

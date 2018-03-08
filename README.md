@@ -26,7 +26,7 @@ Creating issues is good, creating good issues is even better. Please provide:
 This project is used internally by other F5 projects; we're not yet ready to accept contributions. Please check back later or see if another project, such as https://github.com/F5Networks/f5-common-python would be a good place for your contribution.
 
 # Copyright
-Copyright 2017 F5 Networks Inc.
+Copyright (c) 2017,2018, F5 Networks, Inc.
 
 # License
 
