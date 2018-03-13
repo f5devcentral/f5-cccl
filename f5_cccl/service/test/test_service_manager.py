@@ -38,6 +38,9 @@ from mock import Mock
 from mock import patch
 
 
+TEST_USER_AGENT='k8s-bigip-ctlr-v1.4.0'
+
+
 @pytest.fixture
 def ltm_service_manager():
     partition = "test"
@@ -67,7 +70,7 @@ def net_service_manager():
 def test_apply_ltm_config(ltm_service_manager):
     services = {}
     assert ltm_service_manager.apply_ltm_config(services,
-        'k8s-bigip-ctlr-v1.4.0') == 0
+        TEST_USER_AGENT) == 0
 
 
 def test_apply_net_config(net_service_manager):
@@ -89,12 +92,10 @@ class TestServiceConfigDeployer:
         with open(net_svcfile, 'r') as fp:
             self.net_service = json.loads(fp.read())
 
-        user_agent='k8s-bigip-ctlr-v1.4.0'
-
         config_reader = ServiceConfigReader(self.partition)
         self.default_route_domain = self.bigip.get_default_route_domain()
         self.desired_ltm_config = config_reader.read_ltm_config(
-            self.ltm_service, self.default_route_domain, user_agent)
+            self.ltm_service, self.default_route_domain, TEST_USER_AGENT)
         self.desired_net_config = config_reader.read_net_config(
             self.net_service, self.default_route_domain)
 
@@ -108,8 +109,7 @@ class TestServiceConfigDeployer:
         deployer = ltm_service_manager._service_deployer
         deployer._create_resources = Mock(return_value=[])
 
-        ltm_service_manager.apply_ltm_config(self.ltm_service,
-                                             'k8s-bigip-ctlr-v1.4.0')
+        ltm_service_manager.apply_ltm_config(self.ltm_service, TEST_USER_AGENT)
         assert deployer._create_resources.called
         args, kwargs = deployer._create_resources.call_args_list[0]
         return self.get_objects(args[0], obj_type)
@@ -119,7 +119,7 @@ class TestServiceConfigDeployer:
         deployer = ltm_service_manager._service_deployer
         deployer._update_resources = Mock(return_value=[])
 
-        ltm_service_manager.apply_ltm_config(self.ltm_service, 'k8s-bigip-ctlr-v1.4.0')
+        ltm_service_manager.apply_ltm_config(self.ltm_service, TEST_USER_AGENT)
         assert deployer._update_resources.called
         args, kwargs = deployer._update_resources.call_args_list[0]
         return self.get_objects(args[0], obj_type)
@@ -129,8 +129,7 @@ class TestServiceConfigDeployer:
         deployer = ltm_service_manager._service_deployer
         deployer._delete_resources = Mock(return_value=[])
 
-        ltm_service_manager.apply_ltm_config(self.ltm_service,
-                                             'k8s-bigip-ctlr-v1.4.0')
+        ltm_service_manager.apply_ltm_config(self.ltm_service, TEST_USER_AGENT)
         assert deployer._delete_resources.called
         args, kwargs = deployer._delete_resources.call_args_list[0]
         return self.get_objects(args[0], obj_type)
@@ -207,12 +206,14 @@ class TestServiceConfigDeployer:
         objs = self.get_created_ltm_objects(ltm_service_manager, VirtualServer)
         assert 1 == len(objs)
         assert objs[0].name == 'vs1'
+        assert objs[0].data['metadata'][0]['value'] == TEST_USER_AGENT
 
         # Should update one Virtual Server
         self.ltm_service['virtualServers'][0]['name'] = 'virtual2'
         objs = self.get_updated_ltm_objects(ltm_service_manager, VirtualServer)
         assert 1 == len(objs)
         assert objs[0].name == 'virtual2'
+        assert objs[0].data['metadata'][0]['value'] == TEST_USER_AGENT
 
         # Should delete one Virtual Server
         self.ltm_service['virtualServers'] = []
@@ -226,12 +227,14 @@ class TestServiceConfigDeployer:
         objs = self.get_created_ltm_objects(ltm_service_manager, Pool)
         assert 1 == len(objs)
         assert objs[0].name == 'pool2'
+        assert objs[0].data['metadata'][0]['value'] == TEST_USER_AGENT
 
         # Should update one Pool
         self.ltm_service['pools'][0]['name'] = 'pool1'
         objs = self.get_updated_ltm_objects(ltm_service_manager, Pool)
         assert 1 == len(objs)
         assert objs[0].name == 'pool1'
+        assert objs[0].data['metadata'][0]['value'] == TEST_USER_AGENT
 
         # Should delete one Pool
         self.ltm_service['pools'] = []
@@ -302,12 +305,14 @@ class TestServiceConfigDeployer:
         objs = self.get_created_ltm_objects(ltm_service_manager, IRule)
         assert 1 == len(objs)
         assert objs[0].name == 'https_redirect'
+        assert objs[0].data['metadata'][0]['value'] == TEST_USER_AGENT
 
         # Should update one iRule
         self.ltm_service['iRules'][0]['name'] = 'https_redirector'
         objs = self.get_updated_ltm_objects(ltm_service_manager, IRule)
         assert 1 == len(objs)
         assert objs[0].name == 'https_redirector'
+        assert objs[0].data['metadata'][0]['value'] == TEST_USER_AGENT
 
         # Should delete one iRule
         self.ltm_service['iRules'] = [] 
