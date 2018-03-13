@@ -97,7 +97,7 @@ definitions:
           - "none"
       pool:
         type: "string"
-        desctiption: >
+        description: >
           Full path to snat pool, (e.g. /Common/my_snatpool)
     required:
       - "type"

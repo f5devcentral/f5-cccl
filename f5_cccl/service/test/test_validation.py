@@ -127,6 +127,38 @@ class TestConfigValidator(object):
         with pytest.raises(F5CcclValidationError):
             net_validator.validate(invalid_config)
 
+    def test_validate_invalid_source_address_translation(
+            self, valid_ltm_config):
+        """Test the validation methods against invalid source address
+        translation fields on virtual servers
+        """
+        invalid_sats = ["garbage",
+                        1,
+                        "automap",
+                        "---\ntype: automap\npool: 1",
+                        {},
+                        {'type': 'garbage'},
+                        {'garbage': 'automap'},
+                        {'type': 'garbage', 'pool': 'snat-pool'},
+                        {'type': 1},
+                        {'type': 'automap', 'pool': 1},
+                        {'type': 'garbage', 'pool': 'snat-pool', 'extra': 1}]
+        ltm_validator = ServiceConfigValidator()
+
+        try:
+            ltm_validator.validate(valid_ltm_config)
+        except F5CcclValidationError as e:
+            assert False, "ValidationError raised for valid config"
+
+        # Modify the source address translation to make it invalid
+        invalid_config = copy.deepcopy(valid_ltm_config)
+        for sat in invalid_sats:
+            invalid_config['virtualServers'][0]['sourceAddressTranslation'] = \
+                sat
+
+            with pytest.raises(F5CcclValidationError):
+                ltm_validator.validate(invalid_config)
+
 
 @pytest.fixture()
 def store_read_yaml(request):
