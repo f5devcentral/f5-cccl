@@ -29,7 +29,12 @@ va_cfg = {
     "autoDelete": "true",
     "enabled": "yes",
     "description": "Test virutal address resource",
-    "trafficGroup": "/Common/traffic-group-local-only"
+    "trafficGroup": "/Common/traffic-group-local-only",
+    'metadata': [{
+      'name': 'user_agent',
+      'persist': 'true',
+      'value': 'some-controller-v.1.4.0'
+    }]
 }
 
 @pytest.fixture
@@ -74,6 +79,7 @@ def test_update_virtual_address():
     va = VirtualAddress(**va_cfg)
 
     assert 'address' in va.data
+    assert 'metadata' in va.data
 
     # Verify that immutable 'address' is not passed to parent method
     with patch.object(Resource, 'update') as mock_method:

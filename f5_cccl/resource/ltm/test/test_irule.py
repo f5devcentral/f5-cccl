@@ -29,7 +29,12 @@ ssl_redirect_irule_1 = """
 cfg_test = {
     'name': 'ssl_redirect',
     'partition': 'my_partition',
-    'apiAnonymous': ssl_redirect_irule_1
+    'apiAnonymous': ssl_redirect_irule_1,
+    'metadata': [{
+      'name': 'user_agent',
+      'persist': 'true',
+      'value': 'some-controller-v.1.4.0'
+    }]
 }
 
 class FakeObj: pass
@@ -50,7 +55,10 @@ def test_create_irule():
 
     # verify all cfg items
     for k,v in cfg_test.items():
-        assert irule.data[k] == v.strip()
+        if type(v) is not list:
+            assert irule.data[k] == v.strip()
+        else:
+            assert irule.data[k] == v
 
 
 def test_hash():

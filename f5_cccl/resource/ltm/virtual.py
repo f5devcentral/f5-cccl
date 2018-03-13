@@ -63,7 +63,8 @@ class VirtualServer(Resource):
                       pool=None,
                       policies=list(),
                       profiles=list(),
-                      rules=list())
+                      rules=list(),
+                      metadata=list())
 
     def __init__(self, name, partition, default_route_domain, **properties):
         """Create a Virtual server instance."""
