@@ -36,7 +36,7 @@ def create_client_ssl_profile(mgmt, partition, profile):
     cert = profile['cert']
     cert_name = name + '.crt'
     if cert != "":
-        incomplete = _install_certificate(mgmt, cert, cert_name)
+        incomplete = _install_certificate(mgmt, partition, cert, cert_name)
     if incomplete > 0:
         # Unable to install cert
         return incomplete
@@ -44,7 +44,7 @@ def create_client_ssl_profile(mgmt, partition, profile):
     key = profile['key']
     key_name = name + '.key'
     if key != "":
-        incomplete = _install_key(mgmt, key, key_name)
+        incomplete = _install_key(mgmt, partition, key, key_name)
     if incomplete > 0:
         # Unable to install key
         return incomplete
@@ -56,8 +56,8 @@ def create_client_ssl_profile(mgmt, partition, profile):
         kwargs = {}
         if cert != "" and key != "":
             chain = [{'name': name,
-                      'cert': '/Common/' + cert_name,
-                      'key': '/Common/' + key_name}]
+                      'cert': '/' + partition + '/' + cert_name,
+                      'key': '/' + partition + '/' + key_name}]
             kwargs = {'certKeyChain': chain}
 
         ssl_client_profile.create(name=name,
@@ -87,7 +87,7 @@ def create_server_ssl_profile(mgmt, partition, profile):
     cert = profile['cert']
     cert_name = name + '.crt'
     if cert != "":
-        incomplete = _install_certificate(mgmt, cert, cert_name)
+        incomplete = _install_certificate(mgmt, partition, cert, cert_name)
     if incomplete > 0:
         # Unable to install cert
         return incomplete
@@ -128,7 +128,8 @@ def delete_unused_ssl_profiles(mgmt, partition, config):
     try:
         client_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection(
             requests_params={'params': '$filter=partition+eq+%s' % partition})
-        incomplete += _delete_ssl_profiles(mgmt, config, client_profiles)
+        incomplete += _delete_ssl_profiles(
+            mgmt, partition, config, client_profiles)
     except Exception as err:  # pylint: disable=broad-except
         LOGGER.error("Error reading client SSL profiles from BIG-IP: %s",
                      str(err))
@@ -138,7 +139,8 @@ def delete_unused_ssl_profiles(mgmt, partition, config):
     try:
         server_profiles = mgmt.tm.ltm.profile.server_ssls.get_collection(
             requests_params={'params': '$filter=partition+eq+%s' % partition})
-        incomplete += _delete_ssl_profiles(mgmt, config, server_profiles)
+        incomplete += _delete_ssl_profiles(
+            mgmt, partition, config, server_profiles)
     except Exception as err:  # pylint: disable=broad-except
         LOGGER.error("Error reading server SSL profiles from BIG-IP: %s",
                      str(err))
@@ -147,13 +149,13 @@ def delete_unused_ssl_profiles(mgmt, partition, config):
     return incomplete
 
 
-def _delete_ssl_profiles(mgmt, config, profiles):
+def _delete_ssl_profiles(mgmt, partition, config, profiles):
     incomplete = 0
 
     file_certs = mgmt.tm.sys.file.ssl_certs.get_collection(
-        requests_params={'params': '$filter=partition+eq+Common'})
+        requests_params={'params': '$filter=partition+eq+%s' % partition})
     file_keys = mgmt.tm.sys.file.ssl_keys.get_collection(
-        requests_params={'params': '$filter=partition+eq+Common'})
+        requests_params={'params': '$filter=partition+eq+%s' % partition})
     file_list = [file_certs, file_keys]
 
     if 'customProfiles' not in config:
@@ -203,32 +205,32 @@ def _upload_crypto_file(mgmt, file_data, file_name):
     uploader.upload_bytes(file_data, file_name)
 
 
-def _import_certificate(mgmt, cert_name):
+def _import_certificate(mgmt, partition, cert_name):
     cert_registrar = mgmt.tm.sys.crypto.certs
     param_set = {}
-    param_set['name'] = cert_name
+    param_set['name'] = '/' + partition + '/' + cert_name
     param_set['from-local-file'] = os.path.join(
         '/var/config/rest/downloads', cert_name)
     cert_registrar.exec_cmd('install', **param_set)
 
 
-def _import_key(mgmt, key_name):
+def _import_key(mgmt, partition, key_name):
     key_registrar = mgmt.tm.sys.crypto.keys
     param_set = {}
-    param_set['name'] = key_name
+    param_set['name'] = '/' + partition + '/' + key_name
     param_set['from-local-file'] = os.path.join(
         '/var/config/rest/downloads', key_name)
     key_registrar.exec_cmd('install', **param_set)
 
 
-def _install_certificate(mgmt, cert_data, cert_name):
+def _install_certificate(mgmt, partition, cert_data, cert_name):
     incomplete = 0
 
     try:
-        if not _certificate_exists(mgmt, cert_name):
+        if not _certificate_exists(mgmt, partition, cert_name):
             # Upload and install cert
             _upload_crypto_file(mgmt, cert_data, cert_name)
-            _import_certificate(mgmt, cert_name)
+            _import_certificate(mgmt, partition, cert_name)
 
     except Exception as err:  # pylint: disable=broad-except
         incomplete += 1
@@ -237,14 +239,14 @@ def _install_certificate(mgmt, cert_data, cert_name):
     return incomplete
 
 
-def _install_key(mgmt, key_data, key_name):
+def _install_key(mgmt, partition, key_data, key_name):
     incomplete = 0
 
     try:
-        if not _key_exists(mgmt, key_name):
+        if not _key_exists(mgmt, partition, key_name):
             # Upload and install cert
             _upload_crypto_file(mgmt, key_data, key_name)
-            _import_key(mgmt, key_name)
+            _import_key(mgmt, partition, key_name)
 
     except Exception as err:  # pylint: disable=broad-except
         incomplete += 1
@@ -253,18 +255,18 @@ def _install_key(mgmt, key_data, key_name):
     return incomplete
 
 
-def _certificate_exists(mgmt, cert_name):
-    # All certs are in the Common partition
-    name_to_find = "/Common/{}".format(cert_name)
+def _certificate_exists(mgmt, partition, cert_name):
+    # All certs are in the managed partition
+    name_to_find = "/" + partition + "/{}".format(cert_name)
     for cert in mgmt.tm.sys.crypto.certs.get_collection():
         if cert.name == name_to_find:
             return True
     return False
 
 
-def _key_exists(mgmt, key_name):
-    # All keys are in the Common partition
-    name_to_find = "/Common/{}".format(key_name)
+def _key_exists(mgmt, partition, key_name):
+    # All keys are in the managed partition
+    name_to_find = "/" + partition + "/{}".format(key_name)
     for key in mgmt.tm.sys.crypto.keys.get_collection():
         if key.name == name_to_find:
             return True
@@ -278,7 +280,8 @@ def _delete_unused_ssl_profiles(mgmt, partition, config):
     try:
         client_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection(
             requests_params={'params': '$filter=partition+eq+%s' % partition})
-        incomplete += _delete_ssl_profiles(mgmt, config, client_profiles)
+        incomplete += _delete_ssl_profiles(
+            mgmt, partition, config, client_profiles)
     except Exception as err:  # pylint: disable=broad-except
         LOGGER.error("Error reading client SSL profiles from BIG-IP: %s",
                      str(err))
@@ -288,7 +291,8 @@ def _delete_unused_ssl_profiles(mgmt, partition, config):
     try:
         server_profiles = mgmt.tm.ltm.profile.server_ssls.get_collection(
             requests_params={'params': '$filter=partition+eq+%s' % partition})
-        incomplete += _delete_ssl_profiles(mgmt, config, server_profiles)
+        incomplete += _delete_ssl_profiles(
+            mgmt, partition, config, server_profiles)
     except Exception as err:  # pylint: disable=broad-except
         LOGGER.error("Error reading server SSL profiles from BIG-IP: %s",
                      str(err))
