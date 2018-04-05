@@ -35,12 +35,11 @@ class Pool(Resource):
                       loadBalancingMode="round-robin",
                       description=None,
                       monitor="default",
-                      membersReference={},
-                      metadata=list())
+                      membersReference={})
 
     def __init__(self, name, partition, members=None, **properties):
         u"""Create a Pool instance from CCCL poolType."""
-        super(Pool, self).__init__(name, partition)
+        super(Pool, self).__init__(name, partition, **properties)
 
         for key, value in self.properties.items():
             if key == "name" or key == "partition":

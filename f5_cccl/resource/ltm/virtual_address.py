@@ -33,12 +33,11 @@ class VirtualAddress(Resource):
                       autoDelete="false",
                       enabled=None,
                       description=None,
-                      trafficGroup="/Common/traffic-group-1",
-                      metadata=list())
+                      trafficGroup="/Common/traffic-group-1")
 
     def __init__(self, name, partition, default_route_domain, **properties):
         """Create a VirtualAddress instance."""
-        super(VirtualAddress, self).__init__(name, partition)
+        super(VirtualAddress, self).__init__(name, partition, **properties)
 
         for key, value in self.properties.items():
             self._data[key] = properties.get(key, value)

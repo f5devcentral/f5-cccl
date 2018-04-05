@@ -46,21 +46,70 @@ class ServiceConfigDeployer(object):
         self._bigip = bigip_proxy
 
     def _get_resource_tasks(self, existing, desired):
-        """Get the list of resources to create, delete, update."""
+        """Get the list of resources to create, delete, update.
+
+           Here, the term 'manage' means absolute control by CCCL.
+           The term 'unmanaged' means the end-user has control over
+           the resource except for fields we must change. We don't
+           undo end-user changes (unless it conflicts with CCCL
+           requested changes) and we don't delete the resource.
+        """
+        unmanaged = {
+            name: resource for name, resource in existing.items()
+            if resource.whitelist is True
+        }
+        managed = {
+            name: resource for name, resource in existing.items()
+            if resource.whitelist is False
+        }
+
+        desired_set = set(desired)
+        existing_set = set(existing)
+        unmanaged_set = set(unmanaged)
+        managed_set = set(managed)
+
+        # Create any managed resource that doesn't currently exist
         create_list = [
             desired[resource] for resource in
-            set(desired) - set(existing)
+            desired_set - existing_set
         ]
-        update_list = set(desired) & set(existing)
+
+        # Update managed resources that diff between desired and actual
         update_list = [
-            desired[resource] for resource in update_list
-            if desired[resource] != existing[resource]
+            desired[resource] for resource in desired_set & managed_set
+            if desired[resource] != managed[resource]
         ]
+
+        # Merge unmanaged resources with desired if needed
+        for resource in unmanaged_set:
+            update_resource = self._merge_resource(
+                resource, desired, unmanaged)
+            if update_resource:
+                update_list.append(update_resource)
+
+        # Delete any managed resource that isn't still desired
         delete_list = [
-            existing[resource] for resource in
-            set(existing) - set(desired)
+            managed[resource] for resource in
+            managed_set - desired_set
         ]
         return (create_list, update_list, delete_list)
+
+    def _merge_resource(self, resource, desired, unmanaged):
+        """Merge desired settings with existing settings.
+
+           If there are any differences, return the merged object.
+        """
+        unmanaged_resource = unmanaged[resource]  # this always exists
+        desired_resource = desired.get(resource)
+        if desired_resource is None:
+            desired_data = {}
+        else:
+            desired_data = desired_resource.data
+
+        # determine if any changes occurred after merging
+        if unmanaged_resource.merge(desired_data):
+            return unmanaged_resource
+        return None
 
     def _create_resources(self, create_list):
         """Iterate over the resources and call create method."""

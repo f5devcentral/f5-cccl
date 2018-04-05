@@ -69,6 +69,13 @@
             "ipProtocol": "tcp",
             "kind": "tm:ltm:virtual:virtualstate",
             "mask": "255.255.255.255",
+            "metadata": [
+                {
+                    "name": "cccl-whitelist",
+                    "persist": "true",
+                    "value": "false"
+                }
+            ],
             "mirror": "disabled",
             "mobileAppTunnel": "disabled",
             "name": "virtual2",
@@ -91,6 +98,61 @@
             "rateLimitMode": "object",
             "rateLimitSrcMask": 0,
             "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~test~virtual2?ver=12.1.0",
+            "serviceDownImmediateAction": "none",
+            "source": "0.0.0.0/0",
+            "sourceAddressTranslation": {
+                "type": "none"
+            },
+            "sourcePort": "preserve",
+            "synCookieStatus": "not-activated",
+            "translateAddress": "enabled",
+            "translatePort": "enabled",
+            "vlansDisabled": true,
+            "vsIndex": 112
+        },
+        {
+            "addressStatus": "yes",
+            "autoLasthop": "default",
+            "cmpEnabled": "yes",
+            "connectionLimit": 0,
+            "description": "This is a virtual server",
+            "destination": "/test/10.190.6.8:80",
+            "enabled": true,
+            "fullPath": "/test/virtual3",
+            "generation": 15858,
+            "gtmScore": 0,
+            "ipProtocol": "tcp",
+            "kind": "tm:ltm:virtual:virtualstate",
+            "mask": "255.255.255.255",
+            "metadata": [
+                {
+                    "name": "cccl-whitelist",
+                    "persist": "true",
+                    "value": "true"
+                }
+            ],
+            "mirror": "disabled",
+            "mobileAppTunnel": "disabled",
+            "name": "virtual3",
+            "nat64": "disabled",
+            "partition": "test",
+            "policiesReference": {
+                "isSubcollection": true,
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~test~virtual3/policies?ver=12.1.0"
+            },
+            "pool": "/test/pool1",
+            "poolReference": {
+                "link": "https://localhost/mgmt/tm/ltm/pool/~test~pool1?ver=12.1.0"
+            },
+            "profilesReference": {
+                "isSubcollection": true,
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~test~virtual3/profiles?ver=12.1.0"
+            },
+            "rateLimit": "disabled",
+            "rateLimitDstMask": 0,
+            "rateLimitMode": "object",
+            "rateLimitSrcMask": 0,
+            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~test~virtual3?ver=12.1.0",
             "serviceDownImmediateAction": "none",
             "source": "0.0.0.0/0",
             "sourceAddressTranslation": {

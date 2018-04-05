@@ -63,7 +63,7 @@ def test_bigip_refresh_ltm(bigip_proxy):
 
     # verify virtual servers 
     assert big_ip.tm.ltm.virtuals.get_collection.called
-    assert len(bigip_proxy._virtuals) == 1
+    assert len(bigip_proxy._virtuals) == 2
 
     assert len(bigip_proxy._virtuals) == len(test_virtuals)
     for v in test_virtuals:

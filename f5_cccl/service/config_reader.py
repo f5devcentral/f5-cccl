@@ -69,6 +69,7 @@ class ServiceConfigReader(object):
 
         # Update the object with metadata
         if user_agent is not None:
+
             metadata = {
                 'metadata': [{
                     'name': 'user_agent',
