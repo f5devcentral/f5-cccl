@@ -82,9 +82,12 @@ class Condition(Resource):
                 condition_map['index'] = data.get('index', 1)
             elif data.get('extension', False):
                 condition_map['extension'] = True
+            elif data.get('host', False):
+                condition_map['host'] = True
             else:
-                raise ValueError("must specify one of path, pathSegment, or "
-                                 "extension for HTTP URI matching condition")
+                raise ValueError("must specify one of host path, pathSegment, "
+                                 "or extension for HTTP URI matching "
+                                 "condition")
 
         # Does this rule match an HTTP header?
         elif data.get('httpHeader', False):
