@@ -254,20 +254,11 @@ definitions:
         - "setVariable"
       - required:
         - "httpHost"
-        - "replace"
-        - "request"
-        - "value"
-      - required:
         - "httpUri"
         - "path"
         - "replace"
-        - "request"
         - "value"
-      - required:
-        - "httpUri"
-        - "replace"
         - "request"
-        - "value"
 
   l7ConditionType:
     type: "object"
