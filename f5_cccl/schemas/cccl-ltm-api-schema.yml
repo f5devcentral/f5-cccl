@@ -259,6 +259,11 @@ definitions:
         - "replace"
         - "value"
         - "request"
+      - required:
+        - "httpHost"
+        - "replace"
+        - "value"
+        - "request"
 
   l7ConditionType:
     type: "object"
