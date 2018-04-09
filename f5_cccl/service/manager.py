@@ -45,6 +45,7 @@ class ServiceConfigDeployer(object):
         """Initialize the config deployer."""
         self._bigip = bigip_proxy
 
+    # pylint: disable=too-many-locals
     def _get_resource_tasks(self, existing, desired):
         """Get the list of resources to create, delete, update.
 
@@ -92,7 +93,14 @@ class ServiceConfigDeployer(object):
             managed[resource] for resource in
             managed_set - desired_set
         ]
-        return (create_list, update_list, delete_list)
+
+        # These resources, and the resource they reference,
+        # should not be deleted
+        unmanaged_list = [
+            unmanaged[resource] for resource in unmanaged_set
+        ]
+
+        return (create_list, update_list, delete_list, unmanaged_list)
 
     def _merge_resource(self, resource, desired, unmanaged):
         """Merge desired settings with existing settings.
@@ -198,7 +206,7 @@ class ServiceConfigDeployer(object):
             desired = desired_config.get(config_key, dict())
 
             (create_hm, update_hm, delete_hm) = (
-                self._get_resource_tasks(existing, desired))
+                self._get_resource_tasks(existing, desired)[0:3])
 
             create_monitors += create_hm
             update_monitors += update_hm
@@ -278,16 +286,15 @@ class ServiceConfigDeployer(object):
         existing_internal_data_groups = self._bigip.get_internal_data_groups()
         existing_pools = self._bigip.get_pools()
 
-        delete_iapps = self._get_resource_tasks(existing_iapps, {})[-1]
-        delete_virtuals = self._get_resource_tasks(existing_virtuals, {})[-1]
-        delete_policies = self._get_resource_tasks(existing_policies, {})[-1]
-        delete_irules = self._get_resource_tasks(existing_irules, {})[-1]
+        delete_iapps = self._get_resource_tasks(existing_iapps, {})[2]
+        delete_virtuals = self._get_resource_tasks(existing_virtuals, {})[2]
+        delete_policies = self._get_resource_tasks(existing_policies, {})[2]
+        delete_irules = self._get_resource_tasks(existing_irules, {})[2]
         delete_internal_data_groups = self._get_resource_tasks(
-            existing_internal_data_groups, {})[-1]
-        delete_pools = self._get_resource_tasks(existing_pools, {})[-1]
-        delete_monitors = self._get_monitor_tasks({})[-1]
-
-        delete_nodes = self._get_resource_tasks(existing_nodes, {})[-1]
+            existing_internal_data_groups, {})[2]
+        delete_pools = self._get_resource_tasks(existing_pools, {})[2]
+        delete_monitors = self._get_monitor_tasks({})[2]
+        delete_nodes = self._get_resource_tasks(existing_nodes, {})[2]
 
         delete_tasks = delete_iapps + delete_virtuals + delete_policies + \
             delete_irules + delete_internal_data_groups + delete_pools + \
@@ -380,22 +387,23 @@ class ServiceConfigDeployer(object):
         LOGGER.debug("Getting virtual server tasks...")
         existing_virtuals = self._bigip.get_virtuals()
         desired = desired_config.get('virtuals', dict())
-        (create_virtuals, update_virtuals, delete_virtuals) = (
-            self._get_resource_tasks(existing_virtuals, desired))
+        (create_virtuals, update_virtuals, delete_virtuals,
+         unmanaged_virtuals) = (
+             self._get_resource_tasks(existing_virtuals, desired)[0:4])
 
         # Get the list of pool tasks
         LOGGER.debug("Getting pool tasks...")
         existing_pools = self._bigip.get_pools()
         desired = desired_config.get('pools', dict())
-        (create_pools, update_pools, delete_pools) = (
-            self._get_resource_tasks(existing_pools, desired))
+        (create_pools, update_pools, delete_pools, unmanaged_pools) = (
+            self._get_resource_tasks(existing_pools, desired)[0:4])
 
         # Get the list of irule tasks
         LOGGER.debug("Getting iRule tasks...")
         existing = self._bigip.get_irules()
         desired = desired_config.get('irules', dict())
         (create_irules, update_irules, delete_irules) = (
-            self._get_resource_tasks(existing, desired))
+            self._get_resource_tasks(existing, desired)[0:3])
 
         # Get the list of internal data group tasks
         LOGGER.debug("Getting InternalDataGroup tasks...")
@@ -403,26 +411,33 @@ class ServiceConfigDeployer(object):
         desired = desired_config.get('internaldatagroups', dict())
         (create_internal_data_groups, update_internal_data_groups,
          delete_internal_data_groups) = (
-             self._get_resource_tasks(existing, desired))
+             self._get_resource_tasks(existing, desired)[0:3])
 
         # Get the list of policy tasks
         LOGGER.debug("Getting policy tasks...")
         existing = self._bigip.get_l7policies()
         desired = desired_config.get('l7policies', dict())
         (create_policies, update_policies, delete_policies) = (
-            self._get_resource_tasks(existing, desired))
+            self._get_resource_tasks(existing, desired)[0:3])
 
         # Get the list of iapp tasks
         LOGGER.debug("Getting iApp tasks...")
         existing_iapps = self._bigip.get_app_svcs()
         desired = desired_config.get('iapps', dict())
         (create_iapps, update_iapps, delete_iapps) = (
-            self._get_resource_tasks(existing_iapps, desired))
+            self._get_resource_tasks(existing_iapps, desired)[0:3])
 
         # Get the list of monitor tasks
         LOGGER.debug("Getting monitor tasks...")
         (create_monitors, update_monitors, delete_monitors) = (
             self._get_monitor_tasks(desired_config))
+
+        # Trim resources from being deleted if they are referenced from
+        # a whitelisted resource (an 'unmanaged' resource)
+        ignore_unmanaged_references(unmanaged_virtuals, unmanaged_pools,
+                                    delete_policies, delete_irules,
+                                    delete_pools, delete_monitors,
+                                    delete_internal_data_groups)
 
         LOGGER.debug("Building task lists...")
         create_tasks = create_vaddrs + create_monitors + \
@@ -459,14 +474,14 @@ class ServiceConfigDeployer(object):
         existing = self._bigip.get_arps()
         desired = desired_config.get('arps', dict())
         (create_arps, update_arps, delete_arps) = (
-            self._get_resource_tasks(existing, desired))
+            self._get_resource_tasks(existing, desired)[0:3])
 
         # Get the list of tunnel tasks
         LOGGER.debug("Getting tunnel tasks...")
         existing = self._bigip.get_fdb_tunnels()
         desired = desired_config.get('fdbTunnels', dict())
         (create_tunnels, update_tunnels, delete_tunnels) = (
-            self._get_resource_tasks(existing, desired))
+            self._get_resource_tasks(existing, desired)[0:3])
 
         # If there are pre-existing (user-created) tunnels that we are
         # managing, we want to only update these tunnels.
@@ -518,6 +533,83 @@ class ServiceConfigDeployer(object):
             taskq_len = tasks_remaining
 
         return taskq_len
+
+
+# pylint: disable=too-many-locals, too-many-nested-blocks, too-many-branches
+def ignore_unmanaged_references(unmanaged_virtuals, unmanaged_pools,
+                                delete_policies, delete_irules,
+                                delete_pools, delete_monitors,
+                                delete_data_groups):
+    """Ignore any referenced resource for whitelisted virtuals and pools
+
+       This is necessary for situations where a CCCL created resource is
+       eventually whitelisted.  If and when the resource is no
+       longer controlled by CCCL, it will not be able to determine which
+       properties were merged (and need to be backed out).
+
+       ISSUE: This function cannot detect data groups used by irules
+    """
+
+    ignore_policies = set()
+    ignore_irules = set()
+    ignore_pools = set()
+    ignore_monitors = set()
+    ignore_data_groups = set()
+
+    # Start off getting a list of referenced resources
+    for virtual in unmanaged_virtuals:
+        for rule in virtual.data['rules']:
+            ignore_irules.add(rule)
+        for policy in virtual.data['policies']:
+            ignore_policies.add("/{}/{}".format(policy['partition'],
+                                                policy['name']))
+
+    for policy in delete_policies:
+        if policy.full_path() in ignore_policies:
+            for rule in policy.data['rules']:
+                if 'actions' in rule:
+                    for action in rule['actions']:
+                        if 'pool' in action:
+                            # pool name contains partition already
+                            ignore_pools.add(action['pool'])
+
+    # For irules we examine the irule content for a reference to
+    # any of the data groups we want to delete (not ideal).  If we
+    # find a mention of the data group, we don't delete it.
+    for irule in delete_irules:
+        if irule.full_path() in ignore_irules:
+            for data_group in delete_data_groups:
+                if data_group.name in irule.data['apiAnonymous']:
+                    ignore_data_groups.add(data_group.full_path())
+
+    # For the pools we are not going to delete (either unmanaged, or
+    # referenced by an unmanaged virtual server), we must not delete
+    # the referenced health monitor.
+    for pool in unmanaged_pools:
+        ignore_monitors.update(pool.monitors())
+    for pool in delete_pools:
+        if pool.full_path() in ignore_pools:
+            ignore_monitors.update(pool.monitors())
+
+    # Remove from the delete list any resource still used by the
+    # whitelisted virtuals
+    def _prune_resources(resource_name, resource_list, ignore_resources):
+        found = True
+        while found:
+            found = False
+            for idx, resource in enumerate(resource_list):
+                if resource.full_path() in ignore_resources:
+                    LOGGER.debug("Pruning %s resource %s from delete list",
+                                 resource_name, resource.full_path())
+                    del resource_list[idx]
+                    found = True
+                    break
+
+    _prune_resources("policy", delete_policies, ignore_policies)
+    _prune_resources("irule", delete_irules, ignore_irules)
+    _prune_resources("pool", delete_pools, ignore_pools)
+    _prune_resources("monitor", delete_monitors, ignore_monitors)
+    _prune_resources("data_group", delete_data_groups, ignore_data_groups)
 
 
 class ServiceManager(object):
