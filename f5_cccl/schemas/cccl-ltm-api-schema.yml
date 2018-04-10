@@ -168,7 +168,7 @@ definitions:
   l7RuleActionType:
     type: "object"
     description: |
-      Defines an L7 Policy action. The only supported actions are forward and redirect.
+      Defines an L7 Policy action. The only supported actions are forward, redirect, and replace.
 
       The supported forwarding actions are forward to pool and reset(block).
       The supported redirect action is redirect to location (URI)
@@ -216,6 +216,21 @@ definitions:
       setVariable:
         type: "boolean"
         description: "Sets specified variable to value of expression in runtime environment"
+      httpHost:
+        type: "boolean"
+        description: "Set the HTTP host in runtime environment"
+      httpUri:
+        type: "boolean"
+        description: "Set the HTTP URI in runtime environment"
+      path:
+        type: "string"
+        description: "An HTTP request path"
+      replace:
+        type: "boolean"
+        description: "Sets the URL replacement value"
+      value:
+        type: "string"
+        description: "The URL replacement value"
 
     oneOf:
       - required:
@@ -237,6 +252,18 @@ definitions:
         - "tmName"
         - "tcl"
         - "setVariable"
+      - required:
+        - "httpHost"
+        - "httpUri"
+        - "path"
+        - "replace"
+        - "value"
+        - "request"
+      - required:
+        - "httpHost"
+        - "replace"
+        - "value"
+        - "request"
 
   l7ConditionType:
     type: "object"
@@ -355,6 +382,10 @@ definitions:
           - "httpCookie"
           - "values"
           - "tmName"
+      - required:
+          - "httpUri"
+          - "host"
+          - "values"
 
   l7PolicyType:
     id: "#/definitions/l7PolicyType"

@@ -41,6 +41,11 @@ class Action(Resource):
         setVariable=False,
         tcl=False,
         tmName=None,
+        httpHost=False,
+        httpUri=False,
+        path=None,
+        replace=False,
+        value=None,
     )
 
     def __init__(self, name, data):
@@ -87,10 +92,27 @@ class Action(Resource):
             self._data['tmName'] = data.get('tmName', None)
             self._data['expression'] = data.get('expression', None)
             self._data['tcl'] = True
+        # Is this a replace URI host action?
+        elif data.get('replace', False) and data.get('httpHost', False):
+            self._data['replace'] = True
+            self._data['httpHost'] = True
+            self._data['value'] = data.get('value', None)
+        # Is this a replace URI path action?
+        elif data.get('replace', False) and data.get('httpUri', False) and \
+                data.get('path', False):
+            self._data['replace'] = True
+            self._data['httpUri'] = True
+            self._data['path'] = True
+            self._data['value'] = data.get('value', None)
+        # Is this a replace URI action?
+        elif data.get('replace', False) and data.get('httpUri', False):
+            self._data['replace'] = True
+            self._data['httpUri'] = True
+            self._data['value'] = data.get('value', None)
         else:
             # Only forward, redirect and setVariable are supported.
             raise ValueError("Unsupported action, must be one of forward, "
-                             "redirect, setVariable or reset.")
+                             "redirect, setVariable, replace, or reset.")
 
     def __eq__(self, other):
         """Check the equality of the two objects.
