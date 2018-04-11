@@ -80,15 +80,7 @@ class Pool(Resource):
         return True
 
     def _monitors_equal(self, other):
-        self_monitor_list = sorted(
-            [m.rstrip() for m in self._data['monitor'].split(" and ")]
-        )
-
-        other_monitor_list = sorted(
-            [m.rstrip() for m in other.data['monitor'].split(" and ")]
-        )
-
-        return self_monitor_list == other_monitor_list
+        return self.monitors() == other.monitors()
 
     def __hash__(self):  # pylint: disable=useless-super-delegation
         return super(Pool, self).__hash__()
@@ -98,6 +90,13 @@ class Pool(Resource):
 
     def _uri_path(self, bigip):
         return bigip.tm.ltm.pools.pool
+
+    def monitors(self):
+        """Return list of configured monitors"""
+        self_monitor_list = sorted(
+            [m.rstrip() for m in self._data['monitor'].split(" and ")]
+        )
+        return self_monitor_list
 
 
 class ApiPool(Pool):
