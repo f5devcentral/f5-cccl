@@ -120,16 +120,28 @@ def create_server_ssl_profile(mgmt, partition, profile):
     return incomplete
 
 
-def delete_unused_ssl_profiles(mgmt, partition, config):
+def delete_unused_ssl_profiles(mgr, partition, config):
     """Delete unused SSL Profiles."""
     incomplete = 0
 
     # client profiles
+    proxy = mgr.get_proxy()
+    mgmt = proxy.mgmt_root()
+
+    # must exclude profiles that are attached to whitelisted virtuals
+    virtuals = proxy.get_virtuals()
+    ignore_profiles = set()
+    for _, virtual in virtuals.items():
+        if virtual.whitelist is True:
+            for profile in virtual.data['profiles']:
+                ignore_profiles.add("/{}/{}".format(profile['partition'],
+                                                    profile['name']))
+
     try:
         client_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection(
             requests_params={'params': '$filter=partition+eq+%s' % partition})
         incomplete += _delete_ssl_profiles(
-            mgmt, partition, config, client_profiles)
+            mgmt, partition, config, client_profiles, ignore_profiles)
     except Exception as err:  # pylint: disable=broad-except
         LOGGER.error("Error reading client SSL profiles from BIG-IP: %s",
                      str(err))
@@ -140,7 +152,7 @@ def delete_unused_ssl_profiles(mgmt, partition, config):
         server_profiles = mgmt.tm.ltm.profile.server_ssls.get_collection(
             requests_params={'params': '$filter=partition+eq+%s' % partition})
         incomplete += _delete_ssl_profiles(
-            mgmt, partition, config, server_profiles)
+            mgmt, partition, config, server_profiles, ignore_profiles)
     except Exception as err:  # pylint: disable=broad-except
         LOGGER.error("Error reading server SSL profiles from BIG-IP: %s",
                      str(err))
@@ -149,7 +161,7 @@ def delete_unused_ssl_profiles(mgmt, partition, config):
     return incomplete
 
 
-def _delete_ssl_profiles(mgmt, partition, config, profiles):
+def _delete_ssl_profiles(mgmt, partition, config, profiles, ignore_profiles):
     incomplete = 0
 
     file_certs = mgmt.tm.sys.file.ssl_certs.get_collection(
@@ -161,6 +173,9 @@ def _delete_ssl_profiles(mgmt, partition, config, profiles):
     if 'customProfiles' not in config:
         # delete any profiles in managed partition
         for prof in profiles:
+            prof_full_path = "/{}/{}".format(prof.partition, prof.name)
+            if prof_full_path in ignore_profiles:
+                continue
             try:
                 prof_name = prof.name
                 prof.delete()
@@ -171,6 +186,10 @@ def _delete_ssl_profiles(mgmt, partition, config, profiles):
     else:
         # delete profiles no longer in our config
         for prof in profiles:
+            prof_full_path = "/{}/{}".format(prof.partition, prof.name)
+            if prof_full_path in ignore_profiles:
+                continue
+
             if not any(d['name'] == prof.name
                        for d in config['customProfiles']):
                 try:
@@ -271,31 +290,3 @@ def _key_exists(mgmt, partition, key_name):
         if key.name == name_to_find:
             return True
     return False
-
-
-def _delete_unused_ssl_profiles(mgmt, partition, config):
-    incomplete = 0
-
-    # client profiles
-    try:
-        client_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection(
-            requests_params={'params': '$filter=partition+eq+%s' % partition})
-        incomplete += _delete_ssl_profiles(
-            mgmt, partition, config, client_profiles)
-    except Exception as err:  # pylint: disable=broad-except
-        LOGGER.error("Error reading client SSL profiles from BIG-IP: %s",
-                     str(err))
-        incomplete += 1
-
-    # server profiles
-    try:
-        server_profiles = mgmt.tm.ltm.profile.server_ssls.get_collection(
-            requests_params={'params': '$filter=partition+eq+%s' % partition})
-        incomplete += _delete_ssl_profiles(
-            mgmt, partition, config, server_profiles)
-    except Exception as err:  # pylint: disable=broad-except
-        LOGGER.error("Error reading server SSL profiles from BIG-IP: %s",
-                     str(err))
-        incomplete += 1
-
-    return incomplete
