@@ -26,6 +26,12 @@ conditions = {
         'equals': True,
         'values': ["www.my-site.com", "www.your-site.com"],
     },
+    'http_uri': {
+        'httpUri': True,
+        'host': True,
+        'equals': True,
+        'values': ["bar.com", "foo.com"],
+    },
     'http_uri_path': {
         'httpUri': True,
         'path': True,
@@ -96,6 +102,35 @@ def test_create_http_host_match():
     assert not data.get('contains')
 
     assert 'httpUri' not in data
+    assert 'httpCookie' not in data
+    assert 'httpHeader' not in data
+
+    assert not data.get('index')
+    assert not data.get('path')
+    assert not data.get('pathSegment')
+    assert not data.get('extension')
+    assert not data.get('httpCookie')
+    assert not data.get('httpHeader')
+    assert not data.get('tmName')
+
+
+def test_create_http_uri_match():
+    name="0"
+    condition = Condition(name, conditions['http_uri'])
+    data = condition.data
+
+    assert condition.name == "0"
+    assert not condition.partition
+    assert data.get('httpUri')
+    assert data.get('host')
+    assert data.get('equals')
+    assert data.get('values') == ["bar.com", "foo.com"]
+
+    assert not data.get('startsWith')
+    assert not data.get('endsWith')
+    assert not data.get('contains')
+
+    assert 'httpHost' not in data
     assert 'httpCookie' not in data
     assert 'httpHeader' not in data
 

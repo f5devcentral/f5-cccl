@@ -202,13 +202,14 @@ class TestServiceConfigDeployer:
 
     def test_virtual_servers(self, ltm_service_manager):
         """Test create/update/delete of Virtual Servers."""
-        # Should create one Virtual Server 
+        # Should create two Virtual Servers
         #  and ignore Big-IP virtuals not in the partition (/Common/virtual1)
         # or have the cccl-whitelist metadata set (test/virtual3)
         objs = self.get_created_ltm_objects(ltm_service_manager, VirtualServer)
-        assert 1 == len(objs)
-        assert objs[0].name == 'vs1'
+        assert 2 == len(objs)
+        assert sorted([o.name for o in objs]) == ['ingress_172-16-3-39_80', 'vs1']
         assert objs[0].data['metadata'][0]['value'] == TEST_USER_AGENT
+        assert objs[1].data['metadata'][0]['value'] == TEST_USER_AGENT
 
         # Should update one Virtual Server
         self.ltm_service['virtualServers'][0]['name'] = 'virtual2'
@@ -265,10 +266,10 @@ class TestServiceConfigDeployer:
 
     def test_policies(self, ltm_service_manager):
         """Test create/update/delete of L7 Policies."""
-        # Should create one Policy 
+        # Should create two Policies
         objs = self.get_created_ltm_objects(ltm_service_manager, Policy)
-        assert 1 == len(objs)
-        assert objs[0].name == 'test_wrapper_policy'
+        assert 2 == len(objs)
+        assert sorted([o.name for o in objs]) == ['test_wrapper_policy', 'url-rewrite-app-root-policy']
 
         # Should update one Policy
         self.ltm_service['l7Policies'][0]['name'] = 'wrapper_policy'

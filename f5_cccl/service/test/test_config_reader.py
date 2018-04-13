@@ -52,13 +52,13 @@ class TestServiceConfigReader:
         config = reader.read_ltm_config(self.ltm_service, 0,
                                         'marathon-bigip-ctlr-v1.2.1')
 
-        assert len(config.get('virtuals')) == 1
+        assert len(config.get('virtuals')) == 2
         assert len(config.get('pools')) == 1
         assert len(config.get('http_monitors')) == 1
         assert len(config.get('https_monitors')) == 1
         assert len(config.get('icmp_monitors')) == 1
         assert len(config.get('tcp_monitors')) == 1
-        assert len(config.get('l7policies')) == 1
+        assert len(config.get('l7policies')) == 2
         assert len(config.get('iapps')) == 1
 
         config = reader.read_net_config(self.net_service, 0)
