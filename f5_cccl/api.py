@@ -73,6 +73,13 @@ class F5CloudServiceManager(object):
                                                partition,
                                                schema_path)
 
+    def get_proxy(self):
+        """Return the BigIP proxy"""
+
+        # This is only needed until delete_unused_ssl_profiles is properly
+        # integrated into apply_ltm_config
+        return self._bigip_proxy
+
     def apply_ltm_config(self, services):
         """Apply LTM service configurations to the BIG-IP partition.
 
