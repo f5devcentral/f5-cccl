@@ -102,7 +102,7 @@ class Action(Resource):
                 data.get('path', False):
             self._data['replace'] = True
             self._data['httpUri'] = True
-            self._data['path'] = True
+            self._data['path'] = data.get('path', None)
             self._data['value'] = data.get('value', None)
         # Is this a replace URI action?
         elif data.get('replace', False) and data.get('httpUri', False):

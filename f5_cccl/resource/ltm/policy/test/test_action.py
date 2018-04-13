@@ -54,6 +54,20 @@ actions = {
         "forward": True,
         "virtual": "/Test/my_virtual"
     },
+    'rewrite_host': {
+        "httpHost": True,
+        "replace": True,
+        "request": True,
+        "value": "bar.com"
+    },
+    'rewrite_uri': {
+        "httpHost": False,
+        "httpUri": True,
+        "path": "/foo",
+        "replace": True,
+        "request": True,
+        "value": "/bar"
+    },
     'invalid_action': {
         "request": False,
         "forward": False,
@@ -127,6 +141,46 @@ def test_create_set_variable_action():
     assert not data.get('location')
     assert not data.get('reset')
     assert not data.get('forward')
+
+
+def test_create_rewrite_uri_action():
+    name="0"
+    action = Action(name, actions['rewrite_uri'])
+    data = action.data
+
+    assert action.name == "0"
+    assert not action.partition
+    assert data.get('httpUri')
+    assert data.get('request')
+    assert data.get('replace')
+    assert data.get('path') == '/foo'
+    assert data.get('value') == '/bar'
+    assert not data.get('httpHost')
+    assert not data.get('forward')
+    assert not data.get('reset')
+    assert not data.get('pool')
+    assert not data.get('redirect')
+    assert not data.get('location')
+
+
+def test_create_rewrite_host_action():
+    name="0"
+    action = Action(name, actions['rewrite_host'])
+    data = action.data
+
+    assert action.name == "0"
+    assert not action.partition
+    assert data.get('httpHost')
+    assert data.get('request')
+    assert data.get('replace')
+    assert data.get('value') == 'bar.com'
+    assert not data.get('httpUri')
+    assert not data.get('path')
+    assert not data.get('forward')
+    assert not data.get('reset')
+    assert not data.get('pool')
+    assert not data.get('redirect')
+    assert not data.get('location')
 
 
 def test_create_invalid_action():

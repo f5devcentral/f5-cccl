@@ -83,7 +83,34 @@
 	"policies": [
 	  {"name": "wrapper_policy", "partition": "test"}
 	]
-  }],
+  },
+  {
+    "destination": "/test/172.16.3.39:80",
+    "enabled": true,
+    "ipProtocol": "tcp",
+    "name": "ingress_172-16-3-39_80",
+    "policies": [
+       {
+         "name": "url-rewrite-app-root-policy",
+         "partition": "test"
+       }
+    ],
+    "pool": "/test/ingress_default_svc",
+    "profiles": [{
+      "context": "all",
+      "name": "http",
+      "partition": "Common"
+    },
+    {
+      "context": "all",
+      "name": "tcp",
+      "partition": "Common"
+    }],
+    "sourceAddressTranslation": {
+      "type": "automap"
+    }
+  }
+],
   "pools": [
     { "name": "pool2",
       "members": [
@@ -108,6 +135,68 @@
 	  "type": "tcp" }
   ],
   "l7Policies": [{
+    "controls": [
+      "forwarding"
+    ],
+    "legacy": true,
+    "name": "url-rewrite-app-root-policy",
+    "requires": [
+      "http"
+    ],
+    "rules": [{
+      "actions": [{
+        "httpHost": false,
+        "httpReply": true,
+        "location": "/bar",
+        "name": "0",
+        "redirect": true,
+        "request": true,
+        "value": ""
+    }],
+      "conditions": [{
+        "caseInsensitive": true,
+        "equals": true,
+        "external": true,
+        "httpUri": true,
+        "name": "0",
+        "path": true,
+        "present": true,
+        "remote": true,
+        "request": true,
+        "values": [
+          "/"
+        ]
+    }],
+      "name": "app-root-redirect-rule-969c5745-5770-4166-90c6-4dede91dd285"
+    },
+    {
+      "actions": [{
+        "forward": true,
+        "httpHost": false,
+        "name": "0",
+        "pool": "/test/ingress_default_svc",
+        "request": true,
+        "value": ""
+      }],
+      "conditions": [{
+        "caseInsensitive": true,
+        "equals": true,
+        "external": true,
+        "httpUri": true,
+        "name": "0",
+        "path": true,
+        "present": true,
+        "remote": true,
+        "request": true,
+        "values": [
+            "/bar"
+        ]
+    }],
+      "name": "app-root-forward-rule-945cf6d8-5cf6-4c82-a3f0-99822b4b0141"
+    }],
+      "strategy": "/Common/first-match"
+    },
+    {
     "name": "test_wrapper_policy",
 	"strategy": "/Common/first-match",
 	"rules": [
