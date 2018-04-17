@@ -15,7 +15,10 @@
 # limitations under the License.
 #
 
-from pip.req import parse_requirements as parse_reqs
+try:  # for pip >= 10
+    from pip._internal.req import parse_requirements as parse_reqs
+except ImportError:  # for pip <= 9.0.3
+    from pip.req import parse_requirements as parse_reqs
 from setuptools import setup
 from setuptools import find_packages
 
