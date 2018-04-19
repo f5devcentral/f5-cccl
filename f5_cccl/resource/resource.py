@@ -386,8 +386,10 @@ class Resource(object):
     def _process_metadata_flags(self, name, metadata_list):
         # look for supported flags
         metadata_update_idx = None
+        metadata_whitelist_flag = False
         for idx, metadata in enumerate(metadata_list):
             if metadata['name'] == 'cccl-whitelist':
+                metadata_whitelist_flag = True
                 self._whitelist = metadata['value'] in [
                     'true', 'True', 'TRUE', '1', 1]
                 LOGGER.debug('Resource %s cccl-whitelist: %s',
@@ -398,5 +400,12 @@ class Resource(object):
                              name, self._whitelist_updates)
                 metadata_update_idx = idx
 
-        if metadata_update_idx is not None:
+        # We want to remove the 'cccl-whitelist-updates' field from the
+        # metadata that was retrieved from the Big-IP (this field indicates
+        # the changes CCCL made to the existing resource and will be
+        # recalculated). However, if the user deleted the 'cccl-whitelist'
+        # metadata flag, we need to leave it in. This forces a miscompare
+        # with the desired resource configuration. That in turn, causes an
+        # update to occur, ensuring the metadata is removed on the Big-IP side.
+        if metadata_update_idx is not None and metadata_whitelist_flag is True:
             del metadata_list[metadata_update_idx]
