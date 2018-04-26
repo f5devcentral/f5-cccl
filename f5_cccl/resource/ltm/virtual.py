@@ -188,19 +188,20 @@ class VirtualServer(Resource):
         for key in self._data:
             # compare list lengths
             if isinstance(self._data[key], list) and \
-                    len(self._data[key]) != len(other.data.get(key, None)):
+                    len(self._data[key]) != len(other.data.get(key, list())):
                 return False
 
-            if key == 'vlans' or key == 'policies' or key == 'rules':
+            if key == 'vlans' or key == 'policies' or key == 'rules' \
+                    or key == 'metadata':
                 if sorted(self._data[key]) != \
-                        sorted(other.data.get(key, None)):
+                        sorted(other.data.get(key, list())):
                     return False
                 continue
 
             if key == 'profiles':
                 for profile in self._data[key]:
                     if not self.find_profile(profile,
-                                             other.data.get(key, None)):
+                                             other.data.get(key, list())):
                         return False
                 continue
 

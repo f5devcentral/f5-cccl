@@ -49,7 +49,17 @@ class VirtualAddress(Resource):
         if not isinstance(other, VirtualAddress):
             return False
 
-        return super(VirtualAddress, self).__eq__(other)
+        for key in self._data:
+            if isinstance(self._data[key], list):
+                if sorted(self._data[key]) != \
+                        sorted(other.data.get(key, list())):
+                    return False
+                continue
+
+            if self._data[key] != other.data.get(key):
+                return False
+
+        return True
 
     def _uri_path(self, bigip):
         return bigip.tm.ltm.virtual_address_s.virtual_address

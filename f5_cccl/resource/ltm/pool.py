@@ -56,6 +56,7 @@ class Pool(Resource):
         else:
             self.members = list()
 
+    # pylint: disable=too-many-return-statements
     def __eq__(self, other):
         if not isinstance(other, Pool):
             LOGGER.warning(
@@ -65,6 +66,12 @@ class Pool(Resource):
 
         for key in self.properties:
             if key == 'membersReference' or key == 'monitor':
+                continue
+
+            if isinstance(self._data[key], list):
+                if sorted(self._data[key]) != \
+                        sorted(other.data.get(key, list())):
+                    return False
                 continue
 
             if self._data[key] != other.data.get(key, None):
