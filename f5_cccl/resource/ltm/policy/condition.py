@@ -38,6 +38,7 @@ class Condition(Resource):
         "endsWith": None,
         "startsWith": None,
         "contains": None,
+        "matches": None,
 
         "not": None,
         "missing": None,
@@ -55,6 +56,9 @@ class Condition(Resource):
         "httpHeader": False,
         "httpCookie": False,
 
+        "tcp": True,
+        "address": False,
+
         "tmName": None,
         "values": list()
     }
@@ -66,7 +70,6 @@ class Condition(Resource):
 
         values = sorted(data.get('values', list()))
         tm_name = data.get('tmName', None)
-        condition_map = dict()
 
         # Does this rule match the HTTP hostname?
         if data.get('httpHost', False):
@@ -99,6 +102,23 @@ class Condition(Resource):
             condition_map = {
                 'httpCookie': True, 'tmName': tm_name, 'values': values}
 
+        # Does this rule match a TCP related setting?
+        elif data.get('tcp', False):
+            condition_map = {'tcp': True, 'values': values}
+
+            if data.get('external', False):
+                condition_map['external'] = True
+            elif data.get('internal', False):
+                condition_map['internal'] = True
+
+            if data.get('matches', False):
+                condition_map['matches'] = True
+
+            if data.get('address', False):
+                condition_map['address'] = True
+            else:
+                raise ValueError("must specify address for TCP matching "
+                                 "condition")
         else:
             # This class does not support the condition type; however,
             # we want to create in order to manage the policy.
@@ -111,7 +131,9 @@ class Condition(Resource):
         # For example, having a comparison option set to 'None' will conflict
         # with the one that is set to 'True'
         match_options = ['not', 'missing', 'caseSensitive']
-        comparisons = ['contains', 'equals', 'startsWith', 'endsWith']
+        comparisons = [
+            'contains', 'equals', 'startsWith', 'endsWith', 'matches'
+        ]
         for key in match_options + comparisons:
             value = data.get(key, None)
             if value:

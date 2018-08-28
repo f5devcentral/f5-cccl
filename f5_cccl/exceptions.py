@@ -50,7 +50,7 @@ class F5CcclValidationError(F5CcclError):
     def __init__(self, msg):
         """Initialize with base config does not match schema message."""
         super(F5CcclValidationError, self).__init__(msg)
-        self.msg = 'Service congifuration provided does not match schema: ' + \
+        self.msg = 'Service configuration provided does not match schema: ' + \
             msg
 
 

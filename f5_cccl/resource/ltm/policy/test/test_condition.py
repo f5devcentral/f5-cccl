@@ -74,6 +74,12 @@ conditions = {
         'tmName': "Host",
         'contains': True,
         'values': ["www.acme.com"]
+    },
+    'tcp_address': {
+        'tcp': True,
+        'address': True,
+        'matches': True,
+        'values': ["10.10.10.10/32", "10.0.0.0/16"]
     }
 }
 
@@ -180,13 +186,13 @@ def test_create_http_uri_unsupported_match():
     name="0"
 
     with pytest.raises(ValueError):
-        condition = Condition(name, conditions['http_uri_unsupported'])
+        Condition(name, conditions['http_uri_unsupported'])
 
 
 def test_create_http_unsupported_operand_type():
     name="0"
     with pytest.raises(ValueError):
-        condition = Condition(name, conditions['http_unsupported_operand_type'])
+        Condition(name, conditions['http_unsupported_operand_type'])
 
 
 def test_create_http_uri_path_segment_match():
@@ -350,3 +356,32 @@ def test_uri_path(bigip):
 
     with pytest.raises(NotImplementedError):
         condition._uri_path(bigip)
+
+
+def test_create_tcp_address_match():
+    name="0"
+    condition = Condition(name, conditions['tcp_address'])
+    data = condition.data
+
+    assert condition.name == "0"
+    assert not condition.partition
+
+    assert data.get('tcp')
+    assert data.get('values') == ["10.0.0.0/16", "10.10.10.10/32"]
+
+    assert 'httpHost' not in data
+    assert 'httpUri' not in data
+    assert 'httpCookie' not in data
+
+    assert not data.get('equals')
+    assert not data.get('startsWith')
+    assert not data.get('endsWith')
+    assert data.get('matches')
+
+    assert not data.get('missing')
+    assert not data.get('not')
+    assert not data.get('caseSensitive')
+
+    assert not data.get('index')
+    assert not data.get('path')
+    assert not data.get('pathSegment')

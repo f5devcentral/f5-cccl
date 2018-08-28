@@ -67,7 +67,7 @@ class Rule(Resource):
             return False
 
         for key in self.properties:
-            if key == 'actions' or key == 'conditions':
+            if key in ['actions', 'conditions']:
                 if len(self._data[key]) != len(other.data[key]):
                     return False
                 for index, obj in enumerate(self._data[key]):

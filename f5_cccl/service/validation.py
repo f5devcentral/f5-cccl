@@ -52,11 +52,10 @@ def read_yaml_or_json(target):
     """Read json or yaml, return a dict."""
     if target.lower().endswith('.json'):
         return read_json(target)
-    elif target.lower().endswith('.yaml') or target.lower().endswith('.yml'):
+    if target.lower().endswith('.yaml') or target.lower().endswith('.yml'):
         return read_yaml(target)
-    else:
-        raise cccl_exc.F5CcclError(
-            'CCCL API schema json or yaml file expected.')
+    raise cccl_exc.F5CcclError(
+        'CCCL API schema json or yaml file expected.')
 
 
 class ServiceConfigValidator(object):

@@ -53,10 +53,9 @@ class FDBTunnel(Resource):
                 for record in self._data[key]:
                     if record not in other.data[key]:
                         return False
-                    else:
-                        idx = other.data[key].index(record)
-                        if record != other.data[key][idx]:
-                            return False
+                    idx = other.data[key].index(record)
+                    if record != other.data[key][idx]:
+                        return False
                 continue
             if self._data[key] != other.data.get(key):
                 return False

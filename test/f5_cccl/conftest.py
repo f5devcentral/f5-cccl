@@ -54,8 +54,9 @@ def bigip():
         hostname = pytest.symbols.bigip_mgmt_ip
         username = pytest.symbols.bigip_username
         password = pytest.symbols.bigip_password
+        port = pytest.symbols.bigip_port
 
-        bigip_fix = ManagementRoot(hostname, username, password)
+        bigip_fix = ManagementRoot(hostname, username, password, port=port)
         bigip_fix = instrument_bigip(bigip_fix)
     else:
         bigip_fix = MagicMock()
@@ -87,19 +88,19 @@ def partition(bigip):
     except iControlUnexpectedHTTPError as icr_error:
         pass
     try:
-        bigip.tm.sys.folders.folder.load(name=name).delete()
+        bigip.tm.auth.partitions.partition.load(name=name).delete()
     except iControlUnexpectedHTTPError as icr_error:
         pass
 
     try:
-        partition = bigip.tm.sys.folders.folder.create(subPath="/", name=name)
+        partition = bigip.tm.auth.partitions.partition.create(subPath="/", name=name)
     except iControlUnexpectedHTTPError as icr_error:
         code = icr_error.response.status_code
         if code == 400:
             print("Can't create partition {}".format(name))
         elif code == 409:
             print("Partition {} already exists".format(name))
-            partition = bigip.tm.sys.folders.folder.load(subPath="/", name=name)
+            partition = bigip.tm.auth.partitions.partition.load(subPath="/", name=name)
         else:
             print("Unknown error creating partition.")
         print(icr_error)
@@ -119,7 +120,7 @@ def partition(bigip):
 def cccl(bigip, partition):
     cccl = F5CloudServiceManager(bigip, partition)
     yield cccl
-    cccl.apply_config({})
+    cccl.apply_ltm_config({})
 
 
 @pytest.fixture()

@@ -264,6 +264,26 @@
 			"location": "http://www.othersite.com"
 		  }
 		]
+	  },
+      {
+		"conditions": [
+		  {
+            "tcp": true,
+            "address": true,
+            "matches": true,
+            "external": true,
+            "values": ["10.10.10.10/32"]
+		  }
+		],
+		"name": "rule3",
+		"actions": [
+		  {
+			"request": true,
+			"redirect": true,
+			"httpReply": true,
+			"location": "http://www.othersite.com"
+		  }
+		]
 	  }
 	]
   }],

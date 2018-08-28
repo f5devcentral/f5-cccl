@@ -118,6 +118,12 @@ conditions = {
         'tmName': "Host",
         'contains': True,
         'values': ["www.acme.com"]
+    },
+    'tcp_address': {
+        'tcp': True,
+        'address': True,
+        'matches': True,
+        'values': ['1.1.1.1/32', '2.2.2.0/24']
     }
 }
 
@@ -534,7 +540,6 @@ class TestPolicy(object):
                 policy.delete(bigip)
             except exceptions.F5CcclError as e:
                 print(e)
-
 
     def test_create_policy_supported_actions(self, bigip, partition, pool):
         """Create a policy with supported actions"""

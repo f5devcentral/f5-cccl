@@ -42,7 +42,7 @@ class Pool(Resource):
         super(Pool, self).__init__(name, partition, **properties)
 
         for key, value in self.properties.items():
-            if key == "name" or key == "partition":
+            if key in ["name", "partition"]:
                 continue
             self._data[key] = properties.get(key, value)
 
@@ -65,7 +65,7 @@ class Pool(Resource):
             return False
 
         for key in self.properties:
-            if key == 'membersReference' or key == 'monitor':
+            if key in ['membersReference', 'monitor']:
                 continue
 
             if isinstance(self._data[key], list):
@@ -112,7 +112,7 @@ class ApiPool(Pool):
         """Parse the CCCL schema input."""
         pool_config = dict()
         for k, v in properties.items():
-            if k == "members" or k == "monitors":
+            if k in ["members", "monitors"]:
                 continue
             pool_config[k] = v
 

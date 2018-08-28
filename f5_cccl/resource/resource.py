@@ -378,7 +378,7 @@ class Resource(object):
             raise cccl_exc.F5CcclResourceNotFoundError(str(error))
         elif code == 409:
             raise cccl_exc.F5CcclResourceConflictError(str(error))
-        elif code >= 400 and code < 500:
+        elif 400 <= code < 500:
             raise cccl_exc.F5CcclResourceRequestError(str(error))
         else:
             raise cccl_exc.F5CcclError(str(error))

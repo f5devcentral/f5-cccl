@@ -88,7 +88,7 @@ def _merge_list(dst, src):
 
     if not dst:
         return src
-    elif isinstance(dst[0], dict):
+    if isinstance(dst[0], dict):
         dst = _merge_list_of_dict_by_name(dst, src)
     elif isinstance(dst[0], list):
         # May cause duplicates (what is a duplicate for lists of lists?)
