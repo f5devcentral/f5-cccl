@@ -268,7 +268,7 @@ definitions:
     type: "object"
     description: |
       Defines an L7 Policy condition.
-      The supported operands are http-host, http-uri, http-header, and http-cookie
+      The supported operands are http-host, http-uri, http-header, http-cookie, and tcp
 
       Operands
           httpHost   -- Provides all or part of the HTTP Host header, only match against
@@ -282,6 +282,8 @@ definitions:
                         to match against is required.
           httpHeader -- Returns the value of a particular header.  If matching a HTTP header,
                         tmName must be defined.  A list of values to match against is required.
+          tcp        -- Returns the value of a particular TCP related attribute. A list of values
+                        to match against is required.
 
       Supported match operators are equals, startsWith, endsWith, and contains.  These match
       operators can be negated by setting 'not' to true.
@@ -290,7 +292,7 @@ definitions:
       # Match modifiers
       caseSensitive:
         default: false
-        description: "The match string is case-sensive"
+        description: "The match string is case-sensitive"
         type: "boolean"
       missing:
         default: false
@@ -314,6 +316,9 @@ definitions:
       contains:
         description: "The value matches if it contains a certain string."
         type: "boolean"
+      matches:
+        description: "The value matches if it matches certain values."
+        type: "boolean"
 
       # Operand types
       httpUri:
@@ -327,6 +332,9 @@ definitions:
         type: "boolean"
       httpHeader:
         description: "Name of the HTTP header that contains the value to compare."
+        type: "boolean"
+      tcp:
+        description: "Inspect and match on various TCP properties of a connection."
         type: "boolean"
 
       # Operand values
@@ -354,6 +362,9 @@ definitions:
       index:
         description: "The specified index is used to match a specific segment."
         type: "integer"
+      address:
+        description: "Match on IP address"
+        type: "boolean"
 
     oneOf:
       - required:
@@ -384,6 +395,10 @@ definitions:
       - required:
           - "httpUri"
           - "host"
+          - "values"
+      - required:
+          - "tcp"
+          - "address"
           - "values"
 
   l7PolicyType:
@@ -545,7 +560,7 @@ definitions:
         type: "string"
       loadBalancingMode:
         default: "round-robin"
-        description: "Loadbalancing algorithm to use on pool."
+        description: "Load balancing algorithm to use on pool."
         enum:
           - "dynamic-ratio-member"
           - "dynamic-ratio-node"

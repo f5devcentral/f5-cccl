@@ -61,7 +61,7 @@ class Policy(Resource):
         """Check the equality of the two objects.
 
         Only compare the properties as defined in the
-        properties class dictionany.
+        properties class dictionary.
         """
         if not isinstance(other, Policy):
             return False
@@ -155,7 +155,7 @@ class IcrPolicy(Policy):
                 if 'items' in rulesReference:
                     policy['rules'] = self._flatten_rules(
                         rulesReference['items'])
-            elif key == 'name' or key == 'partition':
+            elif key in ['name', 'partition']:
                 pass
             else:
                 policy[key] = data.get(key)

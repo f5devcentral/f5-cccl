@@ -191,8 +191,7 @@ class VirtualServer(Resource):
                     len(self._data[key]) != len(other.data.get(key, list())):
                 return False
 
-            if key == 'vlans' or key == 'policies' or key == 'rules' \
-                    or key == 'metadata':
+            if key in ['vlans', 'policies', 'rules', 'metadata']:
                 if sorted(self._data[key]) != \
                         sorted(other.data.get(key, list())):
                     return False

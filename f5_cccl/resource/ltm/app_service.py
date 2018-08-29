@@ -66,7 +66,7 @@ class ApplicationService(Resource):
             return False
 
         for key in self._data:
-            if key == "variables" or key == "tables":
+            if key in ["variables", "tables"]:
                 # already compared
                 continue
             if self._data[key] != other.data.get(key, None):

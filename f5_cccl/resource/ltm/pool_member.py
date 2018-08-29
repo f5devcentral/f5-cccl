@@ -51,7 +51,7 @@ class PoolMember(Resource):
 
         self._pool = pool
         for key, value in self.properties.items():
-            if key == 'name' or key == 'partition':
+            if key in ['name', 'partition']:
                 continue
             self._data[key] = properties.get(key, value)
 

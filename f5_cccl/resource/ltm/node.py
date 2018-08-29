@@ -40,7 +40,7 @@ class Node(Resource):
         super(Node, self).__init__(name, partition, **properties)
 
         for key, value in self.properties.items():
-            if key == "name" or key == "partition":
+            if key in ["name", "partition"]:
                 continue
 
             self._data[key] = properties.get(key, value)

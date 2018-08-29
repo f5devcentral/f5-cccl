@@ -76,7 +76,9 @@ disable=locally-disabled,
   too-few-public-methods,
   too-many-instance-attributes,
   too-many-arguments,
-  too-many-public-methods
+  too-many-public-methods,
+  too-many-branches,
+  useless-object-inheritance
 
 
 [REPORTS]
