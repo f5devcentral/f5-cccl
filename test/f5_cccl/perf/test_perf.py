@@ -23,6 +23,8 @@ from pprint import pprint
 requests.packages.urllib3.disable_warnings()
 
 req_symbols = ['bigip_mgmt_ip', 'bigip_username', 'bigip_password', 'bigip_port']
+
+
 def missing_bigip_symbols():
     for sym in req_symbols:
         if not hasattr(pytest.symbols, sym):
@@ -97,19 +99,25 @@ testdata = [
 @pytest.mark.benchmark(group="apply-new")
 def test_apply_new(partition, cccl, bigip_rest_counters, benchmark, nv, nm):
     cfg = _make_svc_config(partition, num_virtuals=nv, num_members=nm)
+
     def setup():
         cccl.apply_ltm_config({})
-    def apply():
+
+    def apply_cfg():
         cccl.apply_ltm_config(cfg)
-    benchmark.pedantic(apply, setup=setup, rounds=2, iterations=1)
+
+    benchmark.pedantic(apply_cfg, setup=setup, rounds=2, iterations=1)
     pprint(bigip_rest_counters)
+
 
 @pytest.mark.parametrize("nv,nm", testdata)
 @pytest.mark.benchmark(group="apply-no-change")
 def test_apply_no_change(partition, cccl, bigip_rest_counters, benchmark, nv, nm):
     cfg = _make_svc_config(partition, num_virtuals=nv, num_members=nm)
-    def apply():
+
+    def apply_cfg():
         cccl.apply_ltm_config(cfg)
-    apply()
-    benchmark.pedantic(apply, rounds=2, iterations=1)
+
+    apply_cfg()
+    benchmark.pedantic(apply_cfg, rounds=2, iterations=1)
     pprint(bigip_rest_counters)

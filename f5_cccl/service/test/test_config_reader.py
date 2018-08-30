@@ -58,7 +58,7 @@ class TestServiceConfigReader:
         assert len(config.get('https_monitors')) == 1
         assert len(config.get('icmp_monitors')) == 1
         assert len(config.get('tcp_monitors')) == 1
-        assert len(config.get('l7policies')) == 2
+        assert len(config.get('l7policies')) == 3
         assert len(config.get('iapps')) == 1
 
         config = reader.read_net_config(self.net_service, 0)

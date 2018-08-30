@@ -19,11 +19,11 @@ import pickle
 import pytest
 from f5_cccl.test.conftest import bigip_proxy
 
-from f5_cccl.resource.ltm.app_service import ApplicationService 
-from f5_cccl.resource.ltm.virtual import VirtualServer 
-from f5_cccl.resource.ltm.pool import Pool 
-from f5_cccl.resource.ltm.monitor.http_monitor import HTTPMonitor 
-from f5_cccl.resource.ltm.policy.policy import Policy 
+from f5_cccl.resource.ltm.app_service import ApplicationService
+from f5_cccl.resource.ltm.virtual import VirtualServer
+from f5_cccl.resource.ltm.pool import Pool
+from f5_cccl.resource.ltm.monitor.http_monitor import HTTPMonitor
+from f5_cccl.resource.ltm.policy.policy import Policy
 from f5_cccl.resource.ltm.internal_data_group import InternalDataGroup
 from f5_cccl.resource.ltm.irule import IRule
 from f5_cccl.resource.net.arp import Arp
@@ -226,7 +226,7 @@ class TestServiceConfigDeployer:
 
     def test_pools(self, ltm_service_manager):
         """Test create/update/delete of Pools."""
-        # Should create one Pool 
+        # Should create one Pool
         objs = self.get_created_ltm_objects(ltm_service_manager, Pool)
         assert 1 == len(objs)
         assert objs[0].name == 'pool2'
@@ -247,7 +247,7 @@ class TestServiceConfigDeployer:
 
     def test_monitors(self, ltm_service_manager):
         """Test create/update/delete of Health Monitors."""
-        # Should create one Monitor 
+        # Should create one Monitor
         objs = self.get_created_ltm_objects(ltm_service_manager, HTTPMonitor)
         assert 1 == len(objs)
         assert objs[0].name == 'myhttp'
@@ -259,7 +259,7 @@ class TestServiceConfigDeployer:
         assert objs[0].name == 'mon_http'
 
         # Should delete one Monitor
-        self.ltm_service['monitors'] = [] 
+        self.ltm_service['monitors'] = []
         objs = self.get_deleted_ltm_objects(ltm_service_manager, HTTPMonitor)
         assert 1 == len(objs)
         assert 'mon_http' == objs[0].name
@@ -268,8 +268,11 @@ class TestServiceConfigDeployer:
         """Test create/update/delete of L7 Policies."""
         # Should create two Policies
         objs = self.get_created_ltm_objects(ltm_service_manager, Policy)
-        assert 2 == len(objs)
-        assert sorted([o.name for o in objs]) == ['test_wrapper_policy', 'url-rewrite-app-root-policy']
+        assert 3 == len(objs)
+        assert sorted([o.name for o in objs]) == [
+            'test_address_policy', 'test_wrapper_policy',
+            'url-rewrite-app-root-policy'
+        ]
 
         # Should update one Policy
         self.ltm_service['l7Policies'][0]['name'] = 'wrapper_policy'
@@ -278,14 +281,14 @@ class TestServiceConfigDeployer:
         assert objs[0].name == 'wrapper_policy'
 
         # Should delete one Policy
-        self.ltm_service['l7Policies'] = [] 
+        self.ltm_service['l7Policies'] = []
         objs = self.get_deleted_ltm_objects(ltm_service_manager, Policy)
         assert 1 == len(objs)
         assert 'wrapper_policy' == objs[0].name
 
     def test_internal_data_groups(self, ltm_service_manager):
         """Test create/update/delete of Internal Data Groups."""
-        # Should create one Data Group 
+        # Should create one Data Group
         objs = self.get_created_ltm_objects(ltm_service_manager, InternalDataGroup)
         assert 1 == len(objs)
         assert objs[0].name == 'test-dgs'
@@ -304,7 +307,7 @@ class TestServiceConfigDeployer:
 
     def test_irules(self, ltm_service_manager):
         """Test create/update/delete of iRules."""
-        # Should create one iRule 
+        # Should create one iRule
         objs = self.get_created_ltm_objects(ltm_service_manager, IRule)
         assert 1 == len(objs)
         assert objs[0].name == 'https_redirect'
@@ -318,7 +321,7 @@ class TestServiceConfigDeployer:
         assert objs[0].data['metadata'][0]['value'] == TEST_USER_AGENT
 
         # Should delete one iRule
-        self.ltm_service['iRules'] = [] 
+        self.ltm_service['iRules'] = []
         objs = self.get_deleted_ltm_objects(ltm_service_manager, IRule)
         assert 1 == len(objs)
         assert 'https_redirector' == objs[0].name

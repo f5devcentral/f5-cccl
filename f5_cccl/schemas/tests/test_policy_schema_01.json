@@ -1,0 +1,51 @@
+{
+  "name": "test1",
+  "l7Policies": [
+    {
+      "name": "test_address_policy",
+      "strategy": "/Common/first-match",
+      "rules": [
+        {
+          "conditions": [
+            {
+              "tcp": true,
+              "address": true,
+              "matches": true,
+              "external": true,
+              "values": [
+                "10.10.10.10/32"
+              ]
+            }
+          ],
+          "name": "rule1",
+          "actions": [
+            {
+              "forward": true,
+              "select": true
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "tcp": true,
+              "address": true,
+              "matches": true,
+              "external": true,
+              "values": [
+                "20.20.20.20/32"
+              ]
+            }
+          ],
+          "name": "rule2",
+          "actions": [
+            {
+              "forward": true,
+              "select": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -35,6 +35,7 @@ def _wrap_instrument(f, counters, name):
         return f(*args, **kwargs)
     return instrumented
 
+
 def instrument_bigip(mgmt_root):
     icr = mgmt_root.__dict__['_meta_data']['icr_session']
     counters = {}
