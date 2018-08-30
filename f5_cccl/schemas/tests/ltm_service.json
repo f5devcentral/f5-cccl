@@ -1,292 +1,407 @@
 {
   "name": "test1",
-
-  "iapps": [{
-    "name": "MyAppService0",
-    "template": "/Common/f5.http",
-    "options": {"description": "This is a test iApp"},
-    "poolMemberTable": {
-      "name": "pool__members",
-      "columns": [
-        {"name": "addr", "kind": "IPAddress"},
-        {"name": "port", "kind": "Port"},
-        {"name": "connection_limit", "value": "0"}
-      ],
-      "members": [
-        {"address": "1.2.3.4", "port": 30001},
-        {"address": "1.2.3.4", "port": 30002},
-        {"address": "1.2.3.4", "port": 30003},
-        {"address": "1.2.3.4", "port": 30004},
-        {"address": "1.2.3.4", "port": 30005}
-      ]
-    },
-    "variables": {
-      "net__client_mode": "wan",
-      "net__server_mode": "lan",
-      "pool__addr": "10.10.1.100",
-      "pool__port": "80",
-      "pool__pool_to_use": "/#create_new#",
-      "pool__lb_method": "round-robin",
-      "pool__http": "/#create_new#",
-      "pool__mask": "255.255.255.255",
-      "pool__persist": "/#do_not_use#",
-      "monitor__monitor": "/#create_new#",
-      "monitor__uri": "/",
-      "monitor__frequency": "30",
-      "monitor__response": "none",
-      "ssl_encryption_questions__advanced": "yes",
-      "net__vlan_mode": "all",
-      "net__snat_type": "automap",
-      "client__tcp_wan_opt": "/#create_new#",
-      "client__standard_caching_with_wa": "/#create_new#",
-      "client__standard_caching_without_wa": "/#do_not_use#",
-      "server__tcp_lan_opt": "/#create_new#",
-      "server__oneconnect": "/#create_new#",
-      "server__ntlm": "/#do_not_use#"
+  "iapps": [
+    {
+      "name": "MyAppService0",
+      "template": "/Common/f5.http",
+      "options": {
+        "description": "This is a test iApp"
+      },
+      "poolMemberTable": {
+        "name": "pool__members",
+        "columns": [
+          {
+            "name": "addr",
+            "kind": "IPAddress"
+          },
+          {
+            "name": "port",
+            "kind": "Port"
+          },
+          {
+            "name": "connection_limit",
+            "value": "0"
+          }
+        ],
+        "members": [
+          {
+            "address": "1.2.3.4",
+            "port": 30001
+          },
+          {
+            "address": "1.2.3.4",
+            "port": 30002
+          },
+          {
+            "address": "1.2.3.4",
+            "port": 30003
+          },
+          {
+            "address": "1.2.3.4",
+            "port": 30004
+          },
+          {
+            "address": "1.2.3.4",
+            "port": 30005
+          }
+        ]
+      },
+      "variables": {
+        "net__client_mode": "wan",
+        "net__server_mode": "lan",
+        "pool__addr": "10.10.1.100",
+        "pool__port": "80",
+        "pool__pool_to_use": "/#create_new#",
+        "pool__lb_method": "round-robin",
+        "pool__http": "/#create_new#",
+        "pool__mask": "255.255.255.255",
+        "pool__persist": "/#do_not_use#",
+        "monitor__monitor": "/#create_new#",
+        "monitor__uri": "/",
+        "monitor__frequency": "30",
+        "monitor__response": "none",
+        "ssl_encryption_questions__advanced": "yes",
+        "net__vlan_mode": "all",
+        "net__snat_type": "automap",
+        "client__tcp_wan_opt": "/#create_new#",
+        "client__standard_caching_with_wa": "/#create_new#",
+        "client__standard_caching_without_wa": "/#do_not_use#",
+        "server__tcp_lan_opt": "/#create_new#",
+        "server__oneconnect": "/#create_new#",
+        "server__ntlm": "/#do_not_use#"
+      }
     }
-  }],
-  "virtualAddresses": [
-	{
-	  "name": "192.168.0.1%2",
-	  "autoDelete": "false",
-	  "enabled": "yes",
-	  "address": "192.168.0.1%2"
-	},
-	{
-	  "name": "MyVaddr",
-	  "autoDelete": "false",
-	  "enabled": "no",
-	  "address": "192.168.0.2"
-	}
   ],
-  "virtualServers": [{
-	"name": "vs1",
-	"destination": "/test/MyVaddr:80",
-	"pool": "/test/pool1",
-	"sourceAddress": "0.0.0.0/0",
-	"enabled": true,
-	"vlansEnabled": true,
-	"vlans": ["/test/vlan-100", "/Common/http-tunnel"],
-	"sourceAddressTranslation": {
-	  "type": "snat",
-	  "pool": "/test/snatpool1"
-	},
-	"profiles": [
-	  {"name": "tcp-lan-optimized", "partition": "Common", "context": "serverside"},
-	  {"name": "tcp-wan-optimized", "partition": "Common", "context": "clientside"},
-	  {"name": "http", "partition": "Common", "context": "all"},
-	  {"name": "clientssl", "partition": "Common", "context": "clientside"}
-	],
-	"iRules": [
-	  "/test/https_redirect"
-	],
-	"policies": [
-	  {"name": "wrapper_policy", "partition": "test"}
-	]
-  },
-  {
-    "destination": "/test/172.16.3.39:80",
-    "enabled": true,
-    "ipProtocol": "tcp",
-    "name": "ingress_172-16-3-39_80",
-    "policies": [
-       {
-         "name": "url-rewrite-app-root-policy",
-         "partition": "test"
-       }
-    ],
-    "pool": "/test/ingress_default_svc",
-    "profiles": [{
-      "context": "all",
-      "name": "http",
-      "partition": "Common"
+  "virtualAddresses": [
+    {
+      "name": "192.168.0.1%2",
+      "autoDelete": "false",
+      "enabled": "yes",
+      "address": "192.168.0.1%2"
     },
     {
-      "context": "all",
-      "name": "tcp",
-      "partition": "Common"
-    }],
-    "sourceAddressTranslation": {
-      "type": "automap"
+      "name": "MyVaddr",
+      "autoDelete": "false",
+      "enabled": "no",
+      "address": "192.168.0.2"
     }
-  }
-],
-  "pools": [
-    { "name": "pool2",
-      "members": [
-        {"address": "172.16.0.100%1", "port": 8080},
-        {"address": "172.16.0.101", "port": 8080}
+  ],
+  "virtualServers": [
+    {
+      "name": "vs1",
+      "destination": "/test/MyVaddr:80",
+      "pool": "/test/pool1",
+      "sourceAddress": "0.0.0.0/0",
+      "enabled": true,
+      "vlansEnabled": true,
+      "vlans": [
+        "/test/vlan-100",
+        "/Common/http-tunnel"
       ],
-      "monitors": ["/test/myhttp"]
+      "sourceAddressTranslation": {
+        "type": "snat",
+        "pool": "/test/snatpool1"
+      },
+      "profiles": [
+        {
+          "name": "tcp-lan-optimized",
+          "partition": "Common",
+          "context": "serverside"
+        },
+        {
+          "name": "tcp-wan-optimized",
+          "partition": "Common",
+          "context": "clientside"
+        },
+        {
+          "name": "http",
+          "partition": "Common",
+          "context": "all"
+        },
+        {
+          "name": "clientssl",
+          "partition": "Common",
+          "context": "clientside"
+        }
+      ],
+      "iRules": [
+        "/test/https_redirect"
+      ],
+      "policies": [
+        {
+          "name": "wrapper_policy",
+          "partition": "test"
+        }
+      ]
+    },
+    {
+      "destination": "/test/172.16.3.39:80",
+      "enabled": true,
+      "ipProtocol": "tcp",
+      "name": "ingress_172-16-3-39_80",
+      "policies": [
+        {
+          "name": "url-rewrite-app-root-policy",
+          "partition": "test"
+        }
+      ],
+      "pool": "/test/ingress_default_svc",
+      "profiles": [
+        {
+          "context": "all",
+          "name": "http",
+          "partition": "Common"
+        },
+        {
+          "context": "all",
+          "name": "tcp",
+          "partition": "Common"
+        }
+      ],
+      "sourceAddressTranslation": {
+        "type": "automap"
+      }
+    }
+  ],
+  "pools": [
+    {
+      "name": "pool2",
+      "members": [
+        {
+          "address": "172.16.0.100%1",
+          "port": 8080
+        },
+        {
+          "address": "172.16.0.101",
+          "port": 8080
+        }
+      ],
+      "monitors": [
+        "/test/myhttp"
+      ]
     }
   ],
   "monitors": [
-    { "name": "myhttp",
-	  "type": "http",
-	  "send": "GET /\r\n",
-	  "recv": "SERVER" },
-    { "name": "myhttps",
-	  "type": "https",
-	  "send": "GET /\r\n",
-	  "recv": "HTTPS-SERVER" },
-    { "name": "my_ping",
-	  "type": "icmp" },
-    { "name": "my_tcp",
-	  "type": "tcp" }
-  ],
-  "l7Policies": [{
-    "controls": [
-      "forwarding"
-    ],
-    "legacy": true,
-    "name": "url-rewrite-app-root-policy",
-    "requires": [
-      "http"
-    ],
-    "rules": [{
-      "actions": [{
-        "httpHost": false,
-        "httpReply": true,
-        "location": "/bar",
-        "name": "0",
-        "redirect": true,
-        "request": true,
-        "value": ""
-    }],
-      "conditions": [{
-        "caseInsensitive": true,
-        "equals": true,
-        "external": true,
-        "httpUri": true,
-        "name": "0",
-        "path": true,
-        "present": true,
-        "remote": true,
-        "request": true,
-        "values": [
-          "/"
-        ]
-    }],
-      "name": "app-root-redirect-rule-969c5745-5770-4166-90c6-4dede91dd285"
+    {
+      "name": "myhttp",
+      "type": "http",
+      "send": "GET /\r\n",
+      "recv": "SERVER"
     },
     {
-      "actions": [{
-        "forward": true,
-        "httpHost": false,
-        "name": "0",
-        "pool": "/test/ingress_default_svc",
-        "request": true,
-        "value": ""
-      }],
-      "conditions": [{
-        "caseInsensitive": true,
-        "equals": true,
-        "external": true,
-        "httpUri": true,
-        "name": "0",
-        "path": true,
-        "present": true,
-        "remote": true,
-        "request": true,
-        "values": [
-            "/bar"
-        ]
-    }],
-      "name": "app-root-forward-rule-945cf6d8-5cf6-4c82-a3f0-99822b4b0141"
-    }],
+      "name": "myhttps",
+      "type": "https",
+      "send": "GET /\r\n",
+      "recv": "HTTPS-SERVER"
+    },
+    {
+      "name": "my_ping",
+      "type": "icmp"
+    },
+    {
+      "name": "my_tcp",
+      "type": "tcp"
+    }
+  ],
+  "l7Policies": [
+    {
+      "controls": [
+        "forwarding"
+      ],
+      "legacy": true,
+      "name": "url-rewrite-app-root-policy",
+      "requires": [
+        "http"
+      ],
+      "rules": [
+        {
+          "actions": [
+            {
+              "httpHost": false,
+              "httpReply": true,
+              "location": "/bar",
+              "name": "0",
+              "redirect": true,
+              "request": true,
+              "value": ""
+            }
+          ],
+          "conditions": [
+            {
+              "caseInsensitive": true,
+              "equals": true,
+              "external": true,
+              "httpUri": true,
+              "name": "0",
+              "path": true,
+              "present": true,
+              "remote": true,
+              "request": true,
+              "values": [
+                "/"
+              ]
+            }
+          ],
+          "name": "app-root-redirect-rule-969c5745-5770-4166-90c6-4dede91dd285"
+        },
+        {
+          "actions": [
+            {
+              "forward": true,
+              "httpHost": false,
+              "name": "0",
+              "pool": "/test/ingress_default_svc",
+              "request": true,
+              "value": ""
+            }
+          ],
+          "conditions": [
+            {
+              "caseInsensitive": true,
+              "equals": true,
+              "external": true,
+              "httpUri": true,
+              "name": "0",
+              "path": true,
+              "present": true,
+              "remote": true,
+              "request": true,
+              "values": [
+                "/bar"
+              ]
+            }
+          ],
+          "name": "app-root-forward-rule-945cf6d8-5cf6-4c82-a3f0-99822b4b0141"
+        }
+      ],
       "strategy": "/Common/first-match"
     },
     {
-    "name": "test_wrapper_policy",
-	"strategy": "/Common/first-match",
-	"rules": [
-	  {
-		"conditions": [
-		  {
-			"httpHost": true,
-			"host": true,
-			"equals": true,
-			"values": ["http://www.mysite.com"]
-		  },
-		  {
-			"httpUri": true,
-			"pathSegment": true,
-			"equals": true,
-			"index": 2,
-			"values": ["articles"]
-		  }
-		],
-		"name": "rule1",
-		"actions": [
-		  {
-			"request": true,
-			"forward": true,
-			"reset": true
-		  }
-		]
-	  },
-	  {
-		"conditions": [
-		  {
-			"httpUri": true,
-			"path": true,
-			"not": true,
-			"equals": true,
-			"values": ["www.mysite.com"]
-		  }
-		],
-		"name": "rule2",
-		"actions": [
-		  {
-			"forward": true,
-			"request": true,
-			"pool": "/test/pool2"
-		  }
-		]
-	  },
-	  {
-		"conditions": [
-		  {
-			"httpHeader": true,
-			"caseSensitive": true,
-			"tmName": "X-Foo",
-			"not": true,
-			"startsWith": true,
-			"values": ["ignore"]
-		  }
-		],
-		"name": "rule3",
-		"actions": [
-		  {
-			"request": true,
-			"redirect": true,
-			"httpReply": true,
-			"location": "http://www.othersite.com"
-		  }
-		]
-	  },
-      {
-		"conditions": [
-		  {
-            "tcp": true,
-            "address": true,
-            "matches": true,
-            "external": true,
-            "values": ["10.10.10.10/32"]
-		  }
-		],
-		"name": "rule3",
-		"actions": [
-		  {
-			"request": true,
-			"redirect": true,
-			"httpReply": true,
-			"location": "http://www.othersite.com"
-		  }
-		]
-	  }
-	]
-  }],
+      "name": "test_wrapper_policy",
+      "strategy": "/Common/first-match",
+      "rules": [
+        {
+          "conditions": [
+            {
+              "httpHost": true,
+              "host": true,
+              "equals": true,
+              "values": [
+                "http://www.mysite.com"
+              ]
+            },
+            {
+              "httpUri": true,
+              "pathSegment": true,
+              "equals": true,
+              "index": 2,
+              "values": [
+                "articles"
+              ]
+            }
+          ],
+          "name": "rule1",
+          "actions": [
+            {
+              "request": true,
+              "forward": true,
+              "reset": true
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "httpUri": true,
+              "path": true,
+              "not": true,
+              "equals": true,
+              "values": [
+                "www.mysite.com"
+              ]
+            }
+          ],
+          "name": "rule2",
+          "actions": [
+            {
+              "forward": true,
+              "request": true,
+              "pool": "/test/pool2"
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "httpHeader": true,
+              "caseSensitive": true,
+              "tmName": "X-Foo",
+              "not": true,
+              "startsWith": true,
+              "values": [
+                "ignore"
+              ]
+            }
+          ],
+          "name": "rule3",
+          "actions": [
+            {
+              "request": true,
+              "redirect": true,
+              "httpReply": true,
+              "location": "http://www.othersite.com"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "test_address_policy",
+      "strategy": "/Common/first-match",
+      "rules": [
+        {
+          "conditions": [
+            {
+              "tcp": true,
+              "address": true,
+              "matches": true,
+              "external": true,
+              "values": [
+                "10.10.10.10/32"
+              ]
+            }
+          ],
+          "name": "rule1",
+          "actions": [
+            {
+              "forward": true,
+              "select": true
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "tcp": true,
+              "address": true,
+              "matches": true,
+              "external": true,
+              "values": [
+                "20.20.20.20/32"
+              ]
+            }
+          ],
+          "name": "rule2",
+          "actions": [
+            {
+              "forward": true,
+              "shutdown": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
   "iRules": [
     {
       "name": "https_redirect",

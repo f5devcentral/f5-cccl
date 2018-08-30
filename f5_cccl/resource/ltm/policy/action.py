@@ -46,6 +46,8 @@ class Action(Resource):
         path=None,
         replace=False,
         value=None,
+        shutdown=True,
+        select=True,
     )
 
     def __init__(self, name, data):
@@ -69,14 +71,25 @@ class Action(Resource):
             # exclusive options.
             pool = data.get('pool', None)
             reset = data.get('reset', False)
+
+            # This allows you to specify an empty node. This is
+            # what Container Connector does.
+            select = data.get('select', False)
+
+            # This was added in 13.1.0
+            shutdown = data.get('shutdown', False)
             if pool:
                 self._data['pool'] = pool
             elif reset:
                 self._data['reset'] = reset
+            elif select:
+                self._data['select'] = select
+            elif shutdown:
+                self._data['shutdown'] = shutdown
             else:
                 raise ValueError(
-                    "Unsupported forward action, must be one of reset or "
-                    "forward to pool.")
+                    "Unsupported forward action, must be one of reset, "
+                    "forward to pool, select, or shutdown.")
         # Is this a redirect action?
         elif data.get('redirect', False):
             self._data['redirect'] = True

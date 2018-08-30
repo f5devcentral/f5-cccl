@@ -38,26 +38,26 @@ requests.packages.urllib3.disable_warnings()
 
 actions = {
     'redirect': {
-	"request": True,
-	"redirect": True,
-	"location": "http://boulder-dev.f5.com",
-	"httpReply": True
+        "request": True,
+        "redirect": True,
+        "location": "http://boulder-dev.f5.com",
+        "httpReply": True
     },
     'redirect_http_https': {
-	"request": True,
-	"redirect": True,
-	"location": "tcl:https://[getfield [HTTP::host] : 1][HTTP::uri]",
-	"httpReply": True
+        "request": True,
+        "redirect": True,
+        "location": "tcl:https://[getfield [HTTP::host] : 1][HTTP::uri]",
+        "httpReply": True
     },
     'pool_forward': {
-	"request": True,
-	"forward": True,
-	"pool": "/Test1/pool1"
+        "request": True,
+        "forward": True,
+        "pool": "/Test1/pool1"
     },
     'reset': {
-	"request": True,
-	"forward": True,
-	"reset": True
+        "request": True,
+        "forward": True,
+        "reset": True
     },
     'invalid_action': {
         "request": False,
@@ -66,6 +66,10 @@ actions = {
         "location": None,
         "reset": False,
         "redirect": False
+    },
+    'select_forward': {
+        "forward": True,
+        "select": True
     }
 }
 
@@ -341,10 +345,10 @@ class TestPolicy(object):
         assert icr_policy
 
         for i in range(5):
-            test_rule = {
-                'actions': [],
-                'conditions': []
-            }
+            test_rule = dict(
+                actions=[],
+                conditions=[]
+            )
             test_rule['name'] = "rule_{}".format(i)
 
             policy_data['rules'].append(test_rule)

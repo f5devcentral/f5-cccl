@@ -231,8 +231,20 @@ definitions:
       value:
         type: "string"
         description: "The URL replacement value"
+      shutdown:
+        type: "boolean"
+        description: "Reset the connection. (since 13.1.0)"
+      select:
+        type: "boolean"
+        description: "Select location to forward to."
 
     oneOf:
+      - required:
+        - "forward"
+        - "select"
+      - required:
+        - "forward"
+        - "shutdown"
       - required:
         - "forward"
         - "request"
