@@ -35,6 +35,7 @@ class Policy(Resource):
     properties = dict(
         name=None,
         partition=None,
+        requires=["http"],
         strategy="/Common/first-match",
         rules=list()
     )
@@ -51,11 +52,14 @@ class Policy(Resource):
             'strategy',
             self.properties.get('strategy')
         )
+        self._data["requires"] = data.get(
+            'requires',
+            self.properties.get('requires')
+        )
 
         # Fix these values.
         self._data['legacy'] = True
         self._data['controls'] = ["forwarding"]
-        self._data['requires'] = ["http"]
 
     def __eq__(self, other):
         """Check the equality of the two objects.
