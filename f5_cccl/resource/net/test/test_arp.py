@@ -40,7 +40,7 @@ def test_create_arp():
     assert Arp
 
     # verify cfg items
-    for k, v in cfg_test.items():
+    for k, v in list(cfg_test.items()):
         assert arp.data[k] == v
 
 

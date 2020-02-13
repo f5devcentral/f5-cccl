@@ -57,7 +57,7 @@ def validate_defaults(validator, schema, services, rsc_type, rscs):
 
     # Go through the schema, find the 'default' fields, and verify that the
     # validator has added the defaults
-    for key, value in properties.items():
+    for key, value in list(properties.items()):
         default = value.get('default')
         if default is not None:
             for idx, rsc in enumerate(services[rscs]):
@@ -133,7 +133,7 @@ def validate_types(validator, schema, services, rsc_type, rscs):
     # Go through the schema; find the strings, integers, and enums and
     # change them to invalid values and verify that the validator catches
     # the errors
-    for key, value in properties.items():
+    for key, value in list(properties.items()):
         val_type = value.get('type')
         if val_type is not None:
             for idx, rsc in enumerate(services[rscs]):
@@ -195,7 +195,7 @@ def test_resources():
         # - catches missing required fields
         # - supplies correct defaults
         # - catches invalid parameter values and types
-        for key, value in rType['resources'].items():
+        for key, value in list(rType['resources'].items()):
             validate_required(validator, schema, services, key, value)
             validate_defaults(validator, schema, services, key, value)
             validate_types(validator, schema, services, key, value)

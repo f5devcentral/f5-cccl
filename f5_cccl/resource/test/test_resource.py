@@ -53,13 +53,13 @@ class SubResource(Resource):
 
 
 def test_create_resource_without_data():
-    u"""Test Resource instantiation with data."""
+    """Test Resource instantiation with data."""
     with pytest.raises(ValueError):
         res = Resource(name=None, partition=None)
 
 
 def test_create_resource_with_data():
-    u"""Test Resource instantiation with data."""
+    """Test Resource instantiation with data."""
     data = resource_data()
     name = data.get('name', "")
     partition = data.get('partition', "")
@@ -73,13 +73,13 @@ def test_create_resource_with_data():
 
 
 def test_create_resource_without_name():
-    u"""Test Resource instantiation without name."""
+    """Test Resource instantiation without name."""
     with pytest.raises(ValueError):
         res = Resource(name=None, partition=None)
 
 
 def test_create_resource_without_partition():
-    u"""Test Resource instantiation without name."""
+    """Test Resource instantiation without name."""
     data = resource_data()
     name = data.get('name', "")
     partition = data.get('partition', "")
@@ -93,7 +93,7 @@ def test_create_resource_without_partition():
 
 
 def test_get_uri_path(bigip):
-    u"""Test _uri_path throws NotImplemented."""
+    """Test _uri_path throws NotImplemented."""
     data = resource_data()
     res = Resource(**data)
 
@@ -110,7 +110,7 @@ def test_str():
 
 
 def test_create_resource(bigip):
-    u"""Test Resource creation."""
+    """Test Resource creation."""
     data = resource_data()
 
     res = Resource(name=data['name'], partition=data['partition'])
@@ -120,7 +120,7 @@ def test_create_resource(bigip):
 
 
 def test_resource_equal():
-    u"""Test the __eq__ operation for Resouces."""
+    """Test the __eq__ operation for Resouces."""
     data = resource_data()
 
     res1 = Resource(**data)
@@ -131,7 +131,7 @@ def test_resource_equal():
 
 
 def test_resource_not_equal():
-    u"""Test the __eq__ operation for Resouces."""
+    """Test the __eq__ operation for Resouces."""
     data = resource_data()
 
     res1 = Resource(**data)
@@ -143,7 +143,7 @@ def test_resource_not_equal():
 
 
 def test_resource_less_than():
-    u"""Test the __eq__ operation for Resouces."""
+    """Test the __eq__ operation for Resouces."""
     data = resource_data()
 
     res1 = Resource(**data)
@@ -155,7 +155,7 @@ def test_resource_less_than():
 
 
 def test_resource_get_data():
-    u"""Test the __eq__ operation for Resouces."""
+    """Test the __eq__ operation for Resouces."""
     data = resource_data()
 
     res1 = Resource(**data)
@@ -164,7 +164,7 @@ def test_resource_get_data():
 
 
 def test_resource_hash():
-    u"""Test the __eq__ operation for Resouces."""
+    """Test the __eq__ operation for Resouces."""
     data = resource_data()
 
     res1 = Resource(**data)
@@ -174,7 +174,7 @@ def test_resource_hash():
 
 
 def test_resource_fullpath():
-    u"""Test the __eq__ operation for Resouces."""
+    """Test the __eq__ operation for Resouces."""
     data = resource_data()
 
     res1 = Resource(**data)
@@ -183,7 +183,7 @@ def test_resource_fullpath():
 
 
 def test_delete_resource(bigip):
-    u"""Test Resource delete."""
+    """Test Resource delete."""
     data = resource_data()
 
     res = Resource(name=data['name'], partition=data['partition'])
@@ -193,7 +193,7 @@ def test_delete_resource(bigip):
 
 
 def test_read_resource(bigip):
-    u"""Test Resource read."""
+    """Test Resource read."""
     data = resource_data()
 
     res = Resource(name=data['name'], partition=data['partition'])
@@ -203,7 +203,7 @@ def test_read_resource(bigip):
 
 
 def test_update_resource(bigip):
-    u"""Test Resource update."""
+    """Test Resource update."""
     data = resource_data()
 
     res = Resource(name=data['name'], partition=data['partition'])
@@ -213,7 +213,7 @@ def test_update_resource(bigip):
 
 
 def test_set_name():
-    u"""Test Resource name update."""
+    """Test Resource name update."""
     data = resource_data()
 
     res = Resource(name=data['name'], partition=data['partition'])
@@ -223,7 +223,7 @@ def test_set_name():
 
 
 def test_set_partition():
-    u"""Test Resource partition update."""
+    """Test Resource partition update."""
     data = resource_data()
 
     res = Resource(name=data['name'], partition=data['partition'])
@@ -233,7 +233,7 @@ def test_set_partition():
 
 
 def test_set_data():
-    u"""Test Resource data update."""
+    """Test Resource data update."""
     data = resource_data()
 
     res = Resource(name=data['name'], partition=data['partition'])
@@ -243,7 +243,7 @@ def test_set_data():
 
 
 def test_ignore_unknown_properties():
-    u"""Test Resource unknown base properties."""
+    """Test Resource unknown base properties."""
     data = resource_data()
     data['prop1'] = 'property1'
     data['prop2'] = 'property2'
@@ -263,7 +263,7 @@ def test_ignore_unknown_properties():
 
 
 def test_metedata_not_set():
-    u"""Test Resource data update."""
+    """Test Resource data update."""
     data = resource_data()
 
     res = Resource(**data)
@@ -272,7 +272,7 @@ def test_metedata_not_set():
 
 
 def test_unsupported_metedata_property():
-    u"""Test Resource data update."""
+    """Test Resource data update."""
     data = resource_data()
     data['metadata'] = [{'name': 'unsupported', 'value': '0'}]
 
@@ -284,7 +284,7 @@ def test_unsupported_metedata_property():
 
 
 def test_whitelist_true_metedata_property():
-    u"""Test Resource data update."""
+    """Test Resource data update."""
     data = resource_data()
     data['metadata'] = [{'name': 'cccl-whitelist', 'value': 'true'}]
 
@@ -295,7 +295,7 @@ def test_whitelist_true_metedata_property():
 
 
 def test_whitelist_false_metedata_property():
-    u"""Test Resource data update."""
+    """Test Resource data update."""
     data = resource_data()
     data['metadata'] = [{'name': 'cccl-whitelist', 'value': 'false'}]
 
@@ -306,7 +306,7 @@ def test_whitelist_false_metedata_property():
 
 
 def test_create_subresource(bigip):
-    u"""Test that a subclass of Resource will execute 'create'."""
+    """Test that a subclass of Resource will execute 'create'."""
     data = resource_data()
     subres = SubResource(name=data['name'], partition=data['partition'])
 
@@ -321,7 +321,7 @@ def test_create_subresource(bigip):
 
 
 def test_update_subresource(bigip):
-    u"""Test that a subclass of Resource will execute 'update'."""
+    """Test that a subclass of Resource will execute 'update'."""
     data = resource_data()
     subres = SubResource(name=data['name'], partition=data['partition'])
 
@@ -337,7 +337,7 @@ def test_update_subresource(bigip):
 
 
 def test_modify_subresource(bigip):
-    u"""Test that a subclass of Resource will execute 'update'."""
+    """Test that a subclass of Resource will execute 'update'."""
     data = resource_data()
     subres = SubResource(name=data['name'], partition=data['partition'])
 
@@ -353,7 +353,7 @@ def test_modify_subresource(bigip):
 
 
 def test_delete_subresource(bigip):
-    u"""Test that a subclass of Resource will execute 'delete'."""
+    """Test that a subclass of Resource will execute 'delete'."""
     data = resource_data()
     subres = SubResource(name=data['name'], partition=data['partition'])
 
@@ -368,7 +368,7 @@ def test_delete_subresource(bigip):
 
 
 def test_create_subresource_sdk_exception(bigip):
-    u"""Test create can handle SDK exception."""
+    """Test create can handle SDK exception."""
     data = resource_data()
     subres = SubResource(name=data['name'], partition=data['partition'])
 
@@ -383,7 +383,7 @@ def test_create_subresource_sdk_exception(bigip):
 
 
 def test_create_subresource_icontrol_409_exception(bigip, response):
-    u"""Test create can handle HTTP 409 exception."""
+    """Test create can handle HTTP 409 exception."""
     data = resource_data()
     subres = SubResource(name=data['name'], partition=data['partition'])
 
@@ -399,7 +399,7 @@ def test_create_subresource_icontrol_409_exception(bigip, response):
 
 
 def test_create_subresource_icontrol_4XX_exception(bigip, response):
-    u"""Test create can handle HTTP client exception."""
+    """Test create can handle HTTP client exception."""
     data = resource_data()
     subres = SubResource(name=data['name'], partition=data['partition'])
 
@@ -415,7 +415,7 @@ def test_create_subresource_icontrol_4XX_exception(bigip, response):
 
 
 def test_create_subresource_icontrol_500_exception(bigip, response):
-    u"""Test create can handle HTTP server exception."""
+    """Test create can handle HTTP server exception."""
     data = resource_data()
     subres = SubResource(name=data['name'], partition=data['partition'])
 
@@ -431,7 +431,7 @@ def test_create_subresource_icontrol_500_exception(bigip, response):
 
 
 def test_read_subresource_sdk_exception(bigip):
-    u"""Test read can handle SDK exception."""
+    """Test read can handle SDK exception."""
     data = resource_data()
 
     subres = SubResource(name=data['name'], partition=data['partition'])
@@ -445,7 +445,7 @@ def test_read_subresource_sdk_exception(bigip):
 
 
 def test_update_subresource_sdk_exception(bigip):
-    u"""Test update can handle SDK exception."""
+    """Test update can handle SDK exception."""
     data = resource_data()
     subres = SubResource(name=data['name'], partition=data['partition'])
 
@@ -461,7 +461,7 @@ def test_update_subresource_sdk_exception(bigip):
 
 
 def test_update_subresource_icontrol_404_exception(bigip, response):
-    u"""Test update can handle HTTP 404 not found exception.
+    """Test update can handle HTTP 404 not found exception.
 
     A NotFound error should occur when the resource load is performed.
     """
@@ -481,7 +481,7 @@ def test_update_subresource_icontrol_404_exception(bigip, response):
 
 
 def test_update_subresource_icontrol_4XX_exception(bigip, response):
-    u"""Test update can handle gener HTTP client request exception."""
+    """Test update can handle gener HTTP client request exception."""
     data = resource_data()
     subres = SubResource(name=data['name'], partition=data['partition'])
 
@@ -500,7 +500,7 @@ def test_update_subresource_icontrol_4XX_exception(bigip, response):
 
 
 def test_delete_subresource_sdk_exception(bigip):
-    u"""Test delete can handle SDK exception."""
+    """Test delete can handle SDK exception."""
     data = resource_data()
 
     subres = SubResource(name=data['name'], partition=data['partition'])
@@ -517,7 +517,7 @@ def test_delete_subresource_sdk_exception(bigip):
 
 
 def test_delete_subresource_attribute_error(bigip):
-    u"""Test delete can handle SDK exception."""
+    """Test delete can handle SDK exception."""
     data = resource_data()
 
     subres = SubResource(name=data['name'], partition=data['partition'])
@@ -534,7 +534,7 @@ def test_delete_subresource_attribute_error(bigip):
 
 
 def test_delete_subresource_icontrol_404_exception(bigip, response):
-    u"""Test delete can handle HTTP 404 not found exception.
+    """Test delete can handle HTTP 404 not found exception.
 
     A NotFound error should occur when the resource load is performed.
     """
@@ -554,7 +554,7 @@ def test_delete_subresource_icontrol_404_exception(bigip, response):
 
 
 def test_delete_subresource_icontrol_4XX_exception(bigip, response):
-    u"""Test delete can handle gener HTTP client request exception."""
+    """Test delete can handle gener HTTP client request exception."""
     data = resource_data()
     subres = SubResource(name=data['name'], partition=data['partition'])
 

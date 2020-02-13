@@ -649,7 +649,7 @@ class GenericResource(Resource):
                                               "testPartition",
                                               **properties)
 
-        for key, value in properties.items():
+        for key, value in list(properties.items()):
             self._data[key] = value
 
     def scrub_data(self, include_metadata = False):
@@ -697,7 +697,7 @@ def test_merge_cccl_resource_properties():
         # cycle through each update request and verify proper merge
         # (the Big-IP current state is the final state of the previous update)
         for ltm_update in test['ltmUpdates']:
-            print("Running test '{}'".format(test['name']))
+            print(("Running test '{}'".format(test['name'])))
             if 'changedBigipProperties' in ltm_update:
                 # Simulates BigIP changing on the fly
                 current_bigip_resource.replace_data(

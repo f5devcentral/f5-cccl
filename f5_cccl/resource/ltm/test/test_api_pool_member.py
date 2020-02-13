@@ -91,7 +91,7 @@ def test_create_cccl_member_min_config(pool, members):
     # Test data
     assert member.data
     pool_data = copy.copy(member.data)
-    for k, _ in POOL_PROPERTIES.items():
+    for k, _ in list(POOL_PROPERTIES.items()):
         if k == 'name':
             assert pool_data['name'] == "172.16.200.100%0:80"
         elif k == 'partition':
@@ -128,7 +128,7 @@ def test_create_cccl_member_w_route_domain(pool, members):
     # Test data
     assert member.data
     pool_data = copy.copy(member.data)
-    for k, _ in POOL_PROPERTIES.items():
+    for k, _ in list(POOL_PROPERTIES.items()):
         if k == 'name':
             assert pool_data['name'] == "172.16.200.101%0:80"
         elif k == 'partition':
@@ -195,7 +195,7 @@ def test_create_cccl_member_w_nonzero_route_domain(pool, members):
     # Test data
     assert member.data
     pool_data = copy.copy(member.data)
-    for k, _ in POOL_PROPERTIES.items():
+    for k, _ in list(POOL_PROPERTIES.items()):
         if k == 'name':
             assert pool_data['name'] == "172.16.200.103%2:80"
         elif k == 'partition':
@@ -233,7 +233,7 @@ def test_create_cccl_member_min_ipv6_config(pool, members):
     # Test data
     assert member.data
     pool_data = copy.copy(member.data)
-    for k, _ in POOL_PROPERTIES.items():
+    for k, _ in list(POOL_PROPERTIES.items()):
         if k == 'name':
             assert (pool_data['name'] ==
                     "2001:0db8:3c4d:0015:0000:0000:abcd:ef12%0.80")
@@ -272,7 +272,7 @@ def test_create_cccl_member_min_ipv6_rd_config(pool, members):
     # Test data
     assert member.data
     pool_data = copy.copy(member.data)
-    for k, _ in POOL_PROPERTIES.items():
+    for k, _ in list(POOL_PROPERTIES.items()):
         if k == 'name':
             assert (pool_data['name'] ==
                     "2001:0db8:3c4d:0015:0000:0000:abcd:ef12%2.80")

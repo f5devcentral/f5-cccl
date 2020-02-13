@@ -1,4 +1,4 @@
-u"""This module provides class for managing member configuration."""
+"""This module provides class for managing member configuration."""
 # coding=utf-8
 #
 # Copyright (c) 2017,2018, F5 Networks, Inc.
@@ -29,7 +29,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class PoolMember(Resource):
-    u"""PoolMember class for deploying configuration on BIG-IP?
+    """PoolMember class for deploying configuration on BIG-IP?
 
     Encapsulate an PoolMember configuration object as defined by BIG-IP
     into a dictionary
@@ -50,7 +50,7 @@ class PoolMember(Resource):
         super(PoolMember, self).__init__(name, partition)
 
         self._pool = pool
-        for key, value in self.properties.items():
+        for key, value in list(self.properties.items()):
             if key in ['name', 'partition']:
                 continue
             self._data[key] = properties.get(key, value)
@@ -96,7 +96,7 @@ class PoolMember(Resource):
 
     @property
     def name(self):
-        u"""Override the name property to get quoted format.
+        """Override the name property to get quoted format.
 
         This handles the '%' route domain marker.
         """
@@ -112,7 +112,7 @@ class ApiPoolMember(PoolMember):
     """PoolMember instantiated from F5 CCCL schema input."""
 
     def __init__(self, partition, default_route_domain, pool, **properties):
-        u"""Create a PoolMember instance from CCCL PoolMemberType.
+        """Create a PoolMember instance from CCCL PoolMemberType.
 
         Args:
             If this is defined as None, the name will be computed
@@ -141,7 +141,7 @@ class ApiPoolMember(PoolMember):
 
     @staticmethod
     def _init_member(address, port, default_route_domain):
-        u"""Initialize the pool member name and address.
+        """Initialize the pool member name and address.
 
         An address is of the form:
         <ip_address>[%<route_domain_id>]

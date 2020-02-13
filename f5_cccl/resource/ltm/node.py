@@ -39,7 +39,7 @@ class Node(Resource):
         """Create a Node instance."""
         super(Node, self).__init__(name, partition, **properties)
 
-        for key, value in self.properties.items():
+        for key, value in list(self.properties.items()):
             if key in ["name", "partition"]:
                 continue
 

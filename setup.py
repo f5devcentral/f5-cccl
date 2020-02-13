@@ -24,11 +24,10 @@ from setuptools import find_packages
 
 import f5_cccl
 
-install_requires = map(lambda x: str(x.req),
-                       parse_reqs('./setup_requirements.txt',
-                       session='setup'))
+install_requires = [str(x.req) for x in parse_reqs('./setup_requirements.txt',
+                       session='setup')]
 
-print('install_requires', install_requires)
+print(('install_requires', install_requires))
 setup(
     name='f5-cccl',
     description='F5 Networks Common Controller Core Library',

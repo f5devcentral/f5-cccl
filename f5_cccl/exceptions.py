@@ -55,36 +55,36 @@ class F5CcclValidationError(F5CcclError):
 
 
 class F5CcclResourceCreateError(F5CcclError):
-    u"""General resource creation failure."""
+    """General resource creation failure."""
 
 
 class F5CcclResourceConflictError(F5CcclError):
-    u"""Resource already exists on BIG-IP?."""
+    """Resource already exists on BIG-IP?."""
 
 
 class F5CcclResourceNotFoundError(F5CcclError):
-    u"""Resource not found on BIG-IP?."""
+    """Resource not found on BIG-IP?."""
 
 
 class F5CcclResourceRequestError(F5CcclError):
-    u"""Resource request client error on BIG-IP?."""
+    """Resource request client error on BIG-IP?."""
 
 
 class F5CcclResourceUpdateError(F5CcclError):
-    u"""General resource update failure."""
+    """General resource update failure."""
 
 
 class F5CcclResourceDeleteError(F5CcclError):
-    u"""General resource delete failure."""
+    """General resource delete failure."""
 
 
 class F5CcclApplyConfigError(F5CcclError):
-    u"""General config deployment failure."""
+    """General config deployment failure."""
 
 
 class F5CcclCacheRefreshError(F5CcclError):
-    u"""Failed to update the BigIP configuration state."""
+    """Failed to update the BigIP configuration state."""
 
 
 class F5CcclConfigurationReadError(F5CcclError):
-    u"""Failed to create a Resource from the API configuration."""
+    """Failed to create a Resource from the API configuration."""

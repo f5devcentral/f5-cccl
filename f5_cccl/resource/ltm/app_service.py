@@ -42,7 +42,7 @@ class ApplicationService(Resource):
         """Create an Application Service instance."""
         super(ApplicationService, self).__init__(name, partition)
 
-        for key, value in self.properties.items():
+        for key, value in list(self.properties.items()):
             if key == "options":
                 if key in properties:
                     self._data.update(properties.get(key, value))
@@ -100,7 +100,7 @@ class IcrApplicationService(ApplicationService):
         super(IcrApplicationService, self).__init__(name,
                                                     partition,
                                                     **properties)
-        for key, value in self.properties.items():
+        for key, value in list(self.properties.items()):
             if key == "variables":
                 self._data[key] = properties.get(key, value)
                 # Remove 'encrypted' key and its value from ICR data
@@ -127,7 +127,7 @@ class ApiApplicationService(ApplicationService):
     def _iapp_build_variables(self, config):
         """Create a list of name-value objects."""
         variables = []
-        for key, value in config['variables'].items():
+        for key, value in list(config['variables'].items()):
             var = {'name': key, 'value': value}
             if var['name'] == "pool__addr":
                 var['value'] = normalize_address_with_route_domain(

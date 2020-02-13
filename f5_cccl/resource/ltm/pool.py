@@ -1,4 +1,4 @@
-u"""This module provides class for managing resource configuration."""
+"""This module provides class for managing resource configuration."""
 # coding=utf-8
 #
 # Copyright (c) 2017,2018, F5 Networks, Inc.
@@ -16,7 +16,7 @@ u"""This module provides class for managing resource configuration."""
 # limitations under the License.
 #
 
-from __future__ import print_function
+
 
 import logging
 
@@ -29,7 +29,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Pool(Resource):
-    u"""Pool class for deploying configuration on BIG-IP"""
+    """Pool class for deploying configuration on BIG-IP"""
     properties = dict(name=None,
                       partition=None,
                       loadBalancingMode="round-robin",
@@ -38,10 +38,10 @@ class Pool(Resource):
                       membersReference={})
 
     def __init__(self, name, partition, members=None, **properties):
-        u"""Create a Pool instance from CCCL poolType."""
+        """Create a Pool instance from CCCL poolType."""
         super(Pool, self).__init__(name, partition, **properties)
 
-        for key, value in self.properties.items():
+        for key, value in list(self.properties.items()):
             if key in ["name", "partition"]:
                 continue
             self._data[key] = properties.get(key, value)
@@ -111,7 +111,7 @@ class ApiPool(Pool):
     def __init__(self, name, partition, default_route_domain, **properties):
         """Parse the CCCL schema input."""
         pool_config = dict()
-        for k, v in properties.items():
+        for k, v in list(properties.items()):
             if k in ["members", "monitors"]:
                 continue
             pool_config[k] = v

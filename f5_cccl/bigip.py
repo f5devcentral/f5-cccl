@@ -1,4 +1,4 @@
-u"""This module provides a class for managing a BIG-IP."""
+"""This module provides a class for managing a BIG-IP."""
 # coding=utf-8
 #
 # Copyright (c) 2017,2018, F5 Networks, Inc.

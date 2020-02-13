@@ -72,7 +72,7 @@ def test_create_virtual():
     assert virtual
 
     # verify all cfg items
-    for k,v in cfg_test.items():
+    for k,v in list(cfg_test.items()):
         if k == "vlans" or k == "policies" or k == "rules":
             assert virtual.data[k] == sorted(v)
         else:
@@ -358,7 +358,7 @@ def test_create_api_virtual():
     assert virtual
 
     # verify all cfg items
-    for k,v in cfg_test.items():
+    for k,v in list(cfg_test.items()):
         if k == "vlans" or k == 'policies' or k == "rules":
             assert virtual.data[k] == sorted(v)
         else:
