@@ -54,7 +54,7 @@ def test_create_irule():
     assert irule
 
     # verify all cfg items
-    for k,v in cfg_test.items():
+    for k,v in list(cfg_test.items()):
         if type(v) is not list:
             assert irule.data[k] == v.strip()
         else:

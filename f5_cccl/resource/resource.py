@@ -1,6 +1,6 @@
 # coding=utf-8
 # -*- coding: utf-8 -*-
-u"""This module provides class for managing resource configuration."""
+"""This module provides class for managing resource configuration."""
 #
 # Copyright (c) 2017,2018, F5 Networks, Inc.
 #
@@ -38,7 +38,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Resource(object):
-    u"""Resource super class to wrap BIG-IP configuration objects.
+    """Resource super class to wrap BIG-IP configuration objects.
 
     A Resource represents a piece of CCCL configuration as represented
     by the cccl-api-schema.  It's purpose is to wrap configuration into
@@ -69,7 +69,7 @@ class Resource(object):
         return cls.__name__
 
     def __init__(self, name, partition, **properties):
-        u"""Initialize a BIG-IP resource object from a CCCL schema object.
+        """Initialize a BIG-IP resource object from a CCCL schema object.
 
         Args:
             name (string): the name of the resource
@@ -89,7 +89,7 @@ class Resource(object):
         self._whitelist_updates = None
 
         if properties:
-            for key, default in self.common_properties.items():
+            for key, default in list(self.common_properties.items()):
                 value = properties.get(key, default)
                 if value is not None:
                     self._data[key] = value
@@ -98,7 +98,7 @@ class Resource(object):
                         self._process_metadata_flags(name, value)
 
     def __eq__(self, resource):
-        u"""Compare two resources for equality.
+        """Compare two resources for equality.
 
         Args:
             resouce (Resource): The resource to compare
@@ -121,7 +121,7 @@ class Resource(object):
         return str(self._data)
 
     def merge(self, desired_data):
-        u"""Merge in properties from controller instead of replacing"""
+        """Merge in properties from controller instead of replacing"""
         # 1. stop processing if no merging is needed
         prev_updates = self._retrieve_whitelist_updates()
         if desired_data == {} and prev_updates is None:
@@ -172,7 +172,7 @@ class Resource(object):
                                         key=itemgetter('name'))
 
     def create(self, bigip):
-        u"""Create resource on a BIG-IP system.
+        """Create resource on a BIG-IP system.
 
         The internal data model is applied to the BIG-IP
 
@@ -200,7 +200,7 @@ class Resource(object):
             raise cccl_exc.F5CcclResourceCreateError(str(err))
 
     def read(self, bigip):
-        u"""Retrieve a BIG-IP resource from a BIG-IP.
+        """Retrieve a BIG-IP resource from a BIG-IP.
 
         Returns a resource object with attributes for instance on a
         BIG-IP system.
@@ -228,7 +228,7 @@ class Resource(object):
             raise cccl_exc.F5CcclError(str(err))
 
     def update(self, bigip, data=None, modify=False):
-        u"""Update a resource (e.g., pool) on a BIG-IP system.
+        """Update a resource (e.g., pool) on a BIG-IP system.
 
         Modifies a resource on a BIG-IP system using attributes
         defined in the model object.
@@ -268,7 +268,7 @@ class Resource(object):
             raise cccl_exc.F5CcclResourceUpdateError(str(err))
 
     def delete(self, bigip):
-        u"""Delete a resource on a BIG-IP system.
+        """Delete a resource on a BIG-IP system.
 
         Loads a resource and deletes it.
 
@@ -301,26 +301,26 @@ class Resource(object):
 
     @property
     def name(self):
-        u"""Get the name for this resource."""
+        """Get the name for this resource."""
         return self._data['name']
 
     @property
     def partition(self):
-        u"""Get the partition for this resource."""
+        """Get the partition for this resource."""
         return self._data['partition']
 
     @property
     def data(self):
-        u"""Get the internal data model for this resource."""
+        """Get the internal data model for this resource."""
         return self._data
 
     @property
     def whitelist(self):
-        u"""Flag to indicate if user-created resource should be ignored"""
+        """Flag to indicate if user-created resource should be ignored"""
         return self._whitelist
 
     def _save_whitelist_updates(self, updates):
-        u"""Saves the updates applied to this whitelisted object"""
+        """Saves the updates applied to this whitelisted object"""
         if not self._whitelist:
             LOGGER.error('Cannot apply updates to the non-whitelisted '
                          'object %s', self.full_path())
@@ -336,7 +336,7 @@ class Resource(object):
             self._data['metadata'].append(metadata)
 
     def _retrieve_whitelist_updates(self):
-        u"""Retrieves the updates and ret to this whitelisted object"""
+        """Retrieves the updates and ret to this whitelisted object"""
 
         updates = None
         if not self._whitelist:
@@ -354,11 +354,11 @@ class Resource(object):
         return updates
 
     def full_path(self):
-        u"""Concatenate the partition and name to form fullPath."""
+        """Concatenate the partition and name to form fullPath."""
         return "/{}/{}".format(self.partition, self.name)
 
     def _uri_path(self, bigip):
-        u"""Get the URI resource path key for the F5 SDK.
+        """Get the URI resource path key for the F5 SDK.
 
         For example, a pool resource returns:
 
@@ -369,7 +369,7 @@ class Resource(object):
         raise NotImplementedError
 
     def _handle_http_error(self, error):
-        u"""Extract the error code and reraise a CCCL Error."""
+        """Extract the error code and reraise a CCCL Error."""
         code = error.response.status_code
         LOGGER.error(
             "HTTP error(%d): CCCL resource(%s) /%s/%s.",

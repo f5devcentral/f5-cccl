@@ -39,7 +39,7 @@ class VirtualAddress(Resource):
         """Create a VirtualAddress instance."""
         super(VirtualAddress, self).__init__(name, partition, **properties)
 
-        for key, value in self.properties.items():
+        for key, value in list(self.properties.items()):
             self._data[key] = properties.get(key, value)
         if self._data['address'] is not None:
             self._data['address'] = normalize_address_with_route_domain(

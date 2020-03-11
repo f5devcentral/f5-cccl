@@ -101,7 +101,7 @@ def _merge_list(dst, src):
 def _merge_dict(dst, src):
     """Merge two dictionaries together, with src overridding dst fields."""
 
-    for key in src.keys():
+    for key in list(src.keys()):
         dst[key] = merge(dst[key], src[key]) if key in dst else src[key]
     return dst
 

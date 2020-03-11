@@ -46,7 +46,7 @@ class Monitor(Resource):
     def __init__(self, name, partition, **kwargs):
         super(Monitor, self).__init__(name, partition)
 
-        for key, value in self.properties.items():
+        for key, value in list(self.properties.items()):
             self._data[key] = kwargs.get(key, value)
 
         # Check for invalid interval/timeout values

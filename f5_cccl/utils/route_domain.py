@@ -29,7 +29,7 @@ path_ip_rd_port_re = re.compile(r'^(.+)/(.+)%(\d+)[:|\.](.+)$')
 
 
 def combine_ip_and_route_domain(ip, route_domain):
-    u"""Return address that includes IP and route domain
+    """Return address that includes IP and route domain
 
     Input ip format must be of the form:
         <ipv4_or_ipv6>
@@ -39,7 +39,7 @@ def combine_ip_and_route_domain(ip, route_domain):
 
 
 def split_ip_with_route_domain(address):
-    u"""Return ip and route-domain parts of address
+    """Return ip and route-domain parts of address
 
     Input ip format must be of the form:
         <ip_v4_or_v6_addr>[%<route_domain_id>]
@@ -56,7 +56,7 @@ def split_ip_with_route_domain(address):
 
 
 def normalize_address_with_route_domain(address, default_route_domain):
-    u"""Return address with the route domain
+    """Return address with the route domain
 
     Return components of address, using the default route domain
     for the partition if one is not already specified.

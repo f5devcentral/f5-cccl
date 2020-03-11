@@ -35,7 +35,7 @@ class Arp(Resource):
         """Create an ARP entry from CCCL arpType."""
         super(Arp, self).__init__(name, partition)
 
-        for key, value in self.properties.items():
+        for key, value in list(self.properties.items()):
             if key in ["name", "partition"]:
                 continue
             self._data[key] = data.get(key, value)

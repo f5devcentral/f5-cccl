@@ -48,7 +48,7 @@ bigip_pools_cfg = [
               'description': None}
          ]
      },
-     'name': u'pool1',
+     'name': 'pool1',
      'metadata': [{
        'name': 'user_agent',
        'persist': 'true',
@@ -59,7 +59,7 @@ bigip_pools_cfg = [
      'partition': 'Common',
      'loadBalancingMode': 'round-robin',
      'monitor': '/Common/http ',
-     'name': u'pool1'
+     'name': 'pool1'
     }
 ]
 

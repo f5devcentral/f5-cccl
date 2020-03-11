@@ -49,7 +49,7 @@ def test_create_internal_data_group():
     assert idg
 
     # verify all cfg items
-    for k,v in cfg_test.items():
+    for k,v in list(cfg_test.items()):
         assert idg.data[k] == v
 
 

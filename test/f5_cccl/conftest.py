@@ -68,12 +68,12 @@ def bigip():
 @pytest.fixture(scope="function")
 def bigip_rest_counters(bigip):
     counters = bigip.test_rest_calls
-    for k in counters.keys():
+    for k in list(counters.keys()):
         counters[k] = 0
 
     yield counters
 
-    for k in counters.keys():
+    for k in list(counters.keys()):
         counters[k] = 0
 
 
@@ -98,9 +98,9 @@ def partition(bigip):
     except iControlUnexpectedHTTPError as icr_error:
         code = icr_error.response.status_code
         if code == 400:
-            print("Can't create partition {}".format(name))
+            print(("Can't create partition {}".format(name)))
         elif code == 409:
-            print("Partition {} already exists".format(name))
+            print(("Partition {} already exists".format(name)))
             partition = bigip.tm.auth.partitions.partition.load(subPath="/", name=name)
         else:
             print("Unknown error creating partition.")
@@ -135,9 +135,9 @@ def pool(bigip, partition):
     except iControlUnexpectedHTTPError as icr_error:
         code = icr_error.response.status_code
         if code == 400:
-            print("Can't create pool {}".format(name))
+            print(("Can't create pool {}".format(name)))
         elif code == 409:
-            print("Pool {} already exists".format(name))
+            print(("Pool {} already exists".format(name)))
             partition = bigip.tm.ltm.pools.pool.load(partition=partition,
                                                      name=name)
         else:

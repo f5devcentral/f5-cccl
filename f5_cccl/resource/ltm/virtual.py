@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-from __future__ import print_function
+
 
 from copy import copy
 import logging
@@ -69,7 +69,7 @@ class VirtualServer(Resource):
         """Create a Virtual server instance."""
         super(VirtualServer, self).__init__(name, partition, **properties)
 
-        for key, default in self.properties.items():
+        for key, default in list(self.properties.items()):
             if key in ["profiles", "policies"]:
                 prop = properties.get(key, default)
                 self._data[key] = sorted(prop, key=itemgetter('name'))

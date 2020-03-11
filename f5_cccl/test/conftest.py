@@ -452,7 +452,7 @@ class MockFolders():
     def __init__(self):
         """Initialize the object."""
 
-    def get_collection():
+    def get_collection(self):
         """Get collection of partitions."""
         pass
 
@@ -994,7 +994,7 @@ class MockBigIP(ManagementRoot):
         partition = self.partition_from_params(requests_params['params'])
         resources = self.bigip_data['virtual_addresses']
         vas = [
-            MockVirtualAddress(**r)
+            MockVirtualAddresses(**r)
             for r in resources if partition == r['partition']
         ]
         return vas

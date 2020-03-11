@@ -16,7 +16,7 @@
 #
 """This module defines the schema validator used by f5-cccl."""
 
-from __future__ import print_function
+
 
 import logging
 from time import time
@@ -99,7 +99,7 @@ class ServiceConfigValidator(object):
 
     def __set_defaults(self, validator, properties, instance, schema):
         """Helper function to simply return when setting defaults."""
-        for item, subschema in properties.items():
+        for item, subschema in list(properties.items()):
             if "default" in subschema:
                 instance.setdefault(item, subschema["default"])
 

@@ -44,7 +44,7 @@ def test_create_node():
     assert node
 
     # verify all cfg items
-    for k,v in cfg_test.items():
+    for k,v in list(cfg_test.items()):
         assert node._data[k] == v
 
 

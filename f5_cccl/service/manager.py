@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-from __future__ import print_function
+
 
 import logging
 from time import time
@@ -56,11 +56,11 @@ class ServiceConfigDeployer(object):
            requested changes) and we don't delete the resource.
         """
         unmanaged = {
-            name: resource for name, resource in existing.items()
+            name: resource for name, resource in list(existing.items())
             if resource.whitelist is True
         }
         managed = {
-            name: resource for name, resource in existing.items()
+            name: resource for name, resource in list(existing.items())
             if resource.whitelist is False
         }
 

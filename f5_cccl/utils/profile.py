@@ -131,7 +131,7 @@ def delete_unused_ssl_profiles(mgr, partition, config):
     # must exclude profiles that are attached to whitelisted virtuals
     virtuals = proxy.get_virtuals()
     ignore_profiles = set()
-    for _, virtual in virtuals.items():
+    for _, virtual in list(virtuals.items()):
         if virtual.whitelist is True:
             for profile in virtual.data['profiles']:
                 ignore_profiles.add("/{}/{}".format(profile['partition'],
