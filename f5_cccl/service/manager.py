@@ -219,12 +219,13 @@ class ServiceConfigDeployer(object):
         all_tunnels = self._bigip.get_fdb_tunnels(all_tunnels=True)
         # Get only the tunnels we desire
         update_list = set(desired) & set(all_tunnels)
-        update_list = [
-            desired[resource] for resource in update_list
-            if desired[resource] != all_tunnels[resource]
-        ]
-
-        return update_list
+        new_list = []
+        for resource in update_list:
+            if desired[resource] != all_tunnels[resource]:
+                new_list.append(desired[resource])
+            LOGGER.info(desired[resource])
+            LOGGER.info(all_tunnels[resource])
+        return new_list
 
     # pylint: disable=too-many-locals
     def _desired_nodes(self, default_route_domain):
