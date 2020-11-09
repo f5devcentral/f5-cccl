@@ -370,9 +370,10 @@ class ServiceConfigDeployer(object):
 
         # Remove legacy resources (pre RD-named resources) before deploying
         # new configuration
-        if ServiceConfigDeployer.first_pass:
-            ServiceConfigDeployer.first_pass = False
-            self._pre_deploy_legacy_ltm_cleanup()
+        # Fix: Customer issue- Hotfix
+        # if ServiceConfigDeployer.first_pass:
+        #     ServiceConfigDeployer.first_pass = False
+        #     self._pre_deploy_legacy_ltm_cleanup()
 
         self._bigip.refresh_ltm()
 
