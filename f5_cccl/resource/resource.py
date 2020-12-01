@@ -257,6 +257,7 @@ class Resource(object):
                 name=urlquote(self.name),
                 partition=self.partition)
             payload = copy.copy(data)
+            obj.raw['_meta_data']['icontrol_version'] = obj.raw['_meta_data']['creation_uri_qargs']['ver'][0]
             if modify:
                 obj.modify(**payload)
             else:

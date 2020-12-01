@@ -403,7 +403,12 @@ class BigIPProxy(object):
         # our local list.
         LOGGER.debug(
             "Retrieving fdb tunnels from BIG-IP /%s...", self._partition)
+        # Adding support for latest bigips
+        self._bigip.tm.net.fdb.tunnels.raw['_meta_data']['icontrol_version'] = self._bigip.tmos_version
         tunnels = self._bigip.tm.net.fdb.tunnels.get_collection()
+        for t in tunnels:
+            t.raw["_meta_data"]["icontrol_version"] = self._bigip.tmos_version
+
 
         # Refresh the arp cache
         self._arps = {
@@ -423,6 +428,7 @@ class BigIPProxy(object):
             for t in tunnels if (self._manageable_resource(t) and
                                  t.partition == self._partition)
         }
+
         self._all_fdb_tunnels = {
             t.name: self._create_resource(IcrFDBTunnel, t,
                                           default_route_domain)
