@@ -411,6 +411,11 @@ class BigIPProxy(object):
             for a in arps if self._manageable_resource(a)
         }
 
+        for tunnel in tunnels:
+            tunnel.records = []
+            for record in tunnel.records_s.get_collection():
+                tunnel.records.append({'name': record.name, 'endpoint': record.endpoint})
+
         # Refresh the tunnel cache
         self._fdb_tunnels = {
             t.name: self._create_resource(IcrFDBTunnel, t,
