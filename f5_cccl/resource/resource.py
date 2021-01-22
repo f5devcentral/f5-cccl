@@ -257,6 +257,11 @@ class Resource(object):
                 name=urlquote(self.name),
                 partition=self.partition)
             payload = copy.copy(data)
+
+            # removing the mutate read-only attribute 'ipAddress' while updating the ARP
+            if self.classname() == "ApiArp":
+                payload.pop("ipAddress")
+
             if modify:
                 obj.modify(**payload)
             else:
