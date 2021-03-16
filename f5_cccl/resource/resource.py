@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """This module provides class for managing resource configuration."""
 #
-# Copyright (c) 2017,2018, F5 Networks, Inc.
+# Copyright (c) 2017-2021 F5 Networks, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
