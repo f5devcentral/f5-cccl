@@ -37,7 +37,7 @@ DEFAULT_NET_SCHEMA = "./f5_cccl/schemas/cccl-net-api-schema.yml"
 def read_yaml(target):
     """Open and read a yaml file."""
     with open(target, 'r') as yaml_file:
-        yaml_data = yaml.load(yaml_file)
+        yaml_data = yaml.load(yaml_file, Loader=yaml.FullLoader)
     return yaml_data
 
 
