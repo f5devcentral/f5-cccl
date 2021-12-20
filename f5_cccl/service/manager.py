@@ -477,6 +477,10 @@ class ServiceConfigDeployer(object):
         (create_arps, update_arps, delete_arps) = (
             self._get_resource_tasks(existing, desired)[0:3])
 
+        LOGGER.warn("Skipped deleting arps...")
+        LOGGER.debug(delete_arps)
+        delete_arps = []
+
         # Get the list of tunnel tasks
         LOGGER.debug("Getting tunnel tasks...")
         existing = self._bigip.get_fdb_tunnels()
