@@ -474,8 +474,11 @@ class ServiceConfigDeployer(object):
         LOGGER.debug("Getting arp tasks...")
         existing = self._bigip.get_arps()
         desired = desired_config.get('arps', dict())
-        (create_arps, update_arps, delete_arps) = (
-            self._get_resource_tasks(existing, desired)[0:3])
+        create_arps = update_arps = delete_arps = list()
+        # To avoid recreating ARPs
+        if len(desired) > 0:
+            (create_arps, update_arps, delete_arps) = (
+                self._get_resource_tasks(existing, desired)[0:3])
 
         # Get the list of tunnel tasks
         LOGGER.debug("Getting tunnel tasks...")
