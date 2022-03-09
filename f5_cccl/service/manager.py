@@ -19,6 +19,7 @@
 
 
 import logging
+import json
 from time import time
 
 import f5_cccl.exceptions as exc
@@ -676,6 +677,24 @@ class ServiceManager(object):
         LOGGER.debug(
             "apply_ltm_config took %.5f seconds.", (time() - start_time))
 
+        try:
+            prom_data = {}
+            for i in service_config.get('iapps', []):
+                prom_data[i['name']] = {
+                    'timecost': int((time() - start_time)*1000),
+                    'members': []
+                }
+                pmt = i.get('poolMemberTable', {})
+                for m in pmt.get('members', []):
+                    prom_data[i['name']]['members'].append(m['address'])
+            # TODO: handle ingress type under cccl mode.
+            # for i in service_config.get('pools'/'l7Policies'/'monitors'/'virtualServers'/)
+            #     pass
+        except Exception as e:
+            LOGGER.error("failed to handle ltm prom data: %s" % e)
+
+        LOGGER.info("prometheus.data.ltm="+json.dumps(prom_data))
+
         return retval
 
     def apply_net_config(self, service_config):
@@ -710,5 +729,14 @@ class ServiceManager(object):
 
         LOGGER.debug(
             "apply_net_config took %.5f seconds.", (time() - start_time))
+
+        try:
+            prom_data = {}
+            for i in service_config.get('arps', []):
+                prom_data[i['ipAddress']] = int((time() - start_time)*1000)
+        except Exception as e:
+            LOGGER.error("failed to handle net prom data: %s" % e)
+
+        LOGGER.info("prometheus.data.net="+json.dumps(prom_data))
 
         return retval
