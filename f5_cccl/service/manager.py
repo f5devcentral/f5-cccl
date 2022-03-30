@@ -425,6 +425,14 @@ class ServiceConfigDeployer(object):
         LOGGER.debug("Getting iApp tasks...")
         existing_iapps = self._bigip.get_app_svcs()
         desired = desired_config.get('iapps', dict())
+        # For iapp with no members, rows field is not returned from get call
+        # For updating with no members,post call requires rows field to be passed with empty list
+        # To reconcile this, set rows to empty list when rows field is not present in existing iapp objects.
+        for name,resource in list(existing_iapps.items()):
+            for v in resource.data["tables"]:
+              if "rows" not in v:
+                v["rows"]=list()
+
         (create_iapps, update_iapps, delete_iapps) = (
             self._get_resource_tasks(existing_iapps, desired)[0:3])
 
