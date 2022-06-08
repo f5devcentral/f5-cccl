@@ -27,7 +27,7 @@ enum34==1.1.6
 cryptography==3.3.2
 idna==2.7
 pycparser==2.19
-urllib3==1.24.2
+urllib3==1.26.5
 six==1.15.0
 attrs==18.2.0
 cffi==1.12.2
