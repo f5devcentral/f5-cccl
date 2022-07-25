@@ -63,7 +63,8 @@ class VirtualServer(Resource):
                       pool=None,
                       policies=list(),
                       profiles=list(),
-                      rules=list())
+                      rules=list(),
+                      mask=None)
 
     def __init__(self, name, partition, default_route_domain, **properties):
         """Create a Virtual server instance."""
@@ -90,6 +91,20 @@ class VirtualServer(Resource):
         except Exception as error:
             LOGGER.error(
                 "Virtual Server address normalization error: %s", error)
+
+        # NetMask validation
+        if 'mask' in self._data:
+            try:
+                self.validateNetMask()
+            except Exception as error:
+                LOGGER.error(
+                    "Virtual Server netmask error: %s", error)
+
+    def validateNetMask(self):
+        """Validate netmask"""
+        if not IPAddress(self._data['mask']).is_netmask():
+            LOGGER.error(
+                "Virtual Server netmask %s is invalid", self._data['mask'])
 
     def normalizeAddresses(self, default_rd):
         '''Normalize destination and source fields to include route domain
