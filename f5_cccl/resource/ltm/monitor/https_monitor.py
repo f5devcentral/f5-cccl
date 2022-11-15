@@ -44,6 +44,8 @@ class HTTPSMonitor(Monitor):
         super(HTTPSMonitor, self).__init__(name, partition, **kwargs)
         for key in ['send', 'recv']:
             self._data[key] = kwargs.get(key, self.properties.get(key))
+        # fix for bipip health monitor
+        self._data["compatibility"] = "disabled"
 
     def _uri_path(self, bigip):
         """Get the URI resource path key for the F5-SDK for HTTPS monitor
