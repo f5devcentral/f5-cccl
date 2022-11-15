@@ -38,11 +38,12 @@ class HTTPSMonitor(Monitor):
     properties = dict(interval=5,
                       timeout=16,
                       send="GET /\\r\\n",
-                      recv="")
+                      recv="",
+                      sslProfile="")
 
     def __init__(self, name, partition, **kwargs):
         super(HTTPSMonitor, self).__init__(name, partition, **kwargs)
-        for key in ['send', 'recv']:
+        for key in ['send', 'recv', 'sslProfile']:
             self._data[key] = kwargs.get(key, self.properties.get(key))
         # fix for bipip health monitor
         self._data["compatibility"] = "disabled"
