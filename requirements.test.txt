@@ -21,7 +21,7 @@ jsonschema==3.0.0
 jsonpatch==1.16
 requests==2.20.0
 asn1crypto==0.24.0
-certifi==2018.11.29
+certifi==2022.12.7
 chardet==3.0.4
 enum34==1.1.6
 cryptography==3.3.2
