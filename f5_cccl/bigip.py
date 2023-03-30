@@ -44,6 +44,7 @@ from f5_cccl.resource.ltm.internal_data_group import IcrInternalDataGroup
 # NET resources
 from f5_cccl.resource.net.arp import IcrArp
 from f5_cccl.resource.net.fdb.tunnel import IcrFDBTunnel
+from f5_cccl.resource.net.route import IcrRoute
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -90,6 +91,7 @@ class BigIPProxy(object):
         # BIG-IP NET resources
         self._arps = dict()
         self._fdb_tunnels = dict()
+        self._routes = dict()
 
     def mgmt_root(self):
         """Return a reference to the proxied BIG-IP."""
@@ -395,6 +397,10 @@ class BigIPProxy(object):
         arps = self._bigip.tm.net.arps.get_collection(
             requests_params={"params": query})
 
+        #Retrieve list of routes
+        LOGGER.debug("Retrieving routes from BIG-IP /%s...", self._partition)
+        routes = self._bigip.tm.net.routes.get_collection(
+            requests_params={"params": query})
         # Retrieve the list of tunnels
         # WORKAROUND: We don't pass the request_params in the fdb tunnel case,
         # due to an issue with the f5-sdk expecting an object param, rather
@@ -409,6 +415,12 @@ class BigIPProxy(object):
         self._arps = {
             a.name: self._create_resource(IcrArp, a)
             for a in arps if self._manageable_resource(a)
+        }
+
+        # Refresh the route cache
+        self._routes = {
+            a.name: self._create_resource(IcrRoute, a)
+            for a in routes if self._manageable_resource(a)
         }
 
         for tunnel in tunnels:
@@ -521,3 +533,7 @@ class BigIPProxy(object):
             return self._all_fdb_tunnels
 
         return self._fdb_tunnels
+
+    def get_routes(self):
+        """Return the index of arps."""
+        return self._routes

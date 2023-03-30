@@ -39,6 +39,7 @@ from f5_cccl.resource.ltm.internal_data_group import ApiInternalDataGroup
 # NET resources
 from f5_cccl.resource.net.arp import ApiArp
 from f5_cccl.resource.net.fdb.tunnel import ApiFDBTunnel
+from f5_cccl.resource.net.route import ApiRoute
 
 
 LOGGER = logging.getLogger(__name__)
@@ -212,6 +213,12 @@ class ServiceConfigReader(object):
             t['name']: self._create_config_item(ApiFDBTunnel, t,
                                                 default_route_domain)
             for t in user_tunnels
+        }
+
+        routes = service_config.get('routes', list())
+        config_dict['routes'] = {
+            a['name']: self._create_config_item(ApiRoute, a)
+            for a in routes
         }
 
         return config_dict

@@ -68,7 +68,6 @@ class ServiceConfigDeployer(object):
         existing_set = set(existing)
         unmanaged_set = set(unmanaged)
         managed_set = set(managed)
-
         # Create any managed resource that doesn't currently exist
         create_list = [
             desired[resource] for resource in
@@ -478,6 +477,14 @@ class ServiceConfigDeployer(object):
         """
         self._bigip.refresh_net()
 
+        # Get the list of route tasks
+        LOGGER.debug("Getting route tasks...")
+        existing = self._bigip.get_routes()
+        desired = desired_config.get('routes', dict())
+
+        (create_routes, update_routes, delete_routes) = (
+            self._get_resource_tasks(existing, desired)[0:3])
+
         # Get the list of arp tasks
         LOGGER.debug("Getting arp tasks...")
         existing = self._bigip.get_arps()
@@ -500,9 +507,9 @@ class ServiceConfigDeployer(object):
         update_existing_tunnels = self._get_user_tunnel_tasks(desired)
 
         LOGGER.debug("Building task lists...")
-        create_tasks = create_arps + create_tunnels
-        update_tasks = update_arps + update_tunnels + update_existing_tunnels
-        delete_tasks = delete_arps + delete_tunnels
+        create_tasks = create_arps + create_tunnels + create_routes
+        update_tasks = update_arps + update_tunnels + update_existing_tunnels + update_routes
+        delete_tasks = delete_arps + delete_tunnels + delete_routes
 
         taskq_len = len(create_tasks) + len(update_tasks) + len(delete_tasks)
 
@@ -710,7 +717,6 @@ class ServiceManager(object):
         # Read in the configuration
         desired_config = self._config_reader.read_net_config(
             service_config, default_route_domain)
-
         # Deploy the service desired configuration.
         retval = self._service_deployer.deploy_net(desired_config)
 
