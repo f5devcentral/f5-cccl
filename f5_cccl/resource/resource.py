@@ -261,6 +261,9 @@ class Resource(object):
             # removing the mutate read-only attribute 'ipAddress' while updating the ARP
             if self.classname() == "ApiArp":
                 payload.pop("ipAddress")
+            # removing the mutate read-only attribute 'network' while updating the Route
+            if self.classname() == "ApiRoute":
+                payload.pop("network")
 
             if modify:
                 obj.modify(**payload)
