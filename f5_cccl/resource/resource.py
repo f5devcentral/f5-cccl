@@ -264,6 +264,8 @@ class Resource(object):
             # removing the mutate read-only attribute 'network' while updating the Route
             if self.classname() == "ApiRoute":
                 payload.pop("network")
+                obj.delete()
+                obj.create()
 
             if modify:
                 obj.modify(**payload)
