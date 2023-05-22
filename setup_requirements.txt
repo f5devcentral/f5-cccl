@@ -5,7 +5,7 @@ ipaddress==1.0.17
 netaddr==0.7.19
 PyJWT==2.4.0
 PyYAML==5.4
-requests==2.28
+requests==2.31.0
 simplejson==3.10.0
 jsonpatch==1.16
 jsonpointer==2.0
