@@ -446,11 +446,16 @@ class BigIPProxy(object):
 
     def get_default_route_domain(self):
         """Return the configured default route domain for the partition"""
-        partition = self._bigip.tm.auth.partitions.partition.load(
-            name=self._partition)
-        # Note: This information is needed when processing the request config
-        #       which occurs before self.refresh() is called
-        return partition.defaultRouteDomain
+        try:
+            partition = self._bigip.tm.auth.partitions.partition.load(
+                name=self._partition)
+            return partition.defaultRouteDomain
+            # Note: This information is needed when processing the request config
+            #       which occurs before self.refresh() is called
+        except Exception as error:
+            LOGGER.error("F5 SDK Error: %s", error)
+            raise cccl_exc.F5CcclResourceNotFoundError(
+                f"The requested partition {self._partition} was not found.")
 
     def get_virtuals(self, all_virtuals=False):
         """Return the index of virtual servers."""
