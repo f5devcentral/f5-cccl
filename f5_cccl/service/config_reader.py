@@ -220,5 +220,6 @@ class ServiceConfigReader(object):
             a['name']: self._create_config_item(ApiRoute, a)
             for a in routes
         }
+        config_dict['cis-identifier'] = service_config.get('cis-identifier',str())
 
         return config_dict
