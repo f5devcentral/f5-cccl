@@ -41,9 +41,10 @@ class ServiceConfigDeployer(object):
 
     first_pass = True
 
-    def __init__(self, bigip_proxy):
+    def __init__(self, bigip_proxy,partition=None):
         """Initialize the config deployer."""
         self._bigip = bigip_proxy
+        self._partition = partition
 
     # pylint: disable=too-many-locals
     def _get_resource_tasks(self, existing, desired):
@@ -485,6 +486,10 @@ class ServiceConfigDeployer(object):
         (create_routes, update_routes, delete_routes) = (
             self._get_resource_tasks(existing, desired)[0:3])
 
+        if self._partition:
+            if self._partition.lower() == 'common' and len(delete_routes) > 0:
+                delete_routes = [x for x in delete_routes if x._data.get("description") == desired_config.get('cis-identifier')]
+
         # Get the list of arp tasks
         LOGGER.debug("Getting arp tasks...")
         existing = self._bigip.get_arps()
@@ -648,7 +653,7 @@ class ServiceManager(object):
         self._partition = partition
         self._bigip = bigip_proxy
         self._config_validator = ServiceConfigValidator(schema)
-        self._service_deployer = ServiceConfigDeployer(bigip_proxy)
+        self._service_deployer = ServiceConfigDeployer(bigip_proxy,partition)
         self._config_reader = ServiceConfigReader(self._partition)
 
     def get_partition(self):

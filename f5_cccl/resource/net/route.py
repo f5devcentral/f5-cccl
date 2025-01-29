@@ -29,7 +29,8 @@ class Route(Resource):
     properties = dict(name=None,
                       partition=None,
                       network=None,
-                      gw=None)
+                      gw=None,
+                      description=None)
 
     def __init__(self, name, partition, **data):
         """Create an Route entry from CCCL routeType."""
