@@ -21,4 +21,4 @@ six==1.12.0
 attrs==18.2.0
 cffi==1.15.0
 pyrsistent==0.14.11
-setuptools==70.0.0
+setuptools==78.1.1
