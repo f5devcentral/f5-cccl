@@ -488,7 +488,14 @@ class ServiceConfigDeployer(object):
 
         if self._partition:
             if self._partition.lower() == 'common' and len(delete_routes) > 0:
-                delete_routes = [x for x in delete_routes if x._data.get("description") == desired_config.get('cis-identifier')]
+                cis_identifier = desired_config.get('cis-identifier')
+                if cis_identifier:
+                    # Filter routes by CIS identifier when it's provided
+                    delete_routes = [x for x in delete_routes if x._data.get("description") == cis_identifier]
+                else:
+                    # When no CIS identifier is provided, only delete routes with empty/None description
+                    # This prevents deletion of routes from other CIS instances that have identifiers
+                    delete_routes = [x for x in delete_routes if not x._data.get("description")]
 
         # Get the list of arp tasks
         LOGGER.debug("Getting arp tasks...")
