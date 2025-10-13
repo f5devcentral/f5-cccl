@@ -477,25 +477,32 @@ class ServiceConfigDeployer(object):
         :returns: The number of tasks that could not be completed.
         """
         self._bigip.refresh_net()
+        # Determine the static routing mode from global settings
+        static_routing_mode = desired_config.get('global', {}).get('static-route-mode', False)
+        if static_routing_mode:
+            LOGGER.debug("Static routing mode enabled.")
+            # Get the list of route tasks
+            LOGGER.debug("Getting route tasks...")
+            existing = self._bigip.get_routes()
+            desired = desired_config.get('routes', dict())
 
-        # Get the list of route tasks
-        LOGGER.debug("Getting route tasks...")
-        existing = self._bigip.get_routes()
-        desired = desired_config.get('routes', dict())
-
-        (create_routes, update_routes, delete_routes) = (
+            (create_routes, update_routes, delete_routes) = (
             self._get_resource_tasks(existing, desired)[0:3])
 
-        if self._partition:
-            if self._partition.lower() == 'common' and len(delete_routes) > 0:
-                cis_identifier = desired_config.get('cis-identifier')
-                if cis_identifier:
-                    # Filter routes by CIS identifier when it's provided
-                    delete_routes = [x for x in delete_routes if x._data.get("description") == cis_identifier]
-                else:
-                    # When no CIS identifier is provided, only delete routes with empty/None description
-                    # This prevents deletion of routes from other CIS instances that have identifiers
-                    delete_routes = [x for x in delete_routes if not x._data.get("description")]
+            if self._partition:
+                if self._partition.lower() == 'common' and len(delete_routes) > 0:
+                    cis_identifier = desired_config.get('cis-identifier')
+                    if cis_identifier:
+                        # Filter routes by CIS identifier when it's provided
+                        delete_routes = [x for x in delete_routes if x._data.get("description") == cis_identifier]
+                    else:
+                        # When no CIS identifier is provided, only delete routes with empty/None description
+                        # This prevents deletion of routes from other CIS instances that have identifiers
+                        delete_routes = [x for x in delete_routes if not x._data.get("description")]
+        else:
+            create_routes = []
+            update_routes = []
+            delete_routes = []
 
         # Get the list of arp tasks
         LOGGER.debug("Getting arp tasks...")
