@@ -17,6 +17,7 @@
 import json
 import pickle
 import pytest
+import f5_cccl.exceptions as exc
 from f5_cccl.test.conftest import bigip_proxy
 
 from f5_cccl.resource.ltm.app_service import ApplicationService
@@ -178,6 +179,39 @@ class TestServiceConfigDeployer:
         deployer = ServiceConfigDeployer(self.bigip)
         tasks_remaining = deployer.deploy_net(self.desired_net_config)
         assert 0 == tasks_remaining
+
+    def test_create_request_error_not_requeued(self):
+        deployer = ServiceConfigDeployer(self.bigip)
+        resource = MagicMock()
+        resource.name = 'bad-route-create'
+        resource.partition = 'test'
+        resource.create.side_effect = exc.F5CcclResourceRequestError('bad request')
+
+        retry_list = deployer._create_resources([resource])
+
+        assert retry_list == []
+
+    def test_update_request_error_not_requeued(self):
+        deployer = ServiceConfigDeployer(self.bigip)
+        resource = MagicMock()
+        resource.name = 'bad-route-update'
+        resource.partition = 'test'
+        resource.update.side_effect = exc.F5CcclResourceRequestError('bad request')
+
+        retry_list = deployer._update_resources([resource])
+
+        assert retry_list == []
+
+    def test_delete_request_error_not_requeued(self):
+        deployer = ServiceConfigDeployer(self.bigip)
+        resource = MagicMock()
+        resource.name = 'bad-route-delete'
+        resource.partition = 'test'
+        resource.delete.side_effect = exc.F5CcclResourceRequestError('bad request')
+
+        retry_list = deployer._delete_resources([resource])
+
+        assert retry_list == []
 
     def test_app_services(self, ltm_service_manager):
         """Test create/update/delete of app services."""
