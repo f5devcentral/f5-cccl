@@ -133,6 +133,11 @@ class ServiceConfigDeployer(object):
                 LOGGER.warning(
                     "Resource /%s/%s already exists, skipping task...",
                     resource.partition, resource.name)
+            except exc.F5CcclResourceRequestError as e:
+                LOGGER.error(str(e))
+                LOGGER.error(
+                    "Resource /%s/%s creation request invalid, not retrying task...",
+                    resource.partition, resource.name)
             except (exc.F5CcclResourceCreateError,
                     exc.F5CcclError) as e:
                 LOGGER.error(str(e))
@@ -157,8 +162,12 @@ class ServiceConfigDeployer(object):
                 LOGGER.warning(
                     "Resource /%s/%s does not exist, skipping task...",
                     resource.partition, resource.name)
+            except exc.F5CcclResourceRequestError as e:
+                LOGGER.error(str(e))
+                LOGGER.error(
+                    "Resource /%s/%s update request invalid, not retrying task...",
+                    resource.partition, resource.name)
             except (exc.F5CcclResourceUpdateError,
-                    exc.F5CcclResourceRequestError,
                     exc.F5CcclError) as e:
                 LOGGER.error(str(e))
                 LOGGER.error(
@@ -182,8 +191,12 @@ class ServiceConfigDeployer(object):
                 LOGGER.warning(
                     "Resource /%s/%s does not exist, skipping task...",
                     resource.partition, resource.name)
+            except exc.F5CcclResourceRequestError as e:
+                LOGGER.error(str(e))
+                LOGGER.error(
+                    "Resource /%s/%s delete request invalid, not retrying task...",
+                    resource.partition, resource.name)
             except (exc.F5CcclResourceDeleteError,
-                    exc.F5CcclResourceRequestError,
                     exc.F5CcclError) as e:
                 LOGGER.error(str(e))
                 if retry:
