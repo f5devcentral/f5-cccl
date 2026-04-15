@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 # Copyright (c) 2014-2021, F5 Networks, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,19 +14,22 @@
 # limitations under the License.
 #
 
-try:  # for pip >= 10
-    from pip._internal.req import parse_requirements as parse_reqs
-except ImportError:  # for pip <= 9.0.3
-    from pip.req import parse_requirements as parse_reqs
 from setuptools import setup
 from setuptools import find_packages
 
 import f5_cccl
 
-install_requires = [str(x.req) for x in parse_reqs('./setup_requirements.txt',
-                       session='setup')]
+
+def parse_requirements(filename):
+    """Parse requirements from a file."""
+    with open(filename, 'r') as f:
+        return [line.strip() for line in f if line.strip() and not line.startswith('#')]
+
+
+install_requires = parse_requirements('./setup_requirements.txt')
 
 print(('install_requires', install_requires))
+
 setup(
     name='f5-cccl',
     description='F5 Networks Common Controller Core Library',
