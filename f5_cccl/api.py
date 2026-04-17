@@ -17,7 +17,7 @@
 """F5 Common Controller Core Library to read, diff and apply BIG-IP config."""
 
 import logging
-import pkg_resources
+import importlib.resources
 
 from f5_cccl.bigip import BigIPProxy
 from f5_cccl.service.manager import ServiceManager
@@ -67,8 +67,8 @@ class F5CloudServiceManager(object):
                                        prefix=prefix)
 
         if schema_path is None:
-            schema_path = pkg_resources.resource_filename(resource_package,
-                                                          ltm_api_schema)
+            schema_path = str(
+                importlib.resources.files(resource_package).joinpath(ltm_api_schema))
         self._service_manager = ServiceManager(self._bigip_proxy,
                                                partition,
                                                schema_path)
