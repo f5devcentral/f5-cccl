@@ -137,7 +137,7 @@ class BigIPProxy(object):
         try:
             self._refresh_ltm()
         except F5SDKError as error:
-            LOGGER.error("F5 SDK Error: %s", error)
+            LOGGER.error("F5 SDK Error: %s", type(error).__name__)
             raise cccl_exc.F5CcclCacheRefreshError(
                 "BigIPProxy: failed to refresh internal BIG-IP ltm state.")
 
@@ -147,7 +147,7 @@ class BigIPProxy(object):
         try:
             self._refresh_net()
         except F5SDKError as error:
-            LOGGER.error("F5 SDK Error: %s", error)
+            LOGGER.error("F5 SDK Error: %s", type(error).__name__)
             raise cccl_exc.F5CcclCacheRefreshError(
                 "BigIPProxy: failed to refresh internal BIG-IP net state.")
 
@@ -174,7 +174,8 @@ class BigIPProxy(object):
         except (ValueError, TypeError) as error:
             LOGGER.error(
                 "Failed to create iControl REST resource %s, %s: error(%s)",
-                resource_obj.name, resource_type.__name__, str(error))
+                resource_obj.name, resource_type.__name__,
+                type(error).__name__)
 
             # An error occurred because the constructor did not like the
             # input.  Use resource name and partition to allow for its
@@ -453,7 +454,7 @@ class BigIPProxy(object):
             # Note: This information is needed when processing the request config
             #       which occurs before self.refresh() is called
         except Exception as error:
-            LOGGER.error("F5 SDK Error: %s", error)
+            LOGGER.error("F5 SDK Error: %s", type(error).__name__)
             raise cccl_exc.F5CcclResourceNotFoundError(
                 f"The requested partition {self._partition} was not found.")
 

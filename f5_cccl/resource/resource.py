@@ -118,7 +118,7 @@ class Resource(object):
         return self.full_path() < resource.full_path()
 
     def __str__(self):
-        return str(self._data)
+        return "{} /{}/{}".format(self.classname(), self.partition, self.name)
 
     def merge(self, desired_data):
         """Merge in properties from controller instead of replacing"""
@@ -384,14 +384,16 @@ class Resource(object):
         LOGGER.error(
             "HTTP error(%d): CCCL resource(%s) /%s/%s.",
             code, self.classname(), self.partition, self.name)
+        sanitized = "HTTP {} for /{}/{}".format(
+            code, self.partition, self.name)
         if code == 404:
-            raise cccl_exc.F5CcclResourceNotFoundError(str(error))
+            raise cccl_exc.F5CcclResourceNotFoundError(sanitized)
         elif code == 409:
-            raise cccl_exc.F5CcclResourceConflictError(str(error))
+            raise cccl_exc.F5CcclResourceConflictError(sanitized)
         elif 400 <= code < 500:
-            raise cccl_exc.F5CcclResourceRequestError(str(error))
+            raise cccl_exc.F5CcclResourceRequestError(sanitized)
         else:
-            raise cccl_exc.F5CcclError(str(error))
+            raise cccl_exc.F5CcclError(sanitized)
 
     def _process_metadata_flags(self, name, metadata_list):
         # look for supported flags
