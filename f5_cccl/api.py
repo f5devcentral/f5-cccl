@@ -22,7 +22,7 @@ import importlib.resources
 from f5_cccl.bigip import BigIPProxy
 from f5_cccl.service.manager import ServiceManager
 
-resource_package = __name__
+resource_package = __package__
 ltm_api_schema = "schemas/cccl-ltm-api-schema.yml"
 net_api_schema = "schemas/cccl-net-api-schema.yml"
 
